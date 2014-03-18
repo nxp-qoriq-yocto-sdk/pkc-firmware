@@ -438,7 +438,7 @@ void c2x0_board_init_f(int dumy)
 
 /*	c2x0_loop(); */
 
-#if 1
+#if 0
 	c2x0_serial_init();
 	c2x0_puts("\t\t\t Uboot UP !!!!! Loading firmware.......\n");
 #endif
@@ -448,8 +448,9 @@ void c2x0_board_init_f(int dumy)
 	c2x0_printf("Debug value... :%d \n", gd->cie_idx);
 	c2x0_code();
 */	
+#if 0
 	c2x0_parse_file_outer();
-	
+#endif
 }
 
 u64 get_tbclk (void)
