@@ -51,6 +51,8 @@ ifeq ($(ENHANCE_KERNEL_TEST), y)
 CFLAGS += -DENHANCE_KERNEL_TEST
 endif
 
+CFLAGS += -mno-strict-align
+
 SRCS	:= $(START:.o=.S) $(SOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(SOBJS) $(COBJS))
 START	:= $(addprefix $(obj),$(START))
