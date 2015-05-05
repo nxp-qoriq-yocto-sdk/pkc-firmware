@@ -1,6 +1,0 @@
-#How to build OC Firmware
-In the $(PWD)
-
-alias fslmake='make ARCH=powerpc CROSS_COMPILE=/opt/fsl/1.2/sysroots/x86_64-fslsdk-linux/usr/bin/ppce500v2-fsl-linux-gnuspe/powerpc-fsl-linux-gnuspe-'; fslmake distclean; fslmake C293QDS_36BIT_SDCARD_config ; fslmake
-
-scp u-boot.bin root@192.168.2.249:/home/nithia/c290_p4080/RSA-DEMO/driver/c293-p4080-u-boot-sd.bin
