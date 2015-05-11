@@ -259,13 +259,11 @@ static void init_rps(c_mem_layout_t *mem, u8 num, u8 respringcount, u32 *cursor)
 }
 
 
-static void init_drv_resp_ring(c_mem_layout_t *mem, u32 offset, u32 depth, 
-					u8 count, u32 *cursor)
+static void init_drv_resp_ring(c_mem_layout_t *mem, u32 offset, u32 depth, u8 count)
 {
     u8 loc = mem->rsrc_mem->ring_count;
     drv_resp_ring_t *ring   =   NULL;
     i32 i = 0;
-	cursor = cursor;
 
     for(i=0; i<count; i++) {
         ring    =   &(mem->rsrc_mem->drv_resp_ring[i]);
@@ -486,12 +484,11 @@ static void handshake(c_mem_layout_t *mem, u32 *cursor)
 				mem->rsrc_mem->drv_resp_ring_count  =   count;
 				mem->rsrc_mem->intr_ctrl_flags      =   (u32 *)*cursor;
 				*cursor +=  (count * sizeof(u32 *));
-				
+
 				mem->rsrc_mem->drv_resp_ring =
 				    (drv_resp_ring_t *) *cursor;
 
-				init_drv_resp_ring(mem, resp_ring_off, depth,
-						   count, cursor);
+				init_drv_resp_ring(mem, resp_ring_off, depth, count);
 				make_drv_resp_ring_circ_list(mem, count);
 			}
 
