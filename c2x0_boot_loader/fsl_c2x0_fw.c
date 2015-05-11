@@ -228,9 +228,9 @@ static void init_rps(c_mem_layout_t *mem, u8 num, u8 respringcount, u32 *cursor)
 		print_debug
 		    ("\t \t \t	Ring	:%d		Details....\n", i);
 		rps[i].req_r = NULL;
-        rps[i].msi_addr = NULL;
-        rps[i].sec = NULL;
-        rps[i].r_s_cntrs = NULL;
+		rps[i].msi_addr = NULL;
+		rps[i].sec = NULL;
+		rps[i].r_s_cntrs = NULL;
 
 		rps[i].idxs = &(mem->rsrc_mem->idxs_mem[i]);
 		rps[i].cntrs = &(mem->rsrc_mem->r_cntrs_mem[i]);
@@ -330,17 +330,17 @@ static void add_ring_to_pq(priority_q_t *p_q, app_ring_pair_t *rp, u8 pri)
 	if (!rp->id)
 		return;
 
-	if (!cursor)
+	if (!cursor) {
 		p_q[pri].ring = rp;
-	else {
+	} else {
 		while (cursor->next)
 			cursor = cursor->next;
 		cursor->next = rp;
-        while (cursor->rp_links[0])
-            cursor = cursor->rp_links[0];
-        cursor->rp_links[0] = rp;
-    }
-    rp->prio = pri;
+		while (cursor->rp_links[0])
+			cursor = cursor->rp_links[0];
+		cursor->rp_links[0] = rp;
+	}
+	rp->prio = pri;
 }
 
 static void make_rp_circ_list(c_mem_layout_t *mem)
@@ -362,50 +362,47 @@ static void make_rp_circ_list(c_mem_layout_t *mem)
 
 static void make_rp_prio_links(c_mem_layout_t *mem)
 {
-    u8 i = 0;
-    u8 max_pri = 0;
-    priority_q_t *p_q = mem->rsrc_mem->p_q;
-    priority_q_t *p_q_n = mem->rsrc_mem->p_q;
-    app_ring_pair_t *r = NULL;
-    app_ring_pair_t *r_next = NULL;
-    app_ring_pair_t *r_head = mem->rsrc_mem->p_q->ring;
+	u8 i = 0;
+	u8 max_pri = 0;
+	priority_q_t *p_q = mem->rsrc_mem->p_q;
+	priority_q_t *p_q_n = mem->rsrc_mem->p_q;
+	app_ring_pair_t *r = NULL;
+	app_ring_pair_t *r_next = NULL;
+	app_ring_pair_t *r_head = mem->rsrc_mem->p_q->ring;
 
-    while( NULL != p_q_n )
-    {
-        max_pri++;
-        p_q_n = p_q_n->next;
-    }
+	while( NULL != p_q_n ) {
+		max_pri++;
+		p_q_n = p_q_n->next;
+	}
 
-    while (p_q) {
-        r = p_q->ring;
-        p_q_n = p_q->next;
-        while(r){
-            r_next = r->rp_links[0];
-            if( NULL != r_next ){
-                for(i=0; i<max_pri; i++)
-                    r->rp_links[i] = r_next;
-                r->max_next_link = max_pri;
-            }
-            else{
-                for(i=0; i<max_pri; i++)
-                {
-                    if( 0 == i )
-                        r->rp_links[i] = r_head;
-                    else{
-                        if(p_q_n)
-                            r->rp_links[i] = p_q_n->ring;
-                        else
-                            r->rp_links[i] = r_head;
-                    }
-                }
-                r->max_next_link = max_pri;
-                max_pri--;
-            }
-            r = r_next;
-        }
-        p_q = p_q->next;
-    }
-    mem->rsrc_mem->rps = r_head;
+	while (p_q) {
+		r = p_q->ring;
+		p_q_n = p_q->next;
+		while(r) {
+			r_next = r->rp_links[0];
+			if( NULL != r_next ) {
+				for(i=0; i<max_pri; i++)
+					r->rp_links[i] = r_next;
+				r->max_next_link = max_pri;
+			} else {
+				for(i=0; i<max_pri; i++) {
+					if( 0 == i ) {
+						r->rp_links[i] = r_head;
+					} else {
+						if(p_q_n)
+							r->rp_links[i] = p_q_n->ring;
+						else
+							r->rp_links[i] = r_head;
+					}
+				}
+				r->max_next_link = max_pri;
+				max_pri--;
+			}
+			r = r_next;
+		}
+		p_q = p_q->next;
+	}
+	mem->rsrc_mem->rps = r_head;
 }
 
 static void handshake(c_mem_layout_t *mem, u32 *cursor) 
@@ -923,7 +920,7 @@ static u32 init_rsrc_sec(sec_engine_t *sec, u32 *cursor)
 
 	sec->jr.id = sec->id;
 	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
-	p_cursor        -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH * sizeof(sec_ip_ring_t)));
+	p_cursor -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH * sizeof(sec_ip_ring_t)));
 	sec->jr.i_ring = (sec_ip_ring_t *) p_cursor;
 
 	mem += SEC_JR_DEPTH * sizeof(sec_ip_ring_t);
@@ -933,7 +930,7 @@ static u32 init_rsrc_sec(sec_engine_t *sec, u32 *cursor)
 	     sec->jr.i_ring);
 
 	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
-	p_cursor        -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH * sizeof(struct sec_op_ring)));
+	p_cursor -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH * sizeof(struct sec_op_ring)));
 	sec->jr.o_ring = (struct sec_op_ring *)p_cursor;
 	mem += SEC_JR_DEPTH * sizeof(struct sec_op_ring);
 	Memset((u8 *)sec->jr.o_ring, 0, (SEC_JR_DEPTH * sizeof(struct sec_op_ring)));
@@ -950,8 +947,7 @@ static u32 init_rsrc_sec(sec_engine_t *sec, u32 *cursor)
 	return mem;
 }
 
-static void alloc_rsrc_mem(c_mem_layout_t *c_mem, u32 *pcursor, 
-               u32 *l2cursor)
+static void alloc_rsrc_mem(c_mem_layout_t *c_mem, u32 *pcursor, u32 *l2cursor)
 {
 	resource_t *rsrc  = c_mem->rsrc_mem;
 	u32 l2_cursor     = *l2cursor;
@@ -1011,8 +1007,8 @@ static void alloc_rsrc_mem(c_mem_layout_t *c_mem, u32 *pcursor,
 	    ("\t	ip pool addr					:%0x\n",
 	     rsrc->ip_pool);
 #endif
-   	*l2cursor   =   l2_cursor;
-    *pcursor    =   p_cursor;
+	*l2cursor = l2_cursor;
+	*pcursor = p_cursor;
 }
 
 #ifdef P4080_EP_TYPE
@@ -1034,28 +1030,29 @@ static void fix_p4080_reg_settings(void)
 	ccsr = (u32 *) (0xfe000c88);
 	*ccsr = 0;
 	SYNC_MEM
-	    /* 2) Modifying the PCIe controller 1 LAW to be of 16G size */
-	    /* PCIe controller 1 LAW will start from 0XA00000000
-	     * instead of known 0XC00000000 */
-	    ccsr = (u32 *) (0xfe000c60);
+	/* 2) Modifying the PCIe controller 1 LAW to be of 16G size
+	 * PCIe controller 1 LAW will start from 0XA00000000
+	 * instead of known 0XC00000000 */
+	ccsr = (u32 *) (0xfe000c60);
 	*ccsr = 0X0000000c;
 	ccsr = (u32 *) (0xfe000c68);
 	*ccsr = 0x80000021;
 	SYNC_MEM
-	    /* Enabling the inbound address translation register */
-	    ccsr = (u32 *) (0xfe200de0);
+	/* Enabling the inbound address translation register */
+	ccsr = (u32 *) (0xfe200de0);
 	*ccsr = 0x000fff00;
 	SYNC_MEM ccsr = (u32 *) (0xfe200df0);
 	*ccsr = 0xa0f55013;
 	SYNC_MEM
-	    /* Enabling the outbound translation address register */
-	    ccsr = (u32 *) (0xfe200c20);
+	/* Enabling the outbound translation address register */
+	ccsr = (u32 *) (0xfe200c20);
 	*ccsr = 0x00;
 	SYNC_MEM ccsr = (u32 *) (0xfe200c28);
 	*ccsr = 0X00c00000;
 	SYNC_MEM ccsr = (u32 *) (0xfe200c30);
 	*ccsr = 0x80044021;
-SYNC_MEM}
+	SYNC_MEM
+}
 #endif
 
 /* Switch controls */
@@ -1116,9 +1113,7 @@ static inline void Enq_Cpy(sec_ip_ring_t *sec_i, req_ring_t *req_r, u32 count)
 static inline void Deq_Cpy(resp_ring_t *resp_r, sec_op_ring_t *sec_o,
 			   u32 count)
 {
-
 	memcpy(resp_r, sec_o, (sizeof(resp_ring_t) * count));
-
 }
 
 inline i32 circ_room(u32 wi, u32 ri, u32 w_depth, u32 r_depth, u32 count)
@@ -1144,12 +1139,12 @@ static inline u32 sel_sec_enqueue(c_mem_layout_t *c_mem, sec_engine_t **psec,
 	sec_engine_t *sec	= NULL;
 	sec_jr_t *jr		= NULL;
 	dma_addr_t desc		= 0;
-	u64 sec_sel			= 0;
-	u32 secroom			= 0;
-	u32 wi				= 0;
+	u64 sec_sel		= 0;
+	u32 secroom		= 0;
+	u32 wi			= 0;
 
-	u32 ri				= rp->idxs->r_index;
-    u32 sec_cnt			= c_mem->rsrc_mem->sec_eng_cnt;
+	u32 ri			= rp->idxs->r_index;
+	u32 sec_cnt		= c_mem->rsrc_mem->sec_eng_cnt;
 
 	print_debug("%s( ): rp: %d ri: %d \n", __FUNCTION__, rp->id, rp->idxs->r_index); 
 	desc = rp->req_r[ri].desc;
@@ -1171,7 +1166,7 @@ static inline u32 sel_sec_enqueue(c_mem_layout_t *c_mem, sec_engine_t **psec,
 		break;
 	default:
 		sec = *psec;
-       	*psec = sec->next;
+		*psec = sec->next;
 		break;
 	}	
 
@@ -1206,7 +1201,7 @@ static inline void loop_inorder(app_ring_pair_t *resp_ring)
 	u8  *pos_ptr = NULL;
 	u32 bit_pos = 0;
 
-	do{
+	do {
 		print_debug("\t\t\tOrdered job done idx:%d\n", resp_ring->order_j_d_index);
 		/* Checking whether next ordered response bit is set  */
 		byte_pos = resp_ring->order_j_d_index / BITS_PER_BYTE;
@@ -1216,15 +1211,15 @@ static inline void loop_inorder(app_ring_pair_t *resp_ring)
 				byte_pos, bit_pos, pos_ptr, *pos_ptr);
 		flag = 0x1 & ( *pos_ptr >> (bit_pos));
 		print_debug("\t\t\tFlag value  : %x\n", flag);
-		if(0x1 == flag){
+		if (0x1 == flag) {
 			*pos_ptr &= ~(1 << bit_pos);
 			resp_ring->cntrs->jobs_added += 1;
 			resp_ring->order_j_d_index = 
 				(resp_ring->order_j_d_index + 1) % resp_ring->depth;
 		}
-	}while(flag);
-
+	} while(flag);
 }
+
 static inline void inorder_dequeue(app_ring_pair_t *resp_ring, sec_jr_t *jr, 
 									u32 ri, u32 wi)
 {
@@ -1249,8 +1244,8 @@ static inline void inorder_dequeue(app_ring_pair_t *resp_ring, sec_jr_t *jr,
 				wi - 1, resp_ring->resp_r[wi - 1].desc);
 
 	loop_inorder(resp_ring);
-
 }
+
 static inline u32 sec_dequeue(c_mem_layout_t *c_mem, sec_engine_t **deq_sec,
 			      	u32 *todeq)
 {
@@ -1287,8 +1282,7 @@ static inline u32 sec_dequeue(c_mem_layout_t *c_mem, sec_engine_t **deq_sec,
 			 * next order response is comming
 			 */
 			inorder_dequeue(resp_ring, jr, ri, ctx->wi);	
-		}
-		else {
+		} else {
 			wi = resp_ring->idxs->w_index;
 			Deq_Cpy(&(resp_ring->resp_r[wi]), &jr->o_ring[ri], 1);
 			resp_ring->idxs->w_index = MOD_ADD(wi, 1, resp_ring->depth);
@@ -1474,7 +1468,7 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 {
 	cmd_op_t *cmd_op = NULL;
 	u32 i = 0, reset_val = 0;
-    volatile u32 *rreg = NULL;
+	volatile u32 *rreg = NULL;
 
 #ifdef P4080_EP_TYPE
 #define RESET_REG_ADDR      0xfe0e00b0
@@ -1918,7 +1912,6 @@ inline void Enq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *rp, u32 count)
     jr->tail            =   wi;
 }
 
-
 inline static u32 enqueue_to_sec(sec_engine_t **sec, app_ring_pair_t *rp, u32 cnt)
 {
     sec_engine_t *psec = *sec;
@@ -1931,7 +1924,7 @@ inline static u32 enqueue_to_sec(sec_engine_t **sec, app_ring_pair_t *rp, u32 cn
     Enq_Circ_Cpy(&(psec->jr), rp, room);
     out_be32(&(psec->jr.regs->irja), room);
     rp->cntrs->jobs_processed += room;
-	rp->r_s_cntrs->req_jobs_processed = rp->cntrs->jobs_processed;
+    rp->r_s_cntrs->req_jobs_processed = rp->cntrs->jobs_processed;
 
 RET:
     *sec = psec->next;
@@ -1940,70 +1933,72 @@ RET:
 
 inline void Deq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *r, u32 count)
 {
-    i32 i =0, wi = 0, ri = 0, jrdepth = jr->size, rdepth = r->depth;
+	i32 i =0, wi = 0, ri = 0, jrdepth = jr->size, rdepth = r->depth;
 
 	print_debug("%s( ) cnt: %d \n",__FUNCTION__, count);
-    wi = r->idxs->w_index;
-    ri = jr->head;
+	wi = r->idxs->w_index;
+	ri = jr->head;
 
 	print_debug("%s( ): Wi: %d, ri: %d \n", __FUNCTION__, wi, ri);
-    for(i=0; i<count; i++) {
+	for(i=0; i<count; i++) {
 		print_debug("%s( ): Dequeued desc : %0llx from ri: %d storing at wi: %d \n", 
 				__FUNCTION__, jr->o_ring[ri].desc, ri, wi);
-        r->resp_r[wi].desc      =   jr->o_ring[ri].desc;
-        r->resp_r[wi].result    =   jr->o_ring[ri].status;
-        wi  =   (wi + 1) &~(rdepth);
-        ri  =   (ri + 1) &~(jrdepth);
-    }
-    r->idxs->w_index    =   wi;
-    jr->head            =   ri;
+		r->resp_r[wi].desc      =   jr->o_ring[ri].desc;
+		r->resp_r[wi].result    =   jr->o_ring[ri].status;
+		wi  =   (wi + 1) &~(rdepth);
+		ri  =   (ri + 1) &~(jrdepth);
+	}
+	r->idxs->w_index    =   wi;
+	jr->head            =   ri;
 }
 
 inline void resp_ring_enqueue(sec_jr_t *jr, app_ring_pair_t *r, u32 cnt)
 {
 	print_debug("%s( ) room: %d \n", __FUNCTION__, cnt);
-    Deq_Circ_Cpy(jr, r, cnt);
-    r->cntrs->jobs_added  +=  cnt;
+	Deq_Circ_Cpy(jr, r, cnt);
+	r->cntrs->jobs_added  +=  cnt;
 	r->r_s_cntrs->resp_jobs_added = r->cntrs->jobs_added;
-    out_be32(&jr->regs->orjr, cnt);
+	out_be32(&jr->regs->orjr, cnt);
 }
 
 
 inline static u32 dequeue_from_sec(sec_engine_t **sec, app_ring_pair_t **r)
 {
-    sec_engine_t    *psec   = *sec;
-    app_ring_pair_t *pr     = *r;
-    u32 secroom     = in_be32(&(psec->jr.regs->orsf));
-    u32 resproom    = pr->depth - (pr->cntrs->jobs_added - pr->r_s_c_cntrs->jobs_processed);
-    u32 room        = MIN(MIN(secroom, resproom), MAX_DEQ_BUDGET);
+	sec_engine_t    *psec   = *sec;
+	app_ring_pair_t *pr     = *r;
+	u32 secroom     = in_be32(&(psec->jr.regs->orsf));
+	u32 resproom    = pr->depth - (pr->cntrs->jobs_added - pr->r_s_c_cntrs->jobs_processed);
+	u32 room        = MIN(MIN(secroom, resproom), MAX_DEQ_BUDGET);
 
 	print_debug("%s( ): secroom: %d, respring:%d resproom: %d, room : %d \n",
 			__FUNCTION__, secroom, pr->id, resproom, room);
 
-    if(!secroom)
-        goto SECCHANGE;
-    if(!resproom)
-        goto RESPCHANGE;
+	if(!secroom)
+		goto SECCHANGE;
+	if(!resproom)
+		goto RESPCHANGE;
 
-    resp_ring_enqueue(&(psec->jr), pr, room);
-    *sec = psec->next;
-    *r   = pr->next;
-    goto RET;
+	resp_ring_enqueue(&(psec->jr), pr, room);
+	*sec = psec->next;
+	*r   = pr->next;
+	goto RET;
+
 SECCHANGE:
-    *sec = psec->next;
-    goto RET;
+	*sec = psec->next;
+	goto RET;
 RESPCHANGE:
-    *r = pr->next;
+	*r = pr->next;
 RET:
-    return room;
+	return room;
 }
 
 
 static inline void raise_intr_app_ring(app_ring_pair_t *r)
 {
-	print_debug("%s( ): MSI addr : %0x, MSI data :%0x \n", __FUNCTION__, r->msi_addr, r->msi_data);
-    r->intr_ctrl_flag = 1;
-    out_le16(r->msi_addr, r->msi_data);
+	print_debug("%s( ): MSI addr : %0x, MSI data :%0x \n",
+			__FUNCTION__, r->msi_addr, r->msi_data);
+	r->intr_ctrl_flag = 1;
+	out_le16(r->msi_addr, r->msi_data);
 }
 
 static inline void check_intr(app_ring_pair_t *r, u32 deq, u32 *processedcount)
@@ -2013,21 +2008,21 @@ static inline void check_intr(app_ring_pair_t *r, u32 deq, u32 *processedcount)
 		 print_debug("%s( ): Dequeued :%d  \n", 
 				 __FUNCTION__, deq);
 	}
-    if(deq && r->intr_ctrl_flag) {
+	if(deq && r->intr_ctrl_flag) {
 		print_debug("%s( ): Dequeued :%d intr ctrl flag: %d \n",
 				__FUNCTION__, deq, r->intr_ctrl_flag);
 	}
 #endif
-	if(deq && (!r->intr_ctrl_flag))
-        raise_intr_app_ring(r);
-    else {
-        if(r->cntrs->jobs_added - r->r_s_c_cntrs->jobs_processed) {
-            if(*processedcount != r->r_s_c_cntrs->jobs_processed) {
-                *processedcount = r->r_s_c_cntrs->jobs_processed;
-                raise_intr_app_ring(r);
-            }
-        }
-    }
+	if(deq && (!r->intr_ctrl_flag)) {
+		raise_intr_app_ring(r);
+	} else {
+		if(r->cntrs->jobs_added - r->r_s_c_cntrs->jobs_processed) {
+			if(*processedcount != r->r_s_c_cntrs->jobs_processed) {
+				*processedcount = r->r_s_c_cntrs->jobs_processed;
+				raise_intr_app_ring(r);
+			}
+		}
+	}
 }
 
 #ifdef HIGH_PERF
@@ -2036,39 +2031,38 @@ static void ring_processing_perf(c_mem_layout_t *c_mem)
 /*	drv_resp_ring_t     *drv_r      =   c_mem->rsrc_mem->drv_resp_ring;	*/
 	app_ring_pair_t     *rp         =   c_mem->rsrc_mem->rps;
 	app_ring_pair_t     *resp_r     =   c_mem->rsrc_mem->rps;
-    sec_engine_t        *enq_sec    =   c_mem->rsrc_mem->sec;
-    sec_engine_t        *deq_sec    =   c_mem->rsrc_mem->sec;
-
+	sec_engine_t        *enq_sec    =   c_mem->rsrc_mem->sec;
+	sec_engine_t        *deq_sec    =   c_mem->rsrc_mem->sec;
 
 	u32 cnt = 0, totcount = 0, /* totenqcnt = 0, */ totdeqcnt = 0, deqcnt = 0, processedcount = 0;	
 
 LOOP:
-    cnt =   rp->r_s_c_cntrs->jobs_added - rp->cntrs->jobs_processed;
+	cnt =   rp->r_s_c_cntrs->jobs_added - rp->cntrs->jobs_processed;
 
-    if(!cnt)
+	if(!cnt)
 	        goto DEQ;
 
 	print_debug("%s( ): Count of jobs added %d \n", __FUNCTION__, cnt);
-    totcount += cnt;
-    /*totenqcnt += cnt;*/
+	totcount += cnt;
+	/*totenqcnt += cnt;*/
 
-    /* Enqueue jobs to sec engine */
-    enqueue_to_sec(&enq_sec, rp, cnt);
+	/* Enqueue jobs to sec engine */
+	enqueue_to_sec(&enq_sec, rp, cnt);
 DEQ:
-    if(!totcount)
+	if(!totcount)
 	        goto NEXTRING;
 
-    /* Dequeue jobs from sec engine */
-    deqcnt = dequeue_from_sec(&deq_sec, &resp_r);
-    totdeqcnt += deqcnt;
-    totcount  -= deqcnt;
+	/* Dequeue jobs from sec engine */
+	deqcnt = dequeue_from_sec(&deq_sec, &resp_r);
+	totdeqcnt += deqcnt;
+	totcount  -= deqcnt;
 
 	/* Check interrupt */
-    check_intr(resp_r, deqcnt, &processedcount);
+	check_intr(resp_r, deqcnt, &processedcount);
 
 NEXTRING:
-    rp = rp->next;
-    goto LOOP;
+	rp = rp->next;
+	goto LOOP;
 }
 
 #else
@@ -2096,37 +2090,35 @@ RP_START:
          * to get the ACK and process it..
          * Can wait for long as anyways RESET operation is in progress..
          */
-        wait_for_timeout(50000000ull);
-        block_app_jobs = 1;
-    }
+		wait_for_timeout(50000000ull);
+		block_app_jobs = 1;
+	}
 
 	if (UNBLOCK_APP_JOBS == res) {
-        print1_debug(c_mem,
-                 "Releasing the block condition on app rings...\n");
-        block_app_jobs = 0;
-    }
+		print1_debug(c_mem, "Releasing the block condition on app rings...\n");
+		block_app_jobs = 0;
+	}
 
 	if (REHANDSHAKE == res) {
-        print1_debug(c_mem,
-                 "Going for rehandshake.WAITING FOR FLAG TO SET\n");
-        WAIT_FOR_STATE_CHANGE(c_mem->c_hs_mem->state);
-        block_app_jobs = 0;
-        print1_debug(c_mem, "FLAG HAS BEEN SET GOOING TO START\n");
-        return ;
-    }
+		print1_debug(c_mem, "Going for rehandshake.WAITING FOR FLAG TO SET\n");
+		WAIT_FOR_STATE_CHANGE(c_mem->c_hs_mem->state);
+		block_app_jobs = 0;
+		print1_debug(c_mem, "FLAG HAS BEEN SET GOOING TO START\n");
+		return ;
+	}
 
 APP_RING:
-    if (block_app_jobs)
-        goto RP_START;
+	if (block_app_jobs)
+		goto RP_START;
 
 	if((rp->r_s_c_cntrs->jobs_added - rp->cntrs->jobs_added) >= rp->depth - 1)
 		block_req = 1;
 	else
 		block_req = 0;
 
-	cnt =   rp->r_s_c_cntrs->jobs_added - rp->cntrs->jobs_processed;
+	cnt = rp->r_s_c_cntrs->jobs_added - rp->cntrs->jobs_processed;
 	
-	if((!cnt) ||( block_req))
+	if(!cnt || block_req)
 		goto DEQ;
 
 	sel_sec_enqueue(c_mem, &enq_sec, rp, &deq);
@@ -2168,17 +2160,17 @@ static inline void rng_processing(c_mem_layout_t *c_mem)
 	r_deq_cnt   =   &(rp->cntrs->jobs_processed);
 	cnt = WAIT_FOR_DRIVER_JOBS(&(rp->r_s_c_cntrs->jobs_added), r_deq_cnt);
 
-	if(cnt)
+	if (cnt)
 		ring_jobs    =  sel_sec_enqueue(c_mem, &sec, rp, &deq);
 	else
-		return;	
+		return;
 
 DEQ:
 	ring_jobs   =  sec_dequeue(c_mem, &sec, &deq);
-	if(!ring_jobs)
+	if (!ring_jobs)
 		goto DEQ;
 
-	if(ring_jobs)
+	if (ring_jobs)
 		raise_intr(c_mem->rsrc_mem->drv_resp_ring);
 }
 
@@ -2213,7 +2205,6 @@ START:
 	     c_mem);
 
 	c_mem->dgb_print = c_mem->err_print = 0;
-
 	c_mem->free_mem = TOTAL_CARD_MEMORY - FIRMWARE_SIZE;
 
 	/* Allocating top cache line size number of bytes
@@ -2316,7 +2307,7 @@ START:
 	p_aligned_addr = (p_addr & MSI_TLB_SIZE_MASK);
 
 	/* Physical address should be within 16G window */
-	c_mem->p_msi_mem = (c_mem->p_pci_mem + p_aligned_addr);
+	c_mem->p_msi_mem = c_mem->p_pci_mem + p_aligned_addr;
 	print_debug
 	    ("p_msi_mem					:%0llx\n",
 	     c_mem->p_msi_mem);
@@ -2330,7 +2321,7 @@ START:
 	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
 
 	p_cursor -= sizeof(resource_t);
-	c_mem->rsrc_mem = (resource_t *) (p_cursor);
+	c_mem->rsrc_mem = (resource_t *) p_cursor;
 
 	/* From here allocations will start on L2 part of the cache */
 	l2_cursor = L2_SRAM_VIRT_ADDR;
