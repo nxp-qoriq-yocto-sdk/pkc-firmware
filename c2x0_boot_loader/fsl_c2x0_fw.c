@@ -1450,6 +1450,80 @@ void resetcounters(c_mem_layout_t *mem, u32 sec_id)
 	    mem->rsrc_mem->drv_resp_ring->idxs->r_index = 0;
 }
 
+int check_addr_value(int addr)
+{
+	if ((addr < CONFIG_SYS_INIT_L3_ADDR) ||
+	    (addr > (CONFIG_SYS_INIT_L3_ADDR + TOTAL_CARD_MEMORY - 1))) {
+		print_debug("Trying to access a non-accessable memory, return: %d\n",
+			     NON_ACCESS_MEM);
+		return NON_ACCESS_MEM;
+	}
+	return 0;
+}
+
+int process_debug_cmd_md(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+{
+	cmd_op_t *cmd_op;
+	int addr, i, err;
+
+	cmd_op = (cmd_op_t *) ((u8 *)mem->v_ob_mem + (cmd_req->cmd_op - mem->p_ob_mem));
+	print1_debug(mem, "Cmd op buffer address... :%0x\n", cmd_op);
+
+	addr = cmd_req->ip_info.dgb.address;
+	err = check_addr_value(addr);
+	if (err)
+		return err;
+	/* memcpy(cmd_op->buffer.debug_op, (void *)cmd_req->ip_info.dgb.address, 5);*/
+	for (i = 0; i < 64; ++i) {
+		cmd_op->buffer.debug_op[i] = *((u32 *)addr + i);
+		print1_debug(mem, "DUMPING AT %x : %x\n",
+			(u32 *)addr + i, *((u32 *)addr + i));
+	}
+	return 0;
+}
+
+int process_debug_cmd_mw(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+{
+	int addr, err;
+
+	addr = cmd_req->ip_info.dgb.address;
+	err = check_addr_value(addr);
+	if (err)
+		return err;
+
+	*(u32 *) (addr) = cmd_req->ip_info.dgb.val;
+	print1_debug(mem, "WRITING AT ADDRESS : %x\n", addr);
+	return 0;
+}
+
+int process_debug_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+{
+	int err = 0;
+	print1_debug(mem, "DEBUGGING IN FW\n");
+	print1_debug(mem, "GOT THE COMMAND: %d\n", cmd_req->ip_info.dgb.cmd_id);
+	print1_debug(mem, "THE ADDRESS: %u\n", cmd_req->ip_info.dgb.address);
+	print1_debug(mem, "GOT THE VALUE: %x\n", cmd_req->ip_info.dgb.val);
+
+	switch (cmd_req->ip_info.dgb.cmd_id) {
+	case MD:
+		err = process_debug_cmd_md(cmd_req);
+		break;
+	case MW:
+		err = process_debug_cmd_mw(cmd_req);
+		break;
+	case PRINT1_DEBUG:
+		print1_debug(mem, "DEBUG PRINTS ARE ENABLED\n");
+		mem->dgb_print = cmd_req->ip_info.dgb.val;
+		print1_debug(mem, "DEBUG PRINTS ARE ENABLED\n");
+		break;
+	case PRINT1_ERROR:
+		mem->err_print = cmd_req->ip_info.dgb.val;
+		break;
+	default:
+		err = 1;
+	}
+	return err;
+}
 /*******************************************************************************
  * Function     : process_command
  *
@@ -1504,91 +1578,7 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 		break;
 
 	case DEBUG:
-		print1_debug(mem, "DEBUGGING IN FW\n");
-		print1_debug(mem, "GOT THE COMMAND : %d\n",
-			     cmd_req->ip_info.dgb.cmd_id);
-		print1_debug(mem, "HE ADDRESS : %u\n",
-			     cmd_req->ip_info.dgb.address);
-		print1_debug(mem, "GOT THE VALUE   : %x\n",
-			     cmd_req->ip_info.dgb.val);
-		{
-			switch (cmd_req->ip_info.dgb.cmd_id) {
-			case MD:
-				{
-					u32 i = 0;
-					cmd_op =
-					    (cmd_op_t *) ((u8 *)mem->v_ob_mem +
-							  (cmd_req->cmd_op -
-							   mem->p_ob_mem));
-					 print1_debug
-					    (mem, "Cmd op buffer address... :%0x\n",
-					     cmd_op);
-					if ((cmd_req->ip_info.dgb.address <
-					     CONFIG_SYS_INIT_L3_ADDR)
-					    || (cmd_req->ip_info.dgb.address >
-						((CONFIG_SYS_INIT_L3_ADDR +
-						  TOTAL_CARD_MEMORY) - 1))) {
-						print_debug
-						    ("Trying to access a "
-						     "non-accessable memory,"
-						     "return : %d\n",
-						     NON_ACCESS_MEM);
-						return NON_ACCESS_MEM;
-					}
-/* memcpy(cmd_op->buffer.debug_op, (void *)cmd_req->ip_info.dgb.address, 5);*/
-					for (i = 0; i < 64; ++i) {
-						cmd_op->buffer.debug_op[i] =
-						    *((u32 *) cmd_req->ip_info.
-						      dgb.address + i);
-						print1_debug(mem,
-							     "DUMPING AT %x : %x\n",
-							     ((u32 *) cmd_req->
-							      ip_info.dgb.
-							      address) + i,
-							     *((u32
-								*) (cmd_req->
-								    ip_info.dgb.
-								    address) +
-							       i));
-					}
-				}
-				break;
-
-			case MW:
-				if ((cmd_req->ip_info.dgb.address <
-				     CONFIG_SYS_INIT_L3_ADDR)
-				    || (cmd_req->ip_info.dgb.address >
-					((CONFIG_SYS_INIT_L3_ADDR +
-					  TOTAL_CARD_MEMORY) - 1))) {
-					print_debug
-					    ("Trying to access a non-accessable"
-					     " memory, return : %d\n",
-					     NON_ACCESS_MEM);
-					return NON_ACCESS_MEM;
-				}
-				*(u32 *) (cmd_req->ip_info.dgb.address) =
-				    cmd_req->ip_info.dgb.val;
-				print1_debug(mem, "WRITING AT ADDRESS : %x\n",
-					     cmd_req->ip_info.dgb.address);
-				break;
-
-			case PRINT1_DEBUG:
-				print1_debug(mem,
-					     "DEBUG PRINTS ARE ENABLED\n");
-				mem->dgb_print = cmd_req->ip_info.dgb.val;
-				print1_debug(mem,
-					     "DEBUG PRINTS ARE ENABLED\n");
-				break;
-
-			case PRINT1_ERROR:
-				mem->err_print = cmd_req->ip_info.dgb.val;
-				break;
-
-			default:
-				return 1;
-			}
-		}
-		break;
+		return process_debug_cmd(mem, cmd_req);
 
 	case RESETDEV:
 		print1_debug(mem, "\t \t Resetting Device\n");
