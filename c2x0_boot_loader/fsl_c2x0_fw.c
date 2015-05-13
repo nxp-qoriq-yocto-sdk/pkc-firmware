@@ -1556,6 +1556,45 @@ void process_resetsec_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	}
 }
 
+void process_devstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+{
+	cmd_op_t *cmd_op;
+	app_ring_pair_t *ring_cursor;
+	u32 total_job_added = 0;
+	u32 total_job_processed = 0;
+	u32 i;
+
+	print1_debug(mem, "\t \t Device stats\n");
+
+	cmd_op = (cmd_op_t *) ((u8 *)mem->v_ob_mem +
+			(cmd_req->cmd_op - mem->p_ob_mem));
+
+	print1_debug(mem, "Cmd op buffer address... :%0x\n", cmd_op);
+
+	cmd_op->buffer.dev_stat_op.fwversion = FW_VERSION;
+	cmd_op->buffer.dev_stat_op.totalmem = TOTAL_CARD_MEMORY;
+	cmd_op->buffer.dev_stat_op.codemem = FIRMWARE_SIZE;
+	cmd_op->buffer.dev_stat_op.heapmem = TOTAL_CARD_MEMORY - FIRMWARE_SIZE;
+	cmd_op->buffer.dev_stat_op.freemem = mem->free_mem;
+	cmd_op->buffer.dev_stat_op.num_of_sec_engine =
+			mem->rsrc_mem->sec_eng_cnt;
+	cmd_op->buffer.dev_stat_op.no_of_app_rings =
+			mem->rsrc_mem->ring_count;
+	cmd_op->buffer.dev_stat_op.total_jobs_rx =
+			mem->rsrc_mem->cntrs_mem->tot_jobs_added;
+	cmd_op->buffer.dev_stat_op.total_jobs_pending =
+			mem->rsrc_mem->cntrs_mem->tot_jobs_processed;
+
+	for (i = 1 ; i < mem->rsrc_mem->ring_count; ++i) {
+		ring_cursor = &(mem->rsrc_mem->orig_rps[i]);
+		total_job_added += ring_cursor->r_s_c_cntrs->jobs_added;
+		total_job_processed += ring_cursor->cntrs->jobs_processed;
+	}
+
+	cmd_op->buffer.dev_stat_op.total_jobs_rx = total_job_added;
+	cmd_op->buffer.dev_stat_op.total_jobs_pending = total_job_processed;
+}
+
 /*******************************************************************************
  * Function     : process_command
  *
@@ -1626,46 +1665,7 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 		return UNBLOCK_APP_JOBS;
 
 	case DEVSTAT:
-		{
-			app_ring_pair_t *ring_cursor = NULL;
-			u32 total_job_added = 0;
-			u32 total_job_processed = 0;
-			u32 i = 0;
-
-			print1_debug(mem, "\t \t Device stats\n");
-
-			cmd_op =
-			    (cmd_op_t *) ((u8 *)mem->v_ob_mem +
-					  (cmd_req->cmd_op - mem->p_ob_mem));
-
-			print1_debug(mem, "Cmd op buffer address... :%0x\n",
-				     cmd_op);
-
-			cmd_op->buffer.dev_stat_op.fwversion = FW_VERSION;
-			cmd_op->buffer.dev_stat_op.totalmem = TOTAL_CARD_MEMORY;
-			cmd_op->buffer.dev_stat_op.codemem = FIRMWARE_SIZE;
-			cmd_op->buffer.dev_stat_op.heapmem =
-			    (TOTAL_CARD_MEMORY - FIRMWARE_SIZE);
-			cmd_op->buffer.dev_stat_op.freemem = mem->free_mem;
-			cmd_op->buffer.dev_stat_op.num_of_sec_engine =
-			    mem->rsrc_mem->sec_eng_cnt;
-			cmd_op->buffer.dev_stat_op.no_of_app_rings =
-			    mem->rsrc_mem->ring_count;
-			cmd_op->buffer.dev_stat_op.total_jobs_rx =
-			    mem->rsrc_mem->cntrs_mem->tot_jobs_added;
-			cmd_op->buffer.dev_stat_op.total_jobs_pending =
-			    mem->rsrc_mem->cntrs_mem->tot_jobs_processed;
-
-			for (i = 1 ; i < mem->rsrc_mem->ring_count; ++i) {
-				ring_cursor = &(mem->rsrc_mem->orig_rps[i]);
-				total_job_added += ring_cursor->r_s_c_cntrs->jobs_added;
-				total_job_processed += ring_cursor->cntrs->jobs_processed;
- 			} 
-            cmd_op->buffer.dev_stat_op.total_jobs_rx =
-                total_job_added;
-            cmd_op->buffer.dev_stat_op.total_jobs_pending =
-                total_job_processed;
-		}
+		process_devstat_cmd(mem, cmd_req);
 		break;
 
 	case RINGSTAT:
