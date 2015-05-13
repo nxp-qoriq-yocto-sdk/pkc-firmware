@@ -2126,7 +2126,6 @@ i32 fsl_c2x0_fw(void)
 {
 	u32 l2_cursor = 0;
 	u32 p_cursor = 0;
-	va_addr_t v_ib_mem = 0;
 	phys_addr_t p_addr = 0;
 	phys_addr_t p_aligned_addr = 0;
 
@@ -2168,7 +2167,7 @@ START:
 	    ("c_hs_mem						:%0x\n",
 	     c_mem->c_hs_mem);
 
-	c_mem->v_ib_mem = v_ib_mem = L2_SRAM_VIRT_ADDR;
+	c_mem->v_ib_mem = L2_SRAM_VIRT_ADDR;
 	c_mem->p_ib_mem = L2_SRAM_VIRT_ADDR;	/* Phy addr is same as v addr */
 	print_debug
 	    ("v_ib_mem						:%0x\n",
