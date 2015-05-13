@@ -53,6 +53,18 @@
 #define MAX_DEQ_BUDGET	(-1UL)
 #endif
 
+#ifdef P4080_EP_TYPE
+#define RESET_REG_ADDR      0xfe0e00b0
+#define RESET_REG_VALUE     0x2
+#define RESET_PIC_PIR_ADDR  0xfe041090
+#define RESET_PIC_PIR_VALUE 0x1
+#elif C293_EP_TYPE
+#define RESET_REG_ADDR      (CCSR_VIRT_ADDR + 0Xe0000 + 0xb0)
+#define RESET_REG_VALUE     0x2
+#define RESET_PIC_PIR_ADDR  (CCSR_VIRT_ADDR + 0x40000 + 0x1090)
+#define RESET_PIC_PIR_VALUE 0x1
+#endif
+
 static inline void rng_processing(c_mem_layout_t *c_mem);
 static inline void copy_kek_and_set_scr(c_mem_layout_t *c_mem);
 
@@ -1711,17 +1723,6 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	u32 i = 0, reset_val = 0;
 	volatile u32 *rreg = NULL;
 
-#ifdef P4080_EP_TYPE
-#define RESET_REG_ADDR      0xfe0e00b0
-#define RESET_REG_VALUE     0x2
-#define RESET_PIC_PIR_ADDR  0xfe041090
-#define RESET_PIC_PIR_VALUE 0x1
-#elif C293_EP_TYPE
-#define RESET_REG_ADDR      (CCSR_VIRT_ADDR + 0Xe0000 + 0xb0)
-#define RESET_REG_VALUE     0x2
-#define RESET_PIC_PIR_ADDR  (CCSR_VIRT_ADDR + 0x40000 + 0x1090)
-#define RESET_PIC_PIR_VALUE 0x1
-#endif
 
 #ifdef P4080_EP_TYPE
 	rreg = (u32 *)RESET_REG_ADDR;
