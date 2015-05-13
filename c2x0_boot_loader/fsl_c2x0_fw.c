@@ -1659,6 +1659,16 @@ void process_ringstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	}
 }
 
+void process_pingdev_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+{
+	cmd_op_t *cmd_op;
+
+	print1_debug(mem, "Changed Ping Dev command.....\n");
+	cmd_op = (cmd_op_t *) ((u8 *)mem->v_ob_mem + (cmd_req->cmd_op - mem->p_ob_mem));
+	cmd_op->buffer.ping_op.resp = 556;
+	print1_debug(mem, "Resp : %d\n", cmd_op->buffer.ping_op.resp);
+	print1_debug(mem, "Sending Resp : %d to driver\n", cmd_op->buffer.ping_op.resp);
+}
 
 /*******************************************************************************
  * Function     : process_command
@@ -1738,14 +1748,7 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 		break;
 
 	case PINGDEV:
-		print1_debug(mem, "Changed Ping Dev command.....\n");
-		cmd_op =
-		    (cmd_op_t *) ((u8 *)mem->v_ob_mem +
-				  (cmd_req->cmd_op - mem->p_ob_mem));
-		cmd_op->buffer.ping_op.resp = 556;
-		print1_debug(mem, "Resp : %d\n", cmd_op->buffer.ping_op.resp);
-		print1_debug(mem, "Sending Resp : %d to driver\n",
-			    cmd_op->buffer.ping_op.resp);
+		process_pingdev_cmd(mem, cmd_req);
 		break;
 
 	case REHANDSHAKE:
