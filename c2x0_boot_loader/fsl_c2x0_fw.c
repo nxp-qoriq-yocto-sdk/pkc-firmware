@@ -1524,6 +1524,38 @@ int process_debug_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	}
 	return err;
 }
+
+void process_resetsec_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+{
+	print1_debug(mem, "\t \t Resetting sec engine     :%d\n",
+			cmd_req->ip_info.sec_id);
+	sec_reset(mem->rsrc_mem->sec[cmd_req->ip_info.sec_id].info);
+	{
+	sec_jr_t *sec_jr = &(mem->rsrc_mem->sec->jr);
+	print1_debug(mem, "\t Before SEC i/p ring virtual address	:%0x\n",
+			sec_jr->i_ring);
+	print1_debug(mem, "\t SEC Output ring virtual address         :%0x\n",
+			sec_jr->o_ring);
+	}
+	sec_eng_hw_init(&(mem->rsrc_mem->sec[cmd_req->ip_info.sec_id]));
+	{
+	sec_jr_t *sec_jr = &(mem->rsrc_mem->sec->jr);
+	print1_debug(mem, "\t After  fsl_sec_init SEC Input ring virtual address   :%0x\n",
+			sec_jr->i_ring);
+	print1_debug(mem, "\t SEC Output ring virtual address     :%0x\n",
+			sec_jr->o_ring);
+	}
+	resetcounters(mem, cmd_req->ip_info.sec_id);
+	{
+	i32 secid = cmd_req->ip_info.sec_id;
+	sec_jr_t *sec_jr = &(mem->rsrc_mem->sec[secid].jr);
+	print1_debug(mem, "\t After resetcounters SEC Input ring virtual address         :%0x\n",
+			sec_jr->i_ring);
+	print1_debug(mem, "\t SEC Output ring virtual address         :%0x\n",
+			sec_jr->o_ring);
+	}
+}
+
 /*******************************************************************************
  * Function     : process_command
  *
@@ -1586,51 +1618,12 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 		break;
 
 	case RESETSEC:
-		print1_debug(mem, "\t \t Resetting sec engine     :%d\n",
-			     cmd_req->ip_info.sec_id);
-		sec_reset(mem->rsrc_mem->sec[cmd_req->ip_info.sec_id].info);
-		{
-			sec_jr_t *sec_jr = &(mem->rsrc_mem->sec->jr);
-			print1_debug(mem,
-				     "\t Before SEC i/p ring "
-				     "virtual address	:%0x\n",
-				     sec_jr->i_ring);
-			print1_debug(mem,
-				     "\t SEC Output ring "
-				     "virtual address         :%0x\n",
-				     sec_jr->o_ring);
-		}
-		sec_eng_hw_init(&(mem->rsrc_mem->sec[cmd_req->ip_info.sec_id]));
-		{
-			sec_jr_t *sec_jr = &(mem->rsrc_mem->sec->jr);
-			print1_debug(mem,
-				     "\t After  fsl_sec_init SEC Input ring "
-				     "virtual address   :%0x\n",
-				     sec_jr->i_ring);
-			print1_debug(mem,
-				     "\t SEC Output ring "
-				     "virtual address     :%0x\n",
-				     sec_jr->o_ring);
-		}
-		resetcounters(mem, cmd_req->ip_info.sec_id);
-		{
-			i32 secid = cmd_req->ip_info.sec_id;
-			sec_jr_t *sec_jr = &(mem->rsrc_mem->sec[secid].jr);
-			print1_debug(mem,
-				     "\t After resetcounters SEC Input "
-				     "ring virtual address         :%0x\n",
-				     sec_jr->i_ring);
-			print1_debug(mem,
-				     "\t SEC Output ring "
-				     "virtual address         :%0x\n",
-				     sec_jr->o_ring);
-		}
+		process_resetsec_cmd(mem, cmd_req);
 		/* Driver as part of protocol would have sent the block
 		 * command earlier. Since now the RESET is done, we can
 		 * unblock the rings and accept the jobs.
 		 */
 		return UNBLOCK_APP_JOBS;
-		break;
 
 	case DEVSTAT:
 		{
