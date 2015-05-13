@@ -1706,6 +1706,24 @@ void process_secstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 
 	print1_debug(mem, "\t\t SEC STATISTIC SENT\n");
 }
+
+void process_resetdev_cmd()
+{
+	u32 reset_val;
+	volatile u32 *rreg;
+
+#ifdef P4080_EP_TYPE
+	rreg = (u32 *)RESET_REG_ADDR;
+	reset_val = RESET_REG_VALUE;
+#elif C293_EP_TYPE
+	rreg = (u32 *)RESET_PIC_PIR_ADDR;
+	reset_val = RESET_PIC_PIR_VALUE;
+#endif
+
+	print1_debug(mem, "\t \t Resetting Device\n");
+	*rreg = reset_val;
+}
+
 /*******************************************************************************
  * Function     : process_command
  *
@@ -1719,18 +1737,6 @@ void process_secstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
  ******************************************************************************/
 u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 {
-	u32 reset_val;
-	volatile u32 *rreg;
-
-#ifdef P4080_EP_TYPE
-	rreg = (u32 *)RESET_REG_ADDR;
-	reset_val = RESET_REG_VALUE;
-#elif C293_EP_TYPE
-	rreg = (u32 *)RESET_PIC_PIR_ADDR;
-	reset_val = RESET_PIC_PIR_VALUE;
-#endif
-
-
 	print1_debug(mem, "   ---- Command Ring Processing ----\n");
 	switch (cmd_req->cmd_type) {
 	case BLOCK_APP_JOBS:
@@ -1750,8 +1756,7 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 		return process_debug_cmd(mem, cmd_req);
 
 	case RESETDEV:
-		print1_debug(mem, "\t \t Resetting Device\n");
-		*rreg = reset_val;
+		process_resetdev_cmd();
 		break;
 
 	case RESETSEC:
@@ -1789,7 +1794,6 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 		return 1;
 	}
 	return 0;
-
 }
 
 static i32 cmd_ring_processing(c_mem_layout_t *mem)
