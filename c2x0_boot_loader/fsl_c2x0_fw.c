@@ -1595,6 +1595,71 @@ void process_devstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	cmd_op->buffer.dev_stat_op.total_jobs_pending = total_job_processed;
 }
 
+void process_ringstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+{
+	priority_q_t *p_q_cursor = NULL;
+	app_ring_pair_t *ring_cursor = NULL;
+	u32 pending_cnt, r_id, prop;
+
+	print1_debug(mem, "\t \t Ring Statistics\n");
+
+	cmd_op = (cmd_op_t *) ((u8 *)mem->v_ob_mem + (cmd_req->cmd_op - mem->p_ob_mem));
+	p_q_cursor = mem->rsrc_mem->p_q;
+
+	while (p_q_cursor) {
+		ring_cursor = p_q_cursor->ring;
+		if (0 == cmd_req->ip_info.ring_id)
+			ring_cursor = mem->rsrc_mem->cmdrp;
+
+		while (ring_cursor) {
+			r_id = ring_cursor->id;
+			if (cmd_req->ip_info.ring_id == r_id) {
+				cmd_op->buffer.ring_stat_op.depth = ring_cursor->depth;
+#ifndef COMMON_IP_BUFFER_POOL
+				cmd_op->buffer.ring_stat_op.tot_size = DEFAULT_POOL_SIZE +
+					ring_cursor->depth * sizeof(app_ring_pair_t);
+#else
+				cmd_op->buffer.ring_stat_op.tot_size =
+				    (ring_cursor->depth * sizeof(app_ring_pair_t));
+#endif
+				prop = (ring_cursor->props & APP_RING_PROP_PRIO_MASK) >>
+						APP_RING_PROP_PRIO_SHIFT;
+				print1_debug(mem, "priority : %d\n", prop);
+				cmd_op->buffer.ring_stat_op.priority = prop;
+				prop = (ring_cursor-> props & APP_RING_PROP_AFFINE_MASK) >>
+						APP_RING_PROP_AFFINE_SHIFT;
+				print1_debug(mem, "affinity : %d\n", prop);
+				cmd_op->buffer.ring_stat_op.affinity = prop;
+				prop = (ring_cursor->props & APP_RING_PROP_ORDER_MASK) >>
+						APP_RING_PROP_ORDER_SHIFT;
+				print1_debug(mem, "order : %d\n", prop);
+				cmd_op->buffer.ring_stat_op.order = prop;
+				print1_debug(mem,"Ring : %d, Job added : %d\n",
+					ring_cursor->id,
+					ring_cursor->r_s_c_cntrs->jobs_added);
+				print1_debug(mem, "Ring : %d, Job processed : %d\n",
+					ring_cursor->id,
+					ring_cursor->cntrs->jobs_processed);
+				pending_cnt = ring_cursor->r_s_c_cntrs->jobs_added -
+				    ring_cursor->cntrs->jobs_processed;
+				/* FREE SPACE IN RING */
+				cmd_op->buffer.ring_stat_op.free_count =
+				    (ring_cursor->depth - pending_cnt);
+				/* TOT JOBS PROCESSED BY RING */
+				cmd_op->buffer.ring_stat_op.jobs_processed =
+				    ring_cursor->cntrs->jobs_processed;
+				/* TOTAL JOBS PENDING */
+				cmd_op->buffer.ring_stat_op.jobs_pending = pending_cnt;
+
+				return;
+			}
+			ring_cursor = ring_cursor->next;
+		}
+		p_q_cursor = p_q_cursor->next;
+	}
+}
+
+
 /*******************************************************************************
  * Function     : process_command
  *
@@ -1669,113 +1734,7 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 		break;
 
 	case RINGSTAT:
-		{
-			priority_q_t *p_q_cursor = NULL;
-			app_ring_pair_t *ring_cursor = NULL;
-			u32 pending_cnt = 0;
-			u32 r_id = 0;
-			u32 prop = 0;
-
-			print1_debug(mem, "\t \t Ring Statistics\n");
-
-			cmd_op =
-			    (cmd_op_t *) ((u8 *)mem->v_ob_mem +
-					  (cmd_req->cmd_op - mem->p_ob_mem));
-			p_q_cursor = mem->rsrc_mem->p_q;
-
-			while (p_q_cursor) {
-				ring_cursor = p_q_cursor->ring;
-
-				if (0 == cmd_req->ip_info.ring_id)
-					ring_cursor = mem->rsrc_mem->cmdrp;
-				while (ring_cursor) {
-					r_id = ring_cursor->id;
-					if (cmd_req->ip_info.ring_id == r_id) {
-						cmd_op->buffer.ring_stat_op.
-						    depth = ring_cursor->depth;
-#ifndef COMMON_IP_BUFFER_POOL
-						cmd_op->buffer.ring_stat_op.
-						    tot_size =
-						    ring_cursor->depth *
-						    sizeof(app_ring_pair_t) +
-						    DEFAULT_POOL_SIZE;
-#else
-						cmd_op->buffer.ring_stat_op.
-						    tot_size =
-						    (ring_cursor->depth *
-						     sizeof(app_ring_pair_t));
-#endif
-						prop =
-						    (ring_cursor->
-						     props &
-						     APP_RING_PROP_PRIO_MASK) >>
-						    APP_RING_PROP_PRIO_SHIFT;
-						print1_debug(mem,
-							     "priority : %d\n",
-							     prop);
-						cmd_op->buffer.ring_stat_op.
-						    priority = prop;
-						prop =
-						    (ring_cursor->
-						     props &
-						     APP_RING_PROP_AFFINE_MASK)
-						    >>
-						    APP_RING_PROP_AFFINE_SHIFT;
-						print1_debug(mem,
-							     "affinity : %d\n",
-							     prop);
-						cmd_op->buffer.ring_stat_op.
-						    affinity = prop;
-						prop =
-						    (ring_cursor->
-						     props &
-						     APP_RING_PROP_ORDER_MASK)
-						    >>
-						    APP_RING_PROP_ORDER_SHIFT;
-						print1_debug(mem,
-							     "order : %d\n",
-							     prop);
-						cmd_op->buffer.ring_stat_op.
-						    order = prop;
-						print1_debug(mem,
-							     "Ring : %d, Job added : %d\n",
-							     ring_cursor->id,
-							     ring_cursor->
-							     r_s_c_cntrs->
-							     jobs_added);
-						print1_debug(mem,
-							     "Ring : %d, Job processed : %d\n",
-							     ring_cursor->id,
-							     ring_cursor->
-							     cntrs->
-							     jobs_processed);
-						pending_cnt =
-						    ring_cursor->r_s_c_cntrs->
-						    jobs_added -
-						    ring_cursor->cntrs->
-						    jobs_processed;
-						/* FREE SPACE IN RING */
-						cmd_op->buffer.ring_stat_op.
-						    free_count =
-						    (ring_cursor->depth -
-						     pending_cnt);
-						/* TOT JOBS PROCESSED BY RING */
-						cmd_op->buffer.ring_stat_op.
-						    jobs_processed =
-						    ring_cursor->cntrs->
-						    jobs_processed;
-						/* TOTAL JOBS PENDING */
-						cmd_op->buffer.ring_stat_op.
-						    jobs_pending = pending_cnt;
-
-						return 0;
-					}
-					ring_cursor = ring_cursor->next;
-				}
-
-				p_q_cursor = p_q_cursor->next;
-			}
-		}
+		process_ringstat_cmd(mem, cmd_req);
 		break;
 
 	case PINGDEV:
