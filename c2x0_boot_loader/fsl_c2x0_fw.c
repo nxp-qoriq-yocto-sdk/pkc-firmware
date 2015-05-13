@@ -1719,10 +1719,8 @@ void process_secstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
  ******************************************************************************/
 u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 {
-	cmd_op_t *cmd_op = NULL;
-	u32 i = 0, reset_val = 0;
-	volatile u32 *rreg = NULL;
-
+	u32 reset_val;
+	volatile u32 *rreg;
 
 #ifdef P4080_EP_TYPE
 	rreg = (u32 *)RESET_REG_ADDR;
