@@ -2142,7 +2142,7 @@ START:
 	    (PLATFORM_SRAM_VIRT_ADDR + PLATFORM_SRAM_SIZE - FIRMWARE_SIZE);
 	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
 
-	/* One cache line for HS mem */
+	/* One cache line for handshake (HS) memory */
 	p_cursor -= L1_CACHE_LINE_SIZE;
 
 	print_debug("\n		Memory Pointers\n");
@@ -2210,7 +2210,7 @@ START:
 	print_debug
 	    ("Host ob mem h					:%0x\n",
 	     c_mem->c_hs_mem->h_ob_mem_h);
-	/* Calculate one 36bit adrress from H & L parts of it */
+	/* Calculate one 36bit address from H & L parts of it */
 	p_addr = c_mem->c_hs_mem->h_ob_mem_h;
 	p_addr = (p_addr << 32) | c_mem->c_hs_mem->h_ob_mem_l;
 	print_debug("Host ob 64 Bit address			:%0llx\n",

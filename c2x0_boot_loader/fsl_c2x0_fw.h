@@ -560,7 +560,7 @@ typedef struct job_ctx {
 } job_ctx_t;
 
 /*******************************************************************************
-Description :	Defines the memory latout on the device. Since the memory on the
+Description :	Defines the memory layout on the device. Since the memory on the
 		device is plain, it is accessed by typecasting it to this
 		structure so that accessing is easy.
 Fields      :
