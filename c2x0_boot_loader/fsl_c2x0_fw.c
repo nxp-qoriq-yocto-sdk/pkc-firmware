@@ -1670,6 +1670,30 @@ void process_pingdev_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	print1_debug(mem, "Sending Resp : %d to driver\n", cmd_op->buffer.ping_op.resp);
 }
 
+void process_secstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+{
+	cmd_op_t *cmd_op;
+	int i;
+
+	print1_debug(mem, "\t\t SENDING THE SEC STATISTICS\n");
+
+	cmd_op = (cmd_op_t *) ((u8 *)mem->v_ob_mem + (cmd_req->cmd_op - mem->p_ob_mem));
+
+	cmd_op->buffer.sec_op.sec_ver = mem->rsrc_mem->sec->info->secvid_ms;
+	cmd_op->buffer.sec_op.cha_ver = mem->rsrc_mem->sec->info->chavid_ls;
+	cmd_op->buffer.sec_op.no_of_sec_jr = mem->rsrc_mem->sec_eng_cnt;
+	cmd_op->buffer.sec_op.jr_size = mem->rsrc_mem->sec->jr.size;
+	cmd_op->buffer.sec_op.no_of_sec_engines = mem->rsrc_mem->sec_eng_cnt;
+
+	for (i = 0; i < mem->rsrc_mem->sec_eng_cnt; ++i) {
+		cmd_op->buffer.sec_op.sec[i].sec_tot_req_jobs =
+				mem->rsrc_mem->sec[i].tot_req_cnt;
+		cmd_op->buffer.sec_op.sec[i].sec_tot_resp_jobs =
+				mem->rsrc_mem->sec[i].tot_resp_cnt;
+	}
+
+	print1_debug(mem, "\t\t SEC STATISTIC SENT\n");
+}
 /*******************************************************************************
  * Function     : process_command
  *
@@ -1756,30 +1780,9 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 		mem->c_hs_mem->state = DEFAULT;
 /*            sec_reset();*/
 		return REHANDSHAKE;
+
 	case SECSTAT:
-		print1_debug(mem, "\t\t SENDING THE SEC STATISTICS\n");
-
-		cmd_op =
-		    (cmd_op_t *) ((u8 *)mem->v_ob_mem +
-				  (cmd_req->cmd_op - mem->p_ob_mem));
-
-		cmd_op->buffer.sec_op.sec_ver =
-		    mem->rsrc_mem->sec->info->secvid_ms;
-		cmd_op->buffer.sec_op.cha_ver =
-		    mem->rsrc_mem->sec->info->chavid_ls;
-		cmd_op->buffer.sec_op.no_of_sec_jr = mem->rsrc_mem->sec_eng_cnt;
-		cmd_op->buffer.sec_op.jr_size = mem->rsrc_mem->sec->jr.size;
-		cmd_op->buffer.sec_op.no_of_sec_engines =
-		    mem->rsrc_mem->sec_eng_cnt;
-
-		for (i = 0; i < mem->rsrc_mem->sec_eng_cnt; ++i) {
-			cmd_op->buffer.sec_op.sec[i].sec_tot_req_jobs =
-			    mem->rsrc_mem->sec[i].tot_req_cnt;
-			cmd_op->buffer.sec_op.sec[i].sec_tot_resp_jobs =
-			    mem->rsrc_mem->sec[i].tot_resp_cnt;
-		}
-
-		print1_debug(mem, "\t\t SEC STATISTIC SENT\n");
+		process_secstat_cmd(mem, cmd_req);
 		break;
 
 	default:
