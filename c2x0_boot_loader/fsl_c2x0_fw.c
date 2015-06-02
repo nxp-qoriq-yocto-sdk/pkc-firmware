@@ -1627,12 +1627,12 @@ void process_ringstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 			r_id = ring_cursor->id;
 			if (cmd_req->ip_info.ring_id == r_id) {
 				cmd_op->buffer.ring_stat_op.depth = ring_cursor->depth;
-#ifndef COMMON_IP_BUFFER_POOL
+#ifdef COMMON_IP_BUFFER_POOL
+				cmd_op->buffer.ring_stat_op.tot_size =
+				    ring_cursor->depth * sizeof(app_ring_pair_t);
+#else
 				cmd_op->buffer.ring_stat_op.tot_size = DEFAULT_POOL_SIZE +
 					ring_cursor->depth * sizeof(app_ring_pair_t);
-#else
-				cmd_op->buffer.ring_stat_op.tot_size =
-				    (ring_cursor->depth * sizeof(app_ring_pair_t));
 #endif
 				prop = (ring_cursor->props & APP_RING_PROP_PRIO_MASK) >>
 						APP_RING_PROP_PRIO_SHIFT;
