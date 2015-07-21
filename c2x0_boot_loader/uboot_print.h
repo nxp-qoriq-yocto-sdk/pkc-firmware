@@ -135,3 +135,25 @@ void c2x0_putc(const char c);
 int c2x0_printf(const char *, ...);
 int vsprintf(char *, const char *, va_list );
 unsigned long simple_strtoul(const char *,char **,unsigned int );
+
+#ifdef PRINT_DEBUG
+#define print_debug c2x0_printf
+#define print1_debug(c_mem, msg, ...)   { \
+                if (c_mem->dgb_print)  \
+                    c2x0_printf(msg, ##__VA_ARGS__); \
+                }
+#else
+#define print_debug(fmt, ...) do {} while (0)
+#define print1_debug(c_mem, msg, ...) do {} while (0)
+#endif
+
+#ifdef PRINT_ERROR
+#define print_error c2x0_printf
+#define print1_error(c_mem, msg, ...)   { \
+                if (c_mem->err_print) \
+                    c2x0_printf(msg, ##__VA_ARGS__); \
+                }
+#else
+#define print_error(fmt, ...) do {} while (0)
+#define print1_error(c_mem, msg, ...) do {} while (0)
+#endif

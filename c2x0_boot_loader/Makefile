@@ -47,6 +47,14 @@ ifeq ($(EP_TYPE), P4080)
 CFLAGS += -DP4080_EP_TYPE
 endif
 
+ifeq ($(PRINT_ERROR), y)
+CFLAGS += -DPRINT_ERROR
+endif
+
+ifeq ($(PRINT_DEBUG), y)
+CFLAGS += -DPRINT_DEBUG
+endif
+
 ifeq ($(ENHANCE_KERNEL_TEST), y)
 CFLAGS += -DENHANCE_KERNEL_TEST
 endif
