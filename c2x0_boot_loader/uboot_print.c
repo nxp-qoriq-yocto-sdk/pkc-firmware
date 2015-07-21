@@ -36,6 +36,7 @@
 #include "uboot_common.h"
 #include "uboot_print.h"
 
+#if defined PRINT_DEBUG || defined PRINT_ERROR
 void c2x0_serial_init (void)
 {
     int clock_divisor;
@@ -51,6 +52,27 @@ void c2x0_serial_init (void)
 	
     gd->have_console = 1;
 }
+
+int c2x0_print_buffer (ulong addr, void* data, uint width, uint count, uint linelen)
+{
+	int i;
+	uint32_t x;
+
+	c2x0_printf("%08lx:", addr);
+	/* Copy from memory into linebuf and print hex values */
+	for (i = 0; i < linelen; i++) {
+		x = *(volatile uint32_t *)data;
+		c2x0_printf(" %0*x", width * 2, x);
+		data += width;
+	}
+	return 0;
+}
+#else
+void c2x0_serial_init (void)
+{return;}
+int c2x0_print_buffer (ulong addr, void* data, uint width, uint count, uint linelen)
+{return 0;}
+#endif
 
 char c2x0_getc(void)
 { 
@@ -114,30 +136,17 @@ int c2x0_printf(const char *fmt, ...)
 }
 #define MAX_LINE_LENGTH_BYTES (64)
 #define DEFAULT_LINE_LENGTH_BYTES (16)
-int c2x0_print_buffer (ulong addr, void* data, uint width, uint count, uint linelen)
-{
-    int i;
-    uint32_t x;
-        
-    c2x0_printf("%08lx:", addr);
-        /* Copy from memory into linebuf and print hex values */
-    for (i = 0; i < linelen; i++) {
-        x = *(volatile uint32_t *)data;
-        c2x0_printf(" %0*x", width * 2, x); 
-        data += width;
-    }   
-    return 0;
-}
 #define DISP_LINE_LEN   16
+
 int c2x0_do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     ulong   addr, length = 0x40;
     int size = 4;
     int rc = 0;
 
-	c2x0_printf("Argv :%s\n", argv[1]);
+	print_debug("Argv :%s\n", argv[1]);
     addr = simple_strtoul(argv[1], NULL, 16);
-	c2x0_printf("Addr :%x\n", addr);
+	print_debug("Addr :%x\n", addr);
         /* Print the lines. */
     c2x0_print_buffer(addr, (void*)addr, size, length, DISP_LINE_LEN/size);
 
@@ -191,8 +200,8 @@ void do_command( char *buf )
     	addr[j] = '\0';
 		argv[0] = command;
 		argv[1] = addr;
-        c2x0_printf("\nCommand %s\n", argv[0]);
-        c2x0_printf("Addr to read%s\n", argv[1]);
+        print_debug("\nCommand %s\n", argv[0]);
+        print_debug("Addr to read%s\n", argv[1]);
 		c2x0_do_mem_md(0, 0, 2, argv);
 	}
 	else if( !c2x0_strcmp( command, "mw" ) )
@@ -210,12 +219,12 @@ void do_command( char *buf )
         argv[0] = command;
         argv[1] = addr;
 		argv[2] = data; 
-        c2x0_printf("\nCommand %s\n", argv[0]);
-        c2x0_printf("Addr to write%s\n", argv[1]);
-        c2x0_printf("Data to write %s\n", argv[2]);
+        print_debug("\nCommand %s\n", argv[0]);
+        print_debug("Addr to write%s\n", argv[1]);
+        print_debug("Data to write %s\n", argv[2]);
         c2x0_do_mem_mw(0, 0, 3, argv);
 	}
 	else
-		c2x0_printf("\nUnknown Command\n");
+		print_debug("\nUnknown Command\n");
     return ;
 }

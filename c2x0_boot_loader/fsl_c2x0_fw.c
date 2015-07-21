@@ -2349,7 +2349,7 @@ START:
 	c_mem->rsrc_mem->rps = c_mem->rsrc_mem->rps->next;
 	make_rp_circ_list(c_mem);
 	*/
-	c2x0_printf("\n\t\t\tFirmware up\n");	
+	print_debug("\n\t\t\tFirmware up\n");
 #ifdef HIGH_PERF
 	ring_processing_perf(c_mem);
 #else

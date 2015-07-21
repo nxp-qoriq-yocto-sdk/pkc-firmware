@@ -411,15 +411,15 @@ void c2x0_code(void )
 
 
 	/* Print the MSI address and MSI data */
-	c2x0_printf("H obmem L offset: %0x \n", *hsmem++);
-	c2x0_printf("H obmem H offset: %0x \n", *hsmem++);
+	print_debug("H obmem L offset: %0x \n", *hsmem++);
+	print_debug("H obmem H offset: %0x \n", *hsmem++);
 
 	msi_addr = (void *) (0x90000000 + (*hsmem & 0x000fffff));
-	c2x0_printf("MSI Low  offset:%0x \n", *hsmem++);
-	c2x0_printf("MSI High offset:%0x \n", *hsmem++);
+	print_debug("MSI Low  offset:%0x \n", *hsmem++);
+	print_debug("MSI High offset:%0x \n", *hsmem++);
 #define ASSIGN16_PTR(x,y)                out_le16(x,y);
 #define ASSIGN16_PTR1(x,y)               out_be16(x,y);
-	c2x0_printf("MSI Addr: %0x \n", msi_addr);
+	print_debug("MSI Addr: %0x \n", msi_addr);
 	ASSIGN16_PTR(msi_addr, 0x4191);
 	ASSIGN16_PTR1(msi_addr, 0x4191);
 }
@@ -436,14 +436,12 @@ void c2x0_board_init_f(int dumy)
 
 /*	c2x0_loop(); */
 
-#if 0
 	c2x0_serial_init();
-	c2x0_puts("\t\t\t Uboot UP !!!!! Loading firmware.......\n");
-#endif
+	print_debug("\t\t\t Uboot UP !!!!! Loading firmware.......\n");
 
 	fsl_c2x0_fw( );
 /*
-	c2x0_printf("Debug value... :%d \n", gd->cie_idx);
+	print_debug("Debug value... :%d \n", gd->cie_idx);
 	c2x0_code();
 */	
 #if 0
