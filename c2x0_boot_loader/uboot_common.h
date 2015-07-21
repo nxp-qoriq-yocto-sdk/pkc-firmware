@@ -252,6 +252,4 @@ register volatile c2x0_gd_t *gd asm ("r2");
 extern void write_tlb(u32 _mas0, u32 _mas1, u32 _mas2, u32 _mas3, u32 _mas7);
 
 #define C2X0_CONFIG_L2_SRAM_BASE 0xfff00000
-#define COMMAND_SUPPORT 1
-
 #define WATCHDOG_RESET() {}

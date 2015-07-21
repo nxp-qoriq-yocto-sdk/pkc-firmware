@@ -92,7 +92,7 @@ void c2x0_puts(const char *s)
         c2x0_putc (*s++);
     }
 }
-#if COMMAND_SUPPORT
+
 #define vscnprintf(buf, size, fmt, args...) vsprintf(buf, fmt, ##args)
 int c2x0_printf(const char *fmt, ...)
 {
@@ -218,6 +218,4 @@ void do_command( char *buf )
 	else
 		c2x0_printf("\nUnknown Command\n");
     return ;
-
 }
-#endif 

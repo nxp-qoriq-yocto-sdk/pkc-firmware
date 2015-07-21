@@ -182,9 +182,7 @@ static int c2x0_cread_line(const char *const prompt, char *buf, unsigned int *le
 		if ((ichar == '\n') || (ichar == '\r')) {
 			*len = eol_num;
 			buf[eol_num] = '\0';	/* lose the newline */
-#if COMMAND_SUPPORT
 			do_command(buf);
-#endif
 			c2x0_putc('\n');
 			break;
 		}
