@@ -1,15 +1,14 @@
 Build instructions
 ==================
-A suitable gcc cross-compiler for e500v2 is available within yocto for P1010,
-P1020, P2020 etc.
+A suitable gcc cross-compiler for e500v2 is available within yocto for C293,
+P1010, P1020, P2020 etc.
 
 Example:
 
-SYSROOT=/path/to/build_p2020rdb_release/tmp/sysroots/`uname -m`-linux
+SYSROOT=/path/to/build_c293pcie_release/tmp/sysroots/`uname -m`-linux
 TOOLCHAIN=ppce500v2-fsl-linux-gnuspe
 PATH=$SYSROOT/usr/bin:$PATH
 PATH=$SYSROOT/usr/bin/${TOOLCHAIN}:$PATH
-
 
 export ARCH=powerpc
 export CROSS_COMPILE=powerpc-fsl-linux-gnuspe-
@@ -21,7 +20,7 @@ make
 
 Installation
 ============
-The output file, named u-boot.bin must be installed as
+The resulting binary "u-boot.bin" must be installed as
 
 	/etc/crypto/pkc-firmware.bin
 
