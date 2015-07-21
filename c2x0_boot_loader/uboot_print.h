@@ -33,7 +33,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-int c2x0_serial_init (void);
+void c2x0_serial_init (void);
 
 #define CONFIG_SYS_NS16550_REG_SIZE 1
 

@@ -36,7 +36,7 @@
 #include "uboot_common.h"
 #include "uboot_print.h"
 
-int c2x0_serial_init (void)
+void c2x0_serial_init (void)
 {
     int clock_divisor;
 
@@ -50,8 +50,8 @@ int c2x0_serial_init (void)
     c2x0_serial_out(UART_LCRVAL, &serial_ports[0]->lcr);
 	
     gd->have_console = 1;
-    return (0);
 }
+
 char c2x0_getc(void)
 { 
 	C2X0_NS16550_t com_port = C2X0_PORT;	
