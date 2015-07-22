@@ -75,14 +75,6 @@ struct c2x0_NS16550 {
 
 typedef struct c2x0_NS16550 *C2X0_NS16550_t;
 
-/* Note: The port number specified in the functions is 1 based.
- *   the array is 0 based.
- */ 
-static C2X0_NS16550_t serial_ports[1] = {
-    (C2X0_NS16550_t)CONFIG_SYS_NS16550_COM1
-};
-
-#define C2X0_PORT    serial_ports[0]
 //#define c2x0_serial_out(x, y)    outb(x, (ulong)y)
 
 //#define CONFIG_SYS_NS16550_CLK (gd->bus_clk/2)

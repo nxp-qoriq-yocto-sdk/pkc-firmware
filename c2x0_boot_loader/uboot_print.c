@@ -36,6 +36,13 @@
 #include "uboot_common.h"
 #include "uboot_print.h"
 
+/* Note: The port number specified in the functions is 1 based.
+ *	 the array is 0 based.
+ */
+static C2X0_NS16550_t serial_ports[1] = {
+	(C2X0_NS16550_t)CONFIG_SYS_NS16550_COM1
+};
+
 #if defined PRINT_DEBUG || defined PRINT_ERROR
 void c2x0_serial_init (void)
 {
@@ -76,7 +83,7 @@ int c2x0_print_buffer (ulong addr, void* data, uint width, uint count, uint line
 
 char c2x0_getc(void)
 { 
-	C2X0_NS16550_t com_port = C2X0_PORT;	
+	C2X0_NS16550_t com_port = serial_ports[0];
     while ((c2x0_serial_in(&com_port->lsr) & C2X0_UART_LSR_DR) == 0) {
         WATCHDOG_RESET();
     }   
@@ -103,9 +110,9 @@ void
 c2x0_putc(const char c)
 {       
     if (c == '\n')
-        c2x0_NS16550_putc(C2X0_PORT, '\r');
+        c2x0_NS16550_putc(serial_ports[0], '\r');
     
-    c2x0_NS16550_putc(C2X0_PORT, c);
+    c2x0_NS16550_putc(serial_ports[0], c);
 }
  
 void c2x0_puts(const char *s)

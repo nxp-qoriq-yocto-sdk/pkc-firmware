@@ -738,5 +738,4 @@ extern u64 usec2ticks(u64 );
 extern void c2x0_set_tlb(u8 , u32 , u64 ,
             u8 , u8 , u8 , u8 , u8 , u8 );
 
-static i32 cmd_ring_processing(c_mem_layout_t *);
 #endif
