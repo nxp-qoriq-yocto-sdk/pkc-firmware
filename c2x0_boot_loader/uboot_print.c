@@ -36,188 +36,196 @@
 #include "uboot_common.h"
 #include "uboot_print.h"
 
-int c2x0_serial_init (void)
-{
-    int clock_divisor;
+/* Note: The port number specified in the functions is 1 based.
+ *	 the array is 0 based.
+ */
+static C2X0_NS16550_t serial_ports[1] = {
+	(C2X0_NS16550_t)CONFIG_SYS_NS16550_COM1
+};
 
-    clock_divisor = (( (gd->bus_clk) + (gd->baudrate * (MODE_X_DIV / 2))) / (MODE_X_DIV * gd->baudrate));
-    c2x0_serial_out(UART_LCR_BKSE | UART_LCRVAL, (ulong)&serial_ports[0]->lcr);
-    c2x0_serial_out(0, &serial_ports[0]->dll);
-    c2x0_serial_out(UART_LCRVAL, &serial_ports[0]->lcr);
-    c2x0_serial_out(UART_MCRVAL, &serial_ports[0]->mcr);
-    c2x0_serial_out(UART_LCR_BKSE | UART_LCRVAL, &serial_ports[0]->lcr);
-    c2x0_serial_out(clock_divisor & 0xff, &serial_ports[0]->dll);
-    c2x0_serial_out(UART_LCRVAL, &serial_ports[0]->lcr);
-	
-    gd->have_console = 1;
-    return (0);
+#if defined PRINT_DEBUG || defined PRINT_ERROR
+void c2x0_serial_init (void)
+{
+	int clock_divisor;
+
+	clock_divisor = (gd->bus_clk + (gd->baudrate * (MODE_X_DIV / 2))) / (MODE_X_DIV * gd->baudrate);
+	c2x0_serial_out(UART_LCR_BKSE | UART_LCRVAL, (ulong)&serial_ports[0]->lcr);
+	c2x0_serial_out(0, &serial_ports[0]->dll);
+	c2x0_serial_out(UART_LCRVAL, &serial_ports[0]->lcr);
+	c2x0_serial_out(UART_MCRVAL, &serial_ports[0]->mcr);
+	c2x0_serial_out(UART_LCR_BKSE | UART_LCRVAL, &serial_ports[0]->lcr);
+	c2x0_serial_out(clock_divisor & 0xff, &serial_ports[0]->dll);
+	c2x0_serial_out(UART_LCRVAL, &serial_ports[0]->lcr);
+
+	gd->have_console = 1;
 }
+
+int c2x0_print_buffer (ulong addr, void* data, uint width, uint count, uint linelen)
+{
+	int i;
+	uint32_t x;
+
+	c2x0_printf("%08lx:", addr);
+	/* Copy from memory into linebuf and print hex values */
+	for (i = 0; i < linelen; i++) {
+		x = *(volatile uint32_t *)data;
+		c2x0_printf(" %0*x", width * 2, x);
+		data += width;
+	}
+	return 0;
+}
+#else
+void c2x0_serial_init (void)
+{return;}
+int c2x0_print_buffer (ulong addr, void* data, uint width, uint count, uint linelen)
+{return 0;}
+#endif
+
 char c2x0_getc(void)
 { 
-	C2X0_NS16550_t com_port = C2X0_PORT;	
-    while ((c2x0_serial_in(&com_port->lsr) & C2X0_UART_LSR_DR) == 0) {
-        WATCHDOG_RESET();
-    }   
-    return c2x0_serial_in(&com_port->rbr);
+	C2X0_NS16550_t com_port = serial_ports[0];
+	while ((c2x0_serial_in(&com_port->lsr) & C2X0_UART_LSR_DR) == 0)
+		WATCHDOG_RESET();
+
+	return c2x0_serial_in(&com_port->rbr);
 }
 
 void c2x0_NS16550_putc(C2X0_NS16550_t com_port, char c)
 {   
-    while ((c2x0_serial_in(&com_port->lsr) & C2X0_UART_LSR_THRE) == 0)
-        ;
-    c2x0_serial_out(c, &com_port->thr);
+	while ((c2x0_serial_in(&com_port->lsr) & C2X0_UART_LSR_THRE) == 0)
+		;
+	c2x0_serial_out(c, &com_port->thr);
 
-    /*
-     * Call watchdog_reset() upon newline. This is done here in putc
-     * since the environment code uses a single puts() to print the complete
-     * environment upon "printenv". So we can't put this watchdog call
-     * in puts().
-     */
-    if (c == '\n')
-        WATCHDOG_RESET();
+	/*
+	 * Call watchdog_reset() upon newline. This is done here in putc
+	 * since the environment code uses a single puts() to print the complete
+	 * environment upon "printenv". So we can't put this watchdog call
+	 * in puts().
+	 */
+	if (c == '\n')
+		WATCHDOG_RESET();
 } 
 
-void
-c2x0_putc(const char c)
+void c2x0_putc(const char c)
 {       
-    if (c == '\n')
-        c2x0_NS16550_putc(C2X0_PORT, '\r');
+	if (c == '\n')
+		c2x0_NS16550_putc(serial_ports[0], '\r');
     
-    c2x0_NS16550_putc(C2X0_PORT, c);
+	c2x0_NS16550_putc(serial_ports[0], c);
 }
  
 void c2x0_puts(const char *s)
 {
-    while (*s) {
-        c2x0_putc (*s++);
-    }
+	while (*s)
+		c2x0_putc (*s++);
 }
-#if COMMAND_SUPPORT
+
 #define vscnprintf(buf, size, fmt, args...) vsprintf(buf, fmt, ##args)
 int c2x0_printf(const char *fmt, ...)
 {
-    va_list args;
-    uint i;
-    char printbuffer[CONFIG_SYS_PBSIZE];
+	va_list args;
+	uint i;
+	char printbuffer[CONFIG_SYS_PBSIZE];
 
-    va_start(args, fmt);
+	va_start(args, fmt);
 
-    /* For this to work, printbuffer must be larger than
-     * anything we ever want to print.
-     */
-    i = vscnprintf(printbuffer, sizeof(printbuffer), fmt, args);
-    va_end(args);
+	/* For this to work, printbuffer must be larger than
+	 * anything we ever want to print.
+	 */
+	i = vscnprintf(printbuffer, sizeof(printbuffer), fmt, args);
+	va_end(args);
 
-    /* Print the string */
-    c2x0_puts(printbuffer);
-    return i;
+	/* Print the string */
+	c2x0_puts(printbuffer);
+	return i;
 }
+
 #define MAX_LINE_LENGTH_BYTES (64)
 #define DEFAULT_LINE_LENGTH_BYTES (16)
-int c2x0_print_buffer (ulong addr, void* data, uint width, uint count, uint linelen)
-{
-    int i;
-    uint32_t x;
-        
-    c2x0_printf("%08lx:", addr);
-        /* Copy from memory into linebuf and print hex values */
-    for (i = 0; i < linelen; i++) {
-        x = *(volatile uint32_t *)data;
-        c2x0_printf(" %0*x", width * 2, x); 
-        data += width;
-    }   
-    return 0;
-}
 #define DISP_LINE_LEN   16
+
 int c2x0_do_mem_md ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-    ulong   addr, length = 0x40;
-    int size = 4;
-    int rc = 0;
+	ulong   addr, length = 0x40;
+	int size = 4;
+	int rc = 0;
 
-	c2x0_printf("Argv :%s\n", argv[1]);
-    addr = simple_strtoul(argv[1], NULL, 16);
-	c2x0_printf("Addr :%x\n", addr);
-        /* Print the lines. */
-    c2x0_print_buffer(addr, (void*)addr, size, length, DISP_LINE_LEN/size);
+	print_debug("Argv :%s\n", argv[1]);
+	addr = simple_strtoul(argv[1], NULL, 16);
+	print_debug("Addr :%x\n", addr);
+	/* Print the lines. */
+	c2x0_print_buffer(addr, (void*)addr, size, length, DISP_LINE_LEN/size);
 
-    return (rc);
+	return (rc);
 }
 
 int c2x0_strcmp(const char * cs,const char * ct)
 {   
-    register signed char __res;
+	register signed char __res;
 
-    while (1) {
-        if ((__res = *cs - *ct++) != 0 || !*cs++)
-            break;
-    }
+	while (1) {
+		if ((__res = *cs - *ct++) != 0 || !*cs++)
+			break;
+	}
 
-    return __res;
+	return __res;
 }
 
 int c2x0_do_mem_mw ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-    ulong   addr, writeval;
-    /* Address is specified since argc > 1
-    */
-    addr = simple_strtoul(argv[1], NULL, 16);
-    /* Get the value to write.
-    */
-    writeval = simple_strtoul(argv[2], NULL, 16);
-    *((ulong  *)addr) = (ulong )writeval;
-    return 0;
+	ulong   addr, writeval;
+	/* Address is specified since argc > 1 */
+	addr = simple_strtoul(argv[1], NULL, 16);
+	/* Get the value to write. */
+	writeval = simple_strtoul(argv[2], NULL, 16);
+	*((ulong *)addr) = (ulong)writeval;
+	return 0;
 }
 
 void do_command( char *buf )
 {
-    char command[10], addr[10], data[10];
-    int i=0, j=0;
+	char command[10], addr[10], data[10];
+	int i=0, j=0;
 	char *argv[3];
 
 	if ( buf[0] != 'm' )
 		return ;
     
 	while( buf[i] != ' ' )
-        command[j++] = buf[i++];
-    command[j] = '\0';
+		command[j++] = buf[i++];
+	command[j] = '\0';
 
-	if( !c2x0_strcmp( command, "md" ) )
-	{
-    	j=0;
+	if(!c2x0_strcmp(command, "md")) {
+		j=0;
 		i++;
-    	while( buf[i] != '\0' )
-        	addr[j++] = buf[i++];
-    	addr[j] = '\0';
+		while( buf[i] != '\0' )
+			addr[j++] = buf[i++];
+		addr[j] = '\0';
 		argv[0] = command;
 		argv[1] = addr;
-        c2x0_printf("\nCommand %s\n", argv[0]);
-        c2x0_printf("Addr to read%s\n", argv[1]);
+		print_debug("\nCommand %s\n", argv[0]);
+		print_debug("Addr to read%s\n", argv[1]);
 		c2x0_do_mem_md(0, 0, 2, argv);
-	}
-	else if( !c2x0_strcmp( command, "mw" ) )
-	{
-    	j=0;
+	} else if(!c2x0_strcmp(command, "mw")) {
+		j=0;
 		i++;
-    	while( buf[i] != ' ' )
-        	addr[j++] = buf[i++];
+		while( buf[i] != ' ' )
+			addr[j++] = buf[i++];
 		addr[j] = '\0';
 		j=0;
 		i++;
-    	while( buf[i] != '\0' )
-        	data[j++] = buf[i++];
-    	data[j] = '\0';
-        argv[0] = command;
-        argv[1] = addr;
+		while( buf[i] != '\0' )
+			data[j++] = buf[i++];
+		data[j] = '\0';
+		argv[0] = command;
+		argv[1] = addr;
 		argv[2] = data; 
-        c2x0_printf("\nCommand %s\n", argv[0]);
-        c2x0_printf("Addr to write%s\n", argv[1]);
-        c2x0_printf("Data to write %s\n", argv[2]);
-        c2x0_do_mem_mw(0, 0, 3, argv);
+		print_debug("\nCommand %s\n", argv[0]);
+		print_debug("Addr to write%s\n", argv[1]);
+		print_debug("Data to write %s\n", argv[2]);
+		c2x0_do_mem_mw(0, 0, 3, argv);
+	} else {
+		print_debug("\nUnknown Command\n");
 	}
-	else
-		c2x0_printf("\nUnknown Command\n");
     return ;
-
 }
-#endif 

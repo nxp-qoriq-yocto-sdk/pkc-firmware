@@ -33,7 +33,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-int c2x0_serial_init (void);
+void c2x0_serial_init (void);
 
 #define CONFIG_SYS_NS16550_REG_SIZE 1
 
@@ -75,14 +75,6 @@ struct c2x0_NS16550 {
 
 typedef struct c2x0_NS16550 *C2X0_NS16550_t;
 
-/* Note: The port number specified in the functions is 1 based.
- *   the array is 0 based.
- */ 
-static C2X0_NS16550_t serial_ports[1] = {
-    (C2X0_NS16550_t)CONFIG_SYS_NS16550_COM1
-};
-
-#define C2X0_PORT    serial_ports[0]
 //#define c2x0_serial_out(x, y)    outb(x, (ulong)y)
 
 //#define CONFIG_SYS_NS16550_CLK (gd->bus_clk/2)
@@ -135,3 +127,25 @@ void c2x0_putc(const char c);
 int c2x0_printf(const char *, ...);
 int vsprintf(char *, const char *, va_list );
 unsigned long simple_strtoul(const char *,char **,unsigned int );
+
+#ifdef PRINT_DEBUG
+#define print_debug c2x0_printf
+#define print1_debug(c_mem, msg, ...)   { \
+                if (c_mem->dgb_print)  \
+                    c2x0_printf(msg, ##__VA_ARGS__); \
+                }
+#else
+#define print_debug(fmt, ...) do {} while (0)
+#define print1_debug(c_mem, msg, ...) do {} while (0)
+#endif
+
+#ifdef PRINT_ERROR
+#define print_error c2x0_printf
+#define print1_error(c_mem, msg, ...)   { \
+                if (c_mem->err_print) \
+                    c2x0_printf(msg, ##__VA_ARGS__); \
+                }
+#else
+#define print_error(fmt, ...) do {} while (0)
+#define print1_error(c_mem, msg, ...) do {} while (0)
+#endif

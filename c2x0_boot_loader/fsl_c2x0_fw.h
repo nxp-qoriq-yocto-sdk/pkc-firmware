@@ -126,34 +126,6 @@
 #define MCFGR_SWRST       ((u32)(1)<<31)	/* Software Reset */
 #define MCFGR_DMA_RST     ((u32)(1)<<28)	/* DMA Reset */
 
-/* Prints level control macros */
-
-/* #define PRINT_DEBUG */
-#define PRINT_ERROR
-
-#ifdef PRINT_DEBUG
-#define print_debug     c2x0_printf
-#else
-#define print_debug(fmt, ...) do {} while (0) 
-#endif
-
-#ifdef PRINT_ERROR
-#define print_error     c2x0_printf
-#else
-#define print_error
-#endif
-
-
-#define print1_debug(c_mem, msg, ...)   { \
-                if (c_mem->dgb_print)  \
-                    c2x0_printf(msg, ##__VA_ARGS__); \
-                }
-
-#define print1_error(c_mem, msg, ...)   { \
-                if (c_mem->err_print) \
-                    c2x0_printf(msg, ##__VA_ARGS__); \
-                }
-
 /* Local typedef's */
 typedef int i32;
 typedef short i16;
@@ -766,5 +738,4 @@ extern u64 usec2ticks(u64 );
 extern void c2x0_set_tlb(u8 , u32 , u64 ,
             u8 , u8 , u8 , u8 , u8 , u8 );
 
-static i32 cmd_ring_processing(c_mem_layout_t *);
 #endif
