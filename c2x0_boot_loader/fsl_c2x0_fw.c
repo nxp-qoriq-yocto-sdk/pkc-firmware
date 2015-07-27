@@ -103,7 +103,7 @@ static void firmware_up(c_mem_layout_t *mem)
 	mem->h_hs_mem->data.device.no_secs = (u32) mem->rsrc_mem->sec_eng_cnt;
 
 	mem->h_hs_mem->state = FIRMWARE_UP;
-	print_debug("\n		FIRMWARE UP\n");
+	print_debug("\n\n\nFIRMWARE UP\n");
 
 	SYNC_MEM
 }
@@ -132,26 +132,26 @@ static inline void init_order_mem1(c_mem_layout_t *mem, u32 *cursor)
 	app_ring_pair_t *rp =	NULL;
 	u32 total_rps = mem->rsrc_mem->ring_count;
 
-	print_debug("\t \t init_order_mem \n");
-	print_debug("\t \t Total no of app ring : %d\n", total_rps);
+	print_debug("init_order_mem \n");
+	print_debug("Total no of app ring: %d\n", total_rps);
 	for( i=0; i<total_rps; i++ )
 	{
 		rp = &(mem->rsrc_mem->rps[i]);
-		print_debug("First rp : %d\n", rp->id);
+		print_debug("First rp: %d\n", rp->id);
 		/* Check if the rp is ordered */
 		if(!((rp->props & APP_RING_PROP_ORDER_MASK)
                             >> APP_RING_PROP_ORDER_SHIFT))
 		{
-			print_debug("Order bit is not set for ring : %d\n", rp->id);
+			print_debug("Order bit is not set for ring: %d\n", rp->id);
 			continue;
 		}
 
-		print_debug("Order bit is set for ring : %d\n", rp->id);
+		print_debug("Order bit is set for ring: %d\n", rp->id);
 		rp->order_j_d_index = 0;
-		print_debug("\t \t Ring : %d depth : %d, rp : %x\n", i, rp->depth, rp);
+		print_debug("Ring: %d depth: %d, rp: %x\n", i, rp->depth, rp);
 		*cursor -= (rp->depth / BITS_PER_BYTE);
 		rp->resp_j_done_flag = (u8 *)*cursor;
-		print_debug("\t \t Resp job done flag : %x\n", rp->resp_j_done_flag);
+		print_debug("Resp job done flag: %x\n", rp->resp_j_done_flag);
 		Memset(rp->resp_j_done_flag, 0, (rp->depth/BITS_PER_BYTE));
 	} 
 
@@ -164,35 +164,36 @@ static inline void init_order_mem(c_mem_layout_t *mem, u32 *cursor)
 	app_ring_pair_t *rp_head = mem->rsrc_mem->rps;
 /*	u32 total_rps = mem->rsrc_mem->ring_count; */
 
-	print_debug("\t \t init_order_mem \n");
-	print_debug("\t \t rp_head : %x, rp : %x\n", rp_head, rp);
+	print_debug("init_order_mem \n");
+	print_debug("rp_head : %x, rp: %x\n", rp_head, rp);
 	while(NULL != rp)
 	{
-		print_debug("First rp : %d\n", rp->id);
+		print_debug("First rp: %d\n", rp->id);
 		/* Check if the rp is ordered */
 		if(!((rp->props & APP_RING_PROP_ORDER_MASK)
                             >> APP_RING_PROP_ORDER_SHIFT))
 		{
-			print_debug("Order bit is not set for ring : %d\n", rp->id);
+			print_debug("Order bit is not set for ring: %d\n", rp->id);
 			goto NEXT_RP;
 		}
 
-		print_debug("Order bit is set for ring : %d\n", rp->id);
+		print_debug("Order bit is set for ring: %d\n", rp->id);
 		rp->order_j_d_index = 0;
 		*cursor -= (rp->depth / BITS_PER_BYTE);
 		rp->resp_j_done_flag = (u8 *)*cursor;
-		print_debug("\t \t Resp job done flag : %x\n", rp->resp_j_done_flag);
+		print_debug("Resp job done flag: %x\n", rp->resp_j_done_flag);
 		Memset(rp->resp_j_done_flag, 0, (rp->depth/BITS_PER_BYTE));
 NEXT_RP:
-		print_debug("\t \t rp_head : %x, rp : %x\n", rp_head, rp);
+		print_debug("rp_head: %x, rp: %x\n", rp_head, rp);
 		rp = next_ring(rp);
 		if( rp_head == rp )
 			rp = NULL;
-		print_debug("\t \t rp_head : %x, next rp : %x\n", rp_head, rp);
+		print_debug("rp_head: %x, next rp: %x\n", rp_head, rp);
 	} 
 
 	return;
 }
+
 static void init_rps(c_mem_layout_t *mem, u8 num, u8 respringcount, u32 *cursor)
 {
 	u8 i = 0;
@@ -200,42 +201,35 @@ static void init_rps(c_mem_layout_t *mem, u8 num, u8 respringcount, u32 *cursor)
 /*	u8	*idxs = NULL, *cntrs = NULL, *s_c_cntrs = NULL; */
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
 
-	print_debug("\t Init Ring Pairs	:\n");
+	print_debug("Init Ring Pairs:\n");
 	*cursor -=  (sizeof(indexes_mem_t) * (num+respringcount));
 	mem->rsrc_mem->idxs_mem = (indexes_mem_t *)*cursor;
 	Memset((u8 *)mem->rsrc_mem->idxs_mem, 0, (sizeof(indexes_mem_t) * (num + respringcount)));
-	print_debug("\t \t \t Indexes mem			:%0x\n",
-		    mem->rsrc_mem->idxs_mem);
+	print_debug("Indexes mem: %0x\n", mem->rsrc_mem->idxs_mem);
 
 	*cursor -=  (sizeof(counters_mem_t));		
 	mem->rsrc_mem->cntrs_mem = (counters_mem_t *)*cursor;
 	Memset((u8 *)mem->rsrc_mem->cntrs_mem, 0, sizeof(counters_mem_t));
-	print_debug("\t \t \t Counters mem          :%0x\n",
-		    mem->rsrc_mem->cntrs_mem);
+	print_debug("Counters mem: %0x\n", mem->rsrc_mem->cntrs_mem);
 
 	*cursor -=  (sizeof(counters_mem_t));
 	mem->rsrc_mem->s_c_cntrs_mem = (counters_mem_t *)*cursor;
 	Memset((u8 *)mem->rsrc_mem->s_c_cntrs_mem, 0, sizeof(counters_mem_t));
-	print_debug("\t \t \t S C Counters mem		:%0x\n",
-		    mem->rsrc_mem->s_c_cntrs_mem);
+	print_debug("S C Counters mem: %0x\n", mem->rsrc_mem->s_c_cntrs_mem);
 
 	*cursor -=  (sizeof(ring_counters_mem_t) * (num+respringcount));
 	mem->rsrc_mem->r_cntrs_mem = (ring_counters_mem_t *)*cursor;
 	Memset((u8 *)mem->rsrc_mem->r_cntrs_mem, 0,
 	       (sizeof(ring_counters_mem_t) * (num + respringcount)));
-	print_debug("\t \t \t R counters mem		:%0x\n",
-		    mem->rsrc_mem->r_cntrs_mem);
+	print_debug("R counters mem: %0x\n", mem->rsrc_mem->r_cntrs_mem);
 
 	*cursor -= (sizeof(ring_counters_mem_t) * (num+respringcount));
 	mem->rsrc_mem->r_s_c_cntrs_mem = (ring_counters_mem_t *)*cursor;
 	Memset((u8 *)mem->rsrc_mem->r_s_c_cntrs_mem, 0,
 	       (sizeof(ring_counters_mem_t) * (num + respringcount)));
-	print_debug("\t \t \t R S C counters mem	:%0x\n",
-		    mem->rsrc_mem->r_s_c_cntrs_mem);
+	print_debug("R S C counters mem: %0x\n", mem->rsrc_mem->r_s_c_cntrs_mem);
 
 	for (i = 0; i < num; i++) {
-		print_debug
-		    ("\t \t \t	Ring	:%d		Details....\n", i);
 		rps[i].req_r = NULL;
 		rps[i].msi_addr = NULL;
 		rps[i].sec = NULL;
@@ -249,24 +243,16 @@ static void init_rps(c_mem_layout_t *mem, u8 num, u8 respringcount, u32 *cursor)
 
 		rps[i].next = NULL;
 
-		for( j=0; j<FSL_CRYPTO_MAX_RING_PAIRS; j++ )
+		for(j=0; j<FSL_CRYPTO_MAX_RING_PAIRS; j++)
 			rps[i].rp_links[j] = NULL;
 
-		print_debug
-		    ("\t \t \t \t	Idxs addr			:%0x\n",
-		     rps[i].idxs);
-		print_debug
-		    ("\t \t \t \t	Cntrs				:%0x\n",
-		     rps[i].cntrs);
-		print_debug
-		    ("\t \t \t \t	R S C cntrs			:%0x\n",
-		     rps[i].r_s_c_cntrs);
-		print_debug
-		    ("\t \t \t \t	Ip pool				:%0x\n",
-		     rps[i].ip_pool);
+		print_debug("Ring: %d details\n", i);
+		print_debug("\tIdxs addr: %0x\n", rps[i].idxs);
+		print_debug("\tCntrs: %0x\n", rps[i].cntrs);
+		print_debug("\tR S C cntrs: %0x\n", rps[i].r_s_c_cntrs);
+		print_debug("\tIp pool: %0x\n", rps[i].ip_pool);
 	}
 }
-
 
 static void init_drv_resp_ring(c_mem_layout_t *mem, u32 offset, u32 depth, u8 count)
 {
@@ -277,7 +263,6 @@ static void init_drv_resp_ring(c_mem_layout_t *mem, u32 offset, u32 depth, u8 co
     for(i=0; i<count; i++) {
         ring    =   &(mem->rsrc_mem->drv_resp_ring[i]);
 
-        print_debug("\t Init Drv Resp Ring:     \n");
         ring->id            =   i;
         ring->msi_data      =   0;
         ring->intr_ctrl_flag=   0;
@@ -288,15 +273,15 @@ static void init_drv_resp_ring(c_mem_layout_t *mem, u32 offset, u32 depth, u8 co
         ring->r_cntrs       =   &(mem->rsrc_mem->r_cntrs_mem[loc + i]);
         ring->r_s_c_cntrs   =   &(mem->rsrc_mem->r_s_c_cntrs_mem[loc + i]);
 
-        print_debug("\t \t  Resp ring addr              :%0x \n",   ring->resp_r);
-        print_debug("\t \t  Indexes addr                :%0x \n",   ring->idxs);
-        print_debug("\t \t  R Cntrs addr                :%0x \n",   ring->r_cntrs);
-        print_debug("\t \t  R S C cntrs addr            :%0x \n",   ring->r_s_c_cntrs);
-        print_debug("\t \t  Depth                       :%d  \n",   ring->depth);
+        print_debug("Init Drv Resp Ring:\n");
+        print_debug("\tResp ring addr:	%0x\n", ring->resp_r);
+        print_debug("\tIndexes addr:	%0x\n", ring->idxs);
+        print_debug("\tR Cntrs addr:	%0x\n", ring->r_cntrs);
+        print_debug("\tR S C cntrs addr:%0x\n", ring->r_s_c_cntrs);
+        print_debug("\tDepth:		%d\n", ring->depth);
 
-        offset              +=  (depth * sizeof(resp_ring_t));
+        offset += (depth * sizeof(resp_ring_t));
     }
-	
 }
 
 static void make_drv_resp_ring_circ_list(c_mem_layout_t *mem, u32 count)
@@ -313,26 +298,21 @@ static void init_scs(c_mem_layout_t *mem)
 {
 	u32 i = 0;
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
-	print_debug("\t \t \t Init R S mem....\n");
+	print_debug("Init R S mem....\n");
 	for (i = 0; i < mem->rsrc_mem->ring_count; i++) {
 		rps[i].r_s_cntrs = &(mem->rsrc_mem->r_s_cntrs_mem[i]);
-		print_debug
-		    ("\t \t \t \t \t Ring	:%d	R S Cntrs	:%0x\n",
-		     i, rps[i].r_s_cntrs);
+		print_debug("Ring: %d	R S Cntrs: %0x\n", i, rps[i].r_s_cntrs);
 	}
 
-	mem->rsrc_mem->drv_resp_ring->r_s_cntrs =
-	    &(mem->rsrc_mem->r_s_cntrs_mem[i]);
-	print_debug
-	    ("\t \t \t \t \t Driver resp ring R S Cntrs		:%0x\n",
-	     mem->rsrc_mem->drv_resp_ring->r_s_cntrs);
+	mem->rsrc_mem->drv_resp_ring->r_s_cntrs = &(mem->rsrc_mem->r_s_cntrs_mem[i]);
+	print_debug("Driver resp ring R S Cntrs: %0x\n", mem->rsrc_mem->drv_resp_ring->r_s_cntrs);
 }
 
 static void add_ring_to_pq(priority_q_t *p_q, app_ring_pair_t *rp, u8 pri)
 {
 	app_ring_pair_t *cursor = p_q[pri].ring;
-	print_debug("\t \t \t ********* Pri:%d p_q:%0x rp:%0x cursor:%0x\n",
-		    pri, p_q, rp, cursor);
+	print_debug("Pri:%d\tp_q: %0x\trp: %0x\tcursor: %0x\n",
+			pri, p_q, rp, cursor);
 
 	if (!rp->id)
 		return;
@@ -706,7 +686,7 @@ static void sec_eng_hw_init(sec_engine_t *sec)
 	out_be32(&sec->jr.regs->jrcfg1, jrcfg);
 
 	SYNC_MEM
-	print_debug("\n Sec hw eng init done for id : %d....\n", sec->id); 
+	print_debug("\nSec hw eng init done for id: %d....\n", sec->id);
 
 	return; 
 }
@@ -868,18 +848,14 @@ static u32 init_rsrc_sec(sec_engine_t *sec, u32 *cursor)
 
 	mem += SEC_JR_DEPTH * sizeof(sec_ip_ring_t);
 	Memset( (u8 *)sec->jr.i_ring, 0, (SEC_JR_DEPTH * sizeof(sec_ip_ring_t)));
-	print_debug
-	    ("\t sec ip ring						:%0x\n",
-	     sec->jr.i_ring);
+	print_debug("sec ip ring: %0x\n", sec->jr.i_ring);
 
 	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
 	p_cursor -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH * sizeof(struct sec_op_ring)));
 	sec->jr.o_ring = (struct sec_op_ring *)p_cursor;
 	mem += SEC_JR_DEPTH * sizeof(struct sec_op_ring);
 	Memset((u8 *)sec->jr.o_ring, 0, (SEC_JR_DEPTH * sizeof(struct sec_op_ring)));
-	print_debug
-	    ("\t sec op ring						:%0x\n",
-	     sec->jr.o_ring);
+	print_debug("sec op ring: %0x\n", sec->jr.o_ring);
 
 	/* Call for hardware init of sec engine */
 	init_sec_regs_offset(sec);
@@ -900,10 +876,8 @@ static void alloc_rsrc_mem(c_mem_layout_t *c_mem, u32 *pcursor, u32 *l2cursor)
 	u32 sec_nums     = 0;
 	u32 *dev_id_addr = NULL;
 
-	print_debug("\n		alloc_rsrc_mem\n");
-	print_debug
-	    ("\t rsrc addr						:%0x\n",
-	     rsrc);
+	print_debug("\nalloc_rsrc_mem\n");
+	print_debug("rsrc addr: %0x\n", rsrc);
 
 	Memset( (u8 *)rsrc, 0, sizeof(resource_t));
 
@@ -926,9 +900,7 @@ static void alloc_rsrc_mem(c_mem_layout_t *c_mem, u32 *pcursor, u32 *l2cursor)
 					(sec_nums * sizeof(sec_engine_t)));
 	rsrc->sec = (sec_engine_t *) (p_cursor);
 	Memset( (u8 *)rsrc->sec, 0, sizeof(sec_engine_t) * sec_nums);
-	print_debug
-	    ("\t sec addr						:%0x\n",
-	     rsrc->sec);
+	print_debug("sec addr: %0x\n", rsrc->sec);
 
 	c_mem->free_mem -= sec_nums * sizeof(sec_engine_t);
 	make_sec_circ_list(rsrc->sec, sec_nums);
@@ -946,9 +918,7 @@ static void alloc_rsrc_mem(c_mem_layout_t *c_mem, u32 *pcursor, u32 *l2cursor)
 	Memset(rsrc->ip_pool, 0, DEFAULT_POOL_SIZE);
 	l2_cursor += ALIGN_TO_L1_CACHE_LINE(DEFAULT_POOL_SIZE);
 	c_mem->free_mem -= (DEFAULT_POOL_SIZE);
-	print_debug
-	    ("\t	ip pool addr					:%0x\n",
-	     rsrc->ip_pool);
+	print_debug("ip pool addr: %0x\n", rsrc->ip_pool);
 #endif
 	*l2cursor = l2_cursor;
 	*pcursor = p_cursor;
@@ -1089,9 +1059,9 @@ static inline u32 sel_sec_enqueue(c_mem_layout_t *c_mem, sec_engine_t **psec,
 	u32 ri			= rp->idxs->r_index;
 	u32 sec_cnt		= c_mem->rsrc_mem->sec_eng_cnt;
 
-	print_debug("%s( ): rp: %d ri: %d \n", __FUNCTION__, rp->id, rp->idxs->r_index); 
+	print_debug("%s( ): rp: %d ri: %d\n", __FUNCTION__, rp->id, rp->idxs->r_index);
 	desc = rp->req_r[ri].desc;
-	print_debug("%s( ): DESC: %0llx SEC number :%d \n", __FUNCTION__, desc, (desc & (u64) 0x03)); 
+	print_debug("%s( ): DESC: %0llx SEC number :%d\n", __FUNCTION__, desc, (desc & (u64) 0x03));
 
 	sec_sel = (desc & (u64) 0x03);
 	if (sec_cnt < sec_sel)
@@ -1145,15 +1115,15 @@ static inline void loop_inorder(app_ring_pair_t *resp_ring)
 	u32 bit_pos = 0;
 
 	do {
-		print_debug("\t\t\tOrdered job done idx:%d\n", resp_ring->order_j_d_index);
+		print_debug("Ordered job done idx: %d\n", resp_ring->order_j_d_index);
 		/* Checking whether next ordered response bit is set  */
 		byte_pos = resp_ring->order_j_d_index / BITS_PER_BYTE;
 		bit_pos = resp_ring->order_j_d_index % BITS_PER_BYTE;				
 		pos_ptr = resp_ring->resp_j_done_flag + byte_pos;
-		print_debug("\t\t\tOrdered byte pos:%d, bit pos:%d, addr:%x, value:%x\n",
+		print_debug("Ordered byte pos: %d, bit pos: %d, addr: %x, value: %x\n",
 				byte_pos, bit_pos, pos_ptr, *pos_ptr);
 		flag = 0x1 & ( *pos_ptr >> (bit_pos));
-		print_debug("\t\t\tFlag value  : %x\n", flag);
+		print_debug("Flag value: %x\n", flag);
 		if (0x1 == flag) {
 			*pos_ptr &= ~(1 << bit_pos);
 			resp_ring->cntrs->jobs_added += 1;
@@ -1175,16 +1145,13 @@ static inline void inorder_dequeue(app_ring_pair_t *resp_ring, sec_jr_t *jr,
 	pos_ptr = resp_ring->resp_j_done_flag + byte_pos;
 	bit_pos = (wi - 1) % (BITS_PER_BYTE);
 
-	print_debug("\n \t \tJob byte pos : %d, bit pos : %d,\
-				addr : %x, value : %x\n",
+	print_debug("Job byte pos: %d, bit pos: %d, addr: %x, value: %x\n",
 				byte_pos, bit_pos, pos_ptr, *pos_ptr);
 	*pos_ptr |= ( 1 << bit_pos);
-	print_debug("\t\tAddr value after set bit : %x\n", *pos_ptr);
-	
-	memcpy(&(resp_ring->resp_r[wi - 1]),
-			&jr->o_ring[ri], sizeof(resp_ring_t));
-	print_debug("\t \tIndex : %d, Desc : %0llx\n", 
-				wi - 1, resp_ring->resp_r[wi - 1].desc);
+	print_debug("Addr value after set bit: %x\n", *pos_ptr);
+
+	memcpy(&(resp_ring->resp_r[wi - 1]), &jr->o_ring[ri], sizeof(resp_ring_t));
+	print_debug("Index: %d, Desc: %0llx\n", wi - 1, resp_ring->resp_r[wi - 1].desc);
 
 	loop_inorder(resp_ring);
 }
@@ -1289,11 +1256,11 @@ void invalidate_pending_app_reqs(c_mem_layout_t *c_mem)
 			print1_debug(c_mem, "Read index %d, Write index : %d\n",
 				     ri, wi);
 			print1_debug(c_mem,
-				     "\t Jobs added  :%d Jobs Processed  :%d\n",
+				     "Jobs added  :%d Jobs Processed  :%d\n",
 				     ring_cursor->r_s_c_cntrs->jobs_added,
 				     ring_counters->jobs_processed);
 			print1_debug(c_mem,
-				     "\t Jobs pending    :%d on Ring     :%d\n",
+				     "Jobs pending    :%d on Ring     :%d\n",
 				     ring_cursor->r_s_c_cntrs->jobs_added -
 				     ring_counters->jobs_processed,
 				     ring_cursor->id);
@@ -1327,7 +1294,7 @@ void invalidate_pending_app_reqs(c_mem_layout_t *c_mem)
 			s_ring_counters->req_jobs_processed =
 			    ring_counters->jobs_processed;
 			print1_debug(c_mem,
-				     "\t Giving interrupt for ring :%d\n",
+				     "Giving interrupt for ring :%d\n",
 				     ring_cursor->id);
 			out_le16(ring_cursor->msi_addr, ring_cursor->msi_data);
 			ring_cursor = ring_cursor->next;
@@ -1473,31 +1440,31 @@ int process_debug_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 
 void process_resetsec_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 {
-	print1_debug(mem, "\t \t Resetting sec engine     :%d\n",
+	print1_debug(mem, "Resetting sec engine     :%d\n",
 			cmd_req->ip_info.sec_id);
 	sec_reset(mem->rsrc_mem->sec[cmd_req->ip_info.sec_id].info);
 	{
 	sec_jr_t *sec_jr = &(mem->rsrc_mem->sec->jr);
-	print1_debug(mem, "\t Before SEC i/p ring virtual address	:%0x\n",
+	print1_debug(mem, "Before SEC i/p ring virtual address	:%0x\n",
 			sec_jr->i_ring);
-	print1_debug(mem, "\t SEC Output ring virtual address         :%0x\n",
+	print1_debug(mem, "SEC Output ring virtual address         :%0x\n",
 			sec_jr->o_ring);
 	}
 	sec_eng_hw_init(&(mem->rsrc_mem->sec[cmd_req->ip_info.sec_id]));
 	{
 	sec_jr_t *sec_jr = &(mem->rsrc_mem->sec->jr);
-	print1_debug(mem, "\t After  fsl_sec_init SEC Input ring virtual address   :%0x\n",
+	print1_debug(mem, "After  fsl_sec_init SEC Input ring virtual address   :%0x\n",
 			sec_jr->i_ring);
-	print1_debug(mem, "\t SEC Output ring virtual address     :%0x\n",
+	print1_debug(mem, "SEC Output ring virtual address     :%0x\n",
 			sec_jr->o_ring);
 	}
 	resetcounters(mem, cmd_req->ip_info.sec_id);
 	{
 	i32 secid = cmd_req->ip_info.sec_id;
 	sec_jr_t *sec_jr = &(mem->rsrc_mem->sec[secid].jr);
-	print1_debug(mem, "\t After resetcounters SEC Input ring virtual address         :%0x\n",
+	print1_debug(mem, "After resetcounters SEC Input ring virtual address         :%0x\n",
 			sec_jr->i_ring);
-	print1_debug(mem, "\t SEC Output ring virtual address         :%0x\n",
+	print1_debug(mem, "SEC Output ring virtual address         :%0x\n",
 			sec_jr->o_ring);
 	}
 }
@@ -1510,7 +1477,7 @@ void process_devstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	u32 total_job_processed = 0;
 	u32 i;
 
-	print1_debug(mem, "\t \t Device stats\n");
+	print1_debug(mem, "Device stats\n");
 
 	cmd_op = (cmd_op_t *) ((u8 *)mem->v_ob_mem +
 			(cmd_req->cmd_op - mem->p_ob_mem));
@@ -1547,7 +1514,7 @@ void process_ringstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	app_ring_pair_t *ring_cursor = NULL;
 	u32 pending_cnt, r_id, prop;
 
-	print1_debug(mem, "\t \t Ring Statistics\n");
+	print1_debug(mem, "Ring Statistics\n");
 
 	cmd_op = (cmd_op_t *) ((u8 *)mem->v_ob_mem + (cmd_req->cmd_op - mem->p_ob_mem));
 	p_q_cursor = mem->rsrc_mem->p_q;
@@ -1621,7 +1588,7 @@ void process_secstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	cmd_op_t *cmd_op;
 	int i;
 
-	print1_debug(mem, "\t\t SENDING THE SEC STATISTICS\n");
+	print1_debug(mem, "SENDING THE SEC STATISTICS\n");
 
 	cmd_op = (cmd_op_t *) ((u8 *)mem->v_ob_mem + (cmd_req->cmd_op - mem->p_ob_mem));
 
@@ -1638,7 +1605,7 @@ void process_secstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 				mem->rsrc_mem->sec[i].tot_resp_cnt;
 	}
 
-	print1_debug(mem, "\t\t SEC STATISTIC SENT\n");
+	print1_debug(mem, "SEC STATISTIC SENT\n");
 }
 
 void process_resetdev_cmd()
@@ -1654,7 +1621,7 @@ void process_resetdev_cmd()
 	reset_val = RESET_PIC_PIR_VALUE;
 #endif
 
-	print1_debug(mem, "\t \t Resetting Device\n");
+	print1_debug(mem, "Resetting Device\n");
 	*rreg = reset_val;
 }
 
@@ -1714,7 +1681,7 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 		break;
 
 	case REHANDSHAKE:
-		print1_debug(mem, "\t\t SETTING DEVICE IN REHANDSHAKE\n");
+		print1_debug(mem, "SETTING DEVICE IN REHANDSHAKE\n");
 		mem->c_hs_mem->state = DEFAULT;
 /*            sec_reset();*/
 		return REHANDSHAKE;
@@ -1724,7 +1691,7 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 		break;
 
 	default:
-		print_error("\t \t Invalid Command  !!\n");
+		print_error("Invalid Command  !!\n");
 		return 1;
 	}
 	return 0;
@@ -1783,7 +1750,7 @@ inline void Enq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *rp, u32 count)
     wi = jr->tail;
 
     for(i=0; i<count; i++) {
-		print_debug("%s( ): Adding desc : %0llx from ri: %d  to sec at wi: %d \n",
+	    print_debug("%s( ): Adding desc: %0llx from ri: %d  to sec at wi: %d \n",
 				__FUNCTION__, rp->req_r[ri].desc, ri, wi);
         //check_desc_words(rp->req_r[ri].desc, rp->req_r[ri].desc);
         jr->i_ring[wi].desc   = rp->req_r[ri].desc;
@@ -1817,13 +1784,13 @@ inline void Deq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *r, u32 count)
 {
 	i32 i =0, wi = 0, ri = 0, jrdepth = jr->size, rdepth = r->depth;
 
-	print_debug("%s( ) cnt: %d \n",__FUNCTION__, count);
+	print_debug("%s( ) cnt: %d\n",__FUNCTION__, count);
 	wi = r->idxs->w_index;
 	ri = jr->head;
 
-	print_debug("%s( ): Wi: %d, ri: %d \n", __FUNCTION__, wi, ri);
+	print_debug("%s( ): Wi: %d, ri: %d\n", __FUNCTION__, wi, ri);
 	for(i=0; i<count; i++) {
-		print_debug("%s( ): Dequeued desc : %0llx from ri: %d storing at wi: %d \n", 
+		print_debug("%s( ): Dequeued desc: %0llx from ri: %d storing at wi: %d \n",
 				__FUNCTION__, jr->o_ring[ri].desc, ri, wi);
 		r->resp_r[wi].desc      =   jr->o_ring[ri].desc;
 		r->resp_r[wi].result    =   jr->o_ring[ri].status;
@@ -1836,7 +1803,7 @@ inline void Deq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *r, u32 count)
 
 inline void resp_ring_enqueue(sec_jr_t *jr, app_ring_pair_t *r, u32 cnt)
 {
-	print_debug("%s( ) room: %d \n", __FUNCTION__, cnt);
+	print_debug("%s( ) room: %d\n", __FUNCTION__, cnt);
 	Deq_Circ_Cpy(jr, r, cnt);
 	r->cntrs->jobs_added  +=  cnt;
 	r->r_s_cntrs->resp_jobs_added = r->cntrs->jobs_added;
@@ -1852,7 +1819,7 @@ inline static u32 dequeue_from_sec(sec_engine_t **sec, app_ring_pair_t **r)
 	u32 resproom    = pr->depth - (pr->cntrs->jobs_added - pr->r_s_c_cntrs->jobs_processed);
 	u32 room        = MIN(MIN(secroom, resproom), MAX_DEQ_BUDGET);
 
-	print_debug("%s( ): secroom: %d, respring:%d resproom: %d, room : %d \n",
+	print_debug("%s( ): secroom: %d, respring: %d resproom: %d, room: %d \n",
 			__FUNCTION__, secroom, pr->id, resproom, room);
 
 	if(!secroom)
@@ -1877,7 +1844,7 @@ RET:
 
 static inline void raise_intr_app_ring(app_ring_pair_t *r)
 {
-	print_debug("%s( ): MSI addr : %0x, MSI data :%0x \n",
+	print_debug("%s( ): MSI addr: %0x, MSI data:%0x \n",
 			__FUNCTION__, r->msi_addr, r->msi_data);
 	r->intr_ctrl_flag = 1;
 	out_le16(r->msi_addr, r->msi_data);
@@ -1887,11 +1854,10 @@ static inline void check_intr(app_ring_pair_t *r, u32 deq, u32 *processedcount)
 {
 #ifndef HIGH_PERF
 	if(deq) {
-		 print_debug("%s( ): Dequeued :%d  \n", 
-				 __FUNCTION__, deq);
+		 print_debug("%s( ): Dequeued: %d\n", __FUNCTION__, deq);
 	}
 	if(deq && r->intr_ctrl_flag) {
-		print_debug("%s( ): Dequeued :%d intr ctrl flag: %d \n",
+		print_debug("%s( ): Dequeued: %d intr ctrl flag: %d\n",
 				__FUNCTION__, deq, r->intr_ctrl_flag);
 	}
 #endif
@@ -1924,7 +1890,7 @@ LOOP:
 	if(!cnt)
 	        goto DEQ;
 
-	print_debug("%s( ): Count of jobs added %d \n", __FUNCTION__, cnt);
+	print_debug("%s( ): Count of jobs added %d\n", __FUNCTION__, cnt);
 	totcount += cnt;
 	/*totenqcnt += cnt;*/
 
@@ -2072,18 +2038,15 @@ i32 fsl_c2x0_fw(void)
 #ifndef HIGH_PERF
 START:
 #endif
-	p_cursor =
-	    (PLATFORM_SRAM_VIRT_ADDR + PLATFORM_SRAM_SIZE - FIRMWARE_SIZE);
+	p_cursor = PLATFORM_SRAM_VIRT_ADDR + PLATFORM_SRAM_SIZE - FIRMWARE_SIZE;
 	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
 
 	/* One cache line for handshake (HS) memory */
 	p_cursor -= L1_CACHE_LINE_SIZE;
 
-	print_debug("\n		Memory Pointers\n");
+	print_debug("\nMemory Pointers\n");
 	c_mem = (c_mem_layout_t *) (p_cursor - sizeof(c_mem_layout_t));
-	print_debug
-	    ("c_mem						:%0x\n",
-	     c_mem);
+	print_debug("c_mem: %0x\n", c_mem);
 
 	c_mem->dgb_print = c_mem->err_print = 0;
 	c_mem->free_mem = TOTAL_CARD_MEMORY - FIRMWARE_SIZE;
@@ -2097,66 +2060,46 @@ START:
 	c_mem->c_hs_mem = (c_hs_mem_t *)p_cursor;
 	p_cursor -= sizeof(c_mem_layout_t);
 	c_mem->free_mem -= sizeof(c_mem_layout_t);
-	print_debug
-	    ("c_hs_mem						:%0x\n",
-	     c_mem->c_hs_mem);
+	print_debug("c_hs_mem: %0x\n", c_mem->c_hs_mem);
 
 	c_mem->v_ib_mem = L2_SRAM_VIRT_ADDR;
 	c_mem->p_ib_mem = L2_SRAM_VIRT_ADDR;	/* Phy addr is same as v addr */
-	print_debug
-	    ("v_ib_mem						:%0x\n",
-	     c_mem->v_ib_mem);
-	print_debug
-	    ("p_ib_mem						:%0llx\n",
-	     c_mem->p_ib_mem);
+	print_debug("v_ib_mem: %0x\n", c_mem->v_ib_mem);
+	print_debug("p_ib_mem: %0llx\n", c_mem->p_ib_mem);
 
 	/*PCIE1 controller physical address-outbound window will be set to 16G*/
 	c_mem->p_ob_mem = CONFIG_SYS_PCIE1_MEM_PHYS;
 	c_mem->p_pci_mem = CONFIG_SYS_PCIE1_MEM_PHYS;
-	print_debug
-	    ("p_ob_mem						:%0llx\n",
-	     c_mem->p_ob_mem);
-	print_debug
-	    ("p_pci_mem						:%0llx\n",
-	     c_mem->p_pci_mem);
+	print_debug("p_ob_mem: %0llx\n", c_mem->p_ob_mem);
+	print_debug("p_pci_mem: %0llx\n", c_mem->p_pci_mem);
 
 	/* TLB exist only for 1G  */
 	c_mem->v_ob_mem = CONFIG_SYS_PCIE1_MEM_VIRT;
-	print_debug
-	    ("v_ob_mem						:%0x\n",
-	     c_mem->v_ob_mem);
+	print_debug("v_ob_mem: %0x\n", c_mem->v_ob_mem);
 
 	c_mem->v_msi_mem = CONFIG_SYS_PCIE1_MSI_MEM_VIRT;
-	print_debug
-	    ("v_msi_mem						:%0x\n",
-	     c_mem->v_msi_mem);
+	print_debug("v_msi_mem: %0x\n", c_mem->v_msi_mem);
 
-	print_debug("\n		OB MEM DETAILS\n");
+	print_debug("\nOB MEM DETAILS\n");
 	/* Driver would have updated the offset of its
 	 * created memory inside the outbound window
 	 * Calculate the address valid in our domain -
 	 * The offset will definitely be 1G aligned so simple
 	 * addition should give the 1G aligned address.
 	 */
-	print_debug
-	    ("Host ob mem l					:%0x\n",
-	     c_mem->c_hs_mem->h_ob_mem_l);
-	print_debug
-	    ("Host ob mem h					:%0x\n",
-	     c_mem->c_hs_mem->h_ob_mem_h);
+	print_debug("Host ob mem l: %0x\n", c_mem->c_hs_mem->h_ob_mem_l);
+	print_debug("Host ob mem h: %0x\n", c_mem->c_hs_mem->h_ob_mem_h);
 	/* Calculate one 36bit address from H & L parts of it */
 	p_addr = c_mem->c_hs_mem->h_ob_mem_h;
 	p_addr = (p_addr << 32) | c_mem->c_hs_mem->h_ob_mem_l;
-	print_debug("Host ob 64 Bit address			:%0llx\n",
-		    p_addr);
+	print_debug("Host ob 64 Bit address: %0llx\n", p_addr);
 
 	/* Since we have 1G TLB open for rings - get the 1G aligned
 	 * address for this physical address */
 #define OB_TLB_SIZE_MASK    ((~(0)) << 30)
 	p_aligned_addr = (p_addr & OB_TLB_SIZE_MASK);
 	c_mem->p_ob_mem = (CONFIG_SYS_PCIE1_MEM_PHYS + p_aligned_addr);
-	print_debug("1G Aligned host ob mem addr	:%0llx\n",
-		    c_mem->p_ob_mem);
+	print_debug("1G Aligned host ob mem addr: %0llx\n", c_mem->p_ob_mem);
 
 	/* Set the TLB here for this 1G */
 	/* Using TLB 3 */
@@ -2165,22 +2108,16 @@ START:
 
 	c_mem->h_hs_mem =
 	    (h_hs_mem_t *) (((u8 *)c_mem->v_ob_mem + (p_addr - p_aligned_addr)));
-	print_debug
-	    ("h_hs_mem					:%0x\n",
-	     c_mem->h_hs_mem);
+	print_debug("h_hs_mem: %0x\n", c_mem->h_hs_mem);
 
-	print_debug("		MSI DETAILS\n");
-	print_debug
-	    ("MSI mem l					:%0x\n",
-	     c_mem->c_hs_mem->h_msi_mem_l);
-	print_debug("MSI mem h                      :%0x\n",
-		    c_mem->c_hs_mem->h_msi_mem_h);
+	print_debug("MSI DETAILS\n");
+	print_debug("MSI mem l: %0x\n", c_mem->c_hs_mem->h_msi_mem_l);
+	print_debug("MSI mem h: %0x\n", c_mem->c_hs_mem->h_msi_mem_h);
 
 	/* Form the 64 bit address */
 	p_addr = c_mem->c_hs_mem->h_msi_mem_h;
 	p_addr = (p_addr << 32) | c_mem->c_hs_mem->h_msi_mem_l;
-	print_debug("MSI mem 64 bit address		:%0llx\n",
-		    p_addr);
+	print_debug("MSI mem 64 bit address: %0llx\n", p_addr);
 
 	/* Since we have 1M TLB open for MSI window -
 	 * get the 1M aligned address for this physical address */
@@ -2189,9 +2126,7 @@ START:
 
 	/* Physical address should be within 16G window */
 	c_mem->p_msi_mem = c_mem->p_pci_mem + p_aligned_addr;
-	print_debug
-	    ("p_msi_mem					:%0llx\n",
-	     c_mem->p_msi_mem);
+	print_debug("p_msi_mem: %0llx\n", c_mem->p_msi_mem);
 
 	/* Set the TLB here for this 1M */
 	/* Using TLB 2 */
@@ -2230,7 +2165,7 @@ START:
 	c_mem->rsrc_mem->rps = c_mem->rsrc_mem->rps->next;
 	make_rp_circ_list(c_mem);
 	*/
-	print_debug("\n\t\t\tFirmware up\n");
+	print_debug("\n\n\nFirmware up\n");
 #ifdef HIGH_PERF
 	ring_processing_perf(c_mem);
 #else

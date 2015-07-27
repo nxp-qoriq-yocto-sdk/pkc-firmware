@@ -67,9 +67,8 @@
 
 /* The lower address space in 1MB is platform SRAM
  * and higher address space is L2 SRAM */
-#define L2_SRAM_TLB_ADDR                    CONFIG_SYS_INIT_L3_ADDR
-#define PLATFORM_SRAM_TLB_ADDR              \
-	(L2_SRAM_TLB_ADDR + PLATFORM_SRAM_SIZE)
+#define L2_SRAM_TLB_ADDR	CONFIG_SYS_INIT_L3_ADDR
+#define PLATFORM_SRAM_TLB_ADDR	(L2_SRAM_TLB_ADDR + PLATFORM_SRAM_SIZE)
 
 /* MSI TLB ADDR is CONFIG_SYS_PCIE1_MEM_VIRT + 1G */
 #define MSI_TLB_ADDR                        0xC0000000
