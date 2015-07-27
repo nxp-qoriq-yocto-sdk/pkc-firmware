@@ -412,6 +412,55 @@ static void make_rp_prio_links(c_mem_layout_t *mem)
 	mem->rsrc_mem->rps = r_head;
 }
 
+void hs_fw_init_ring_pair(c_mem_layout_t *mem, u32 *cursor)
+{
+	u32 r_offset = 0;
+	mem->c_hs_mem->state = DEFAULT;
+	print_debug("\nFW_INIT_RING_PAIR\n");
+	{
+	u32 rid = mem->c_hs_mem->data.ring.rid;
+	u32 prio = (mem->c_hs_mem->data.ring.props & APP_RING_PROP_PRIO_MASK)
+			>> APP_RING_PROP_PRIO_SHIFT;
+	u32 msi_addr_l = mem->c_hs_mem->data.ring.msi_addr_l;
+	app_ring_pair_t *rp = &(mem->rsrc_mem->rps[rid]);
+
+	rp->id = rid;
+	rp->props = mem->c_hs_mem->data.ring.props;
+	rp->depth = mem->c_hs_mem->data.ring.depth;
+	rp->msi_data = mem->c_hs_mem->data.ring.msi_data;
+	rp->msi_addr = (void*)(((u8 *)mem->v_msi_mem + ((mem->p_pci_mem + msi_addr_l) -
+			mem->p_msi_mem)));
+	rp->req_r = mem->rsrc_mem->req_mem + r_offset;
+	r_offset += (rp->depth * sizeof(req_ring_t));
+	rp->resp_r = (resp_ring_t *) ((u8 *) mem->v_ob_mem + ((mem->p_pci_mem + mem->c_hs_mem->data.ring.resp_ring) - mem->p_ob_mem));
+
+	print_debug("Rid:	%d\n", rid);
+	print_debug("Order:	%d\n",
+		(mem->c_hs_mem->data.ring.props & APP_RING_PROP_ORDER_MASK) >>
+		APP_RING_PROP_ORDER_SHIFT);
+	print_debug("Prio:	%d\n", prio);
+	print_debug("Depth:	%d\n", rp->depth);
+	print_debug("MSI Data:	%0x\n",rp->msi_data);
+	print_debug("MSI addr:	%0x\n", rp->msi_addr);
+	print_debug("Req r addr: %0x\n", rp->req_r);
+	print_debug("Resp r addr:%0x\n", rp->resp_r);
+
+	add_ring_to_pq(mem->rsrc_mem->p_q, rp, (prio - 1));
+
+	{
+	u32 offset = 0;
+
+	offset = (u8 *) rp->req_r - (u8 *) mem->v_ib_mem;
+	mem->h_hs_mem->data.ring.req_r = offset;
+	offset = (u8 *) &(rp->intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
+	mem->h_hs_mem->data.ring.intr_ctrl_flag = offset;
+	}
+	}
+	mem->h_hs_mem->result = RESULT_OK;
+	mem->h_hs_mem->state = FW_INIT_RING_PAIR_COMPLETE;
+	/*c2x0_getc();*/
+}
+
 void hs_fw_init_config(c_mem_layout_t *mem, u32 *cursor)
 {
 	mem->c_hs_mem->state = DEFAULT;
@@ -509,7 +558,6 @@ void hs_fw_init_config(c_mem_layout_t *mem, u32 *cursor)
 
 static void handshake(c_mem_layout_t *mem, u32 *cursor)
 {
-	u32 r_offset = 0;
 	print_debug("\n		HANDSHAKE\n");
 	print_debug
 	    ("\t State address					:%0x\n",
@@ -528,79 +576,7 @@ static void handshake(c_mem_layout_t *mem, u32 *cursor)
 			break;
 
 		case FW_INIT_RING_PAIR:
-			mem->c_hs_mem->state = DEFAULT;
-			print_debug("\n	FW_INIT_RING_PAIR\n");
-			{
-				u32 rid = mem->c_hs_mem->data.ring.rid;
-				u32 prio =
-				    (mem->c_hs_mem->data.ring.
-				     props & APP_RING_PROP_PRIO_MASK) >>
-				    APP_RING_PROP_PRIO_SHIFT;
-				u32 msi_addr_l =
-				    mem->c_hs_mem->data.ring.msi_addr_l;
-				app_ring_pair_t *rp =
-				    &(mem->rsrc_mem->rps[rid]);
-
-				rp->id = rid;
-				rp->props = mem->c_hs_mem->data.ring.props;
-				rp->depth = mem->c_hs_mem->data.ring.depth;
-				rp->msi_data =
-				    mem->c_hs_mem->data.ring.msi_data;
-				rp->msi_addr =
-				    (void
-				     *)(((u8 *)mem->v_msi_mem +
-					 ((mem->p_pci_mem + msi_addr_l) -
-					  mem->p_msi_mem)));
-				rp->req_r = mem->rsrc_mem->req_mem + r_offset;
-				r_offset += (rp->depth * sizeof(req_ring_t));
-				rp->resp_r =
-				    (resp_ring_t *) ((u8 *) mem->v_ob_mem +
-						     ((mem->p_pci_mem +
-						       mem->c_hs_mem->data.ring.
-						       resp_ring)
-						      - mem->p_ob_mem));
-
-				print_debug
-				    ("\t	Rid			:%d\n",
-				     rid);
-				print_debug
-				    ("\t	Order			:%d\n",
-				     (mem->c_hs_mem->data.ring.props & \
-					  APP_RING_PROP_ORDER_MASK) >> \
-					 APP_RING_PROP_ORDER_SHIFT);
-				print_debug
-				    ("\t	Prio			:%d\n",
-				     prio);
-				print_debug
-				    ("\t	Depth			:%d\n",
-				     rp->depth);
-				print_debug
-				    ("\t	MSI Data		:%0x\n",
-				     rp->msi_data);
-				print_debug
-				    ("\t MSI addr			:%0x\n",
-				     rp->msi_addr);
-				print_debug
-				    ("\t	Req r addr		:%0x\n",
-				     rp->req_r);
-				print_debug("\t Resp r addr		:%0x\n",
-					    rp->resp_r);
-
-				add_ring_to_pq(mem->rsrc_mem->p_q, rp,
-					       (prio - 1));
-
-				{
-					u32 offset = 0;
-
-					offset = (u8 *) rp->req_r - (u8 *) mem->v_ib_mem;
-					mem->h_hs_mem->data.ring.req_r = offset;
-					offset = (u8 *) &(rp->intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
-					mem->h_hs_mem->data.ring.intr_ctrl_flag = offset;
-				}
-			}
-			mem->h_hs_mem->result = RESULT_OK;
-			mem->h_hs_mem->state = FW_INIT_RING_PAIR_COMPLETE;
-			/*c2x0_getc();*/
+			hs_fw_init_ring_pair(mem, cursor);
 			break;
 
 		case FW_HS_COMPLETE:
