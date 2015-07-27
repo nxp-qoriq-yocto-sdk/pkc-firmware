@@ -412,6 +412,36 @@ static void make_rp_prio_links(c_mem_layout_t *mem)
 	mem->rsrc_mem->rps = r_head;
 }
 
+int hs_complete(c_mem_layout_t *mem, u32 *cursor)
+{
+	int hs_comp;
+
+	mem->c_hs_mem->state = DEFAULT;
+	mem->rsrc_mem->drv_resp_ring->msi_addr = mem->rsrc_mem->rps[0].msi_addr;
+	mem->rsrc_mem->drv_resp_ring->msi_data = mem->rsrc_mem->rps[0].msi_data;
+
+	mem->rsrc_mem->cmdrp = mem->rsrc_mem->rps;
+	mem->rsrc_mem->rps = mem->rsrc_mem->rps->next;
+	make_rp_prio_links(mem);
+	make_rp_circ_list(mem);
+
+	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
+	init_order_mem(mem, cursor);
+
+	print_debug("\nHS_COMPLETE:\n");
+
+	if (in_be32(mem->rsrc_mem->sec->rdsta) & 0x1) {
+		mem->h_hs_mem->result = RESULT_OK;
+		mem->h_hs_mem->state = FW_RNG_COMPLETE;
+		hs_comp = 1;
+	} else {
+		mem->h_hs_mem->result = RESULT_OK;
+		mem->h_hs_mem->state = FW_INIT_RNG;
+		hs_comp = 0;
+	}
+	return hs_comp;
+}
+
 void hs_fw_init_ring_pair(c_mem_layout_t *mem, u32 *cursor)
 {
 	u32 r_offset = 0;
@@ -558,17 +588,15 @@ void hs_fw_init_config(c_mem_layout_t *mem, u32 *cursor)
 
 static void handshake(c_mem_layout_t *mem, u32 *cursor)
 {
-	print_debug("\n		HANDSHAKE\n");
-	print_debug
-	    ("\t State address					:%0x\n",
-	     &(mem->c_hs_mem->state));
+	print_debug("\nHANDSHAKE\n");
+	print_debug("State address: %0x\n", &(mem->c_hs_mem->state));
+
 	/* Mark the firmware up to the driver */
 	firmware_up(mem);
 
 	while (true) {
 		WAIT_FOR_STATE_CHANGE(mem->c_hs_mem->state);
-		print_debug("\t State updated by driver		:%d\n",
-			    mem->c_hs_mem->state);
+		print_debug("State updated by driver: %d\n", mem->c_hs_mem->state);
 
 		switch (mem->c_hs_mem->state) {
 		case FW_INIT_CONFIG:
@@ -580,30 +608,8 @@ static void handshake(c_mem_layout_t *mem, u32 *cursor)
 			break;
 
 		case FW_HS_COMPLETE:
-			mem->c_hs_mem->state = DEFAULT;
-			mem->rsrc_mem->drv_resp_ring->msi_addr =
-			    mem->rsrc_mem->rps[0].msi_addr;
-			mem->rsrc_mem->drv_resp_ring->msi_data =
-			    mem->rsrc_mem->rps[0].msi_data;
-			
-			mem->rsrc_mem->cmdrp = mem->rsrc_mem->rps;
-			mem->rsrc_mem->rps = mem->rsrc_mem->rps->next;
-			make_rp_prio_links(mem);
-			make_rp_circ_list(mem);
-
-			*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-			init_order_mem(mem, cursor);
-
-			print_debug("\n	HS_COMPLETE:\n");
-
-			if(!(in_be32(mem->rsrc_mem->sec->rdsta) & 0x1)){
-				mem->h_hs_mem->result = RESULT_OK;
-				mem->h_hs_mem->state = FW_INIT_RNG;
-			} else {
-				mem->h_hs_mem->result = RESULT_OK;
-				mem->h_hs_mem->state = FW_RNG_COMPLETE;
-				return; 
-			}
+			if (hs_complete(mem, cursor))
+				return;
 			break;
 
 		case FW_WAIT_FOR_RNG:
@@ -615,7 +621,6 @@ static void handshake(c_mem_layout_t *mem, u32 *cursor)
 /*			print_debug("\n FW_RNG_DONE\n"); */
 			copy_kek_and_set_scr(mem);
 			return; 
-	
 		}
 	}
 }
