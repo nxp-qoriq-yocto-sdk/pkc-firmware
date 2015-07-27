@@ -412,7 +412,102 @@ static void make_rp_prio_links(c_mem_layout_t *mem)
 	mem->rsrc_mem->rps = r_head;
 }
 
-static void handshake(c_mem_layout_t *mem, u32 *cursor) 
+void hs_fw_init_config(c_mem_layout_t *mem, u32 *cursor)
+{
+	mem->c_hs_mem->state = DEFAULT;
+	print_debug("\nFW_INIT_CONFIG\n");
+	mem->rsrc_mem->ring_count = mem->c_hs_mem->data.config.num_of_rps;
+	{
+	u8 max_pri = mem->c_hs_mem->data.config.max_pri;
+	print_debug("Max pri: %d\n", max_pri);
+
+	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
+	*cursor -= (max_pri * sizeof(priority_q_t));
+	/* Alloc memory for prio q first */
+	mem->rsrc_mem->p_q = (priority_q_t *) (*cursor);
+	init_p_q(mem->rsrc_mem->p_q, max_pri);
+	}
+
+	{
+	u8 max_rps = mem->c_hs_mem->data.config.num_of_rps;
+	u8 respr_count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
+	print_debug("Max rps: %d\n", max_rps);
+
+	mem->rsrc_mem->ring_count = max_rps;
+
+	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
+	*cursor -= (max_rps * sizeof(app_ring_pair_t));
+	mem->rsrc_mem->rps = (app_ring_pair_t *) *cursor;
+	mem->rsrc_mem->orig_rps = mem->rsrc_mem->rps;
+	init_rps(mem, max_rps, respr_count, cursor);
+	}
+
+	{
+	u32 req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
+	print_debug("Req mem size: %d\n", req_mem_size);
+
+	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
+	*cursor -=  req_mem_size;
+	mem->rsrc_mem->req_mem = (void *)*cursor;
+	print_debug("Req mem addr: %0x\n", mem->rsrc_mem->req_mem);
+	}
+	{
+	u32 resp_ring_off = mem->c_hs_mem->data.config.fw_resp_ring;
+	u32 depth = mem->c_hs_mem->data.config.fw_resp_ring_depth;
+	u8 count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
+	print_debug("Resp ring off: %0x\n", resp_ring_off);
+	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
+	*cursor -= (count * sizeof(drv_resp_ring_t));
+	*cursor -= (count * sizeof(u32 *));
+	mem->rsrc_mem->drv_resp_ring_count = count;
+	mem->rsrc_mem->intr_ctrl_flags = (u32 *)*cursor;
+	*cursor += count * sizeof(u32 *);
+
+	mem->rsrc_mem->drv_resp_ring = (drv_resp_ring_t *) *cursor;
+
+	init_drv_resp_ring(mem, resp_ring_off, depth, count);
+	make_drv_resp_ring_circ_list(mem, count);
+	}
+
+	{
+	u32 s_cntrs = mem->c_hs_mem->data.config.s_cntrs;
+	u32 r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
+	mem->rsrc_mem->s_cntrs_mem = (shadow_counters_mem_t *)
+		((u8 *)mem->v_ob_mem + ((mem->p_pci_mem + s_cntrs) - mem->p_ob_mem));
+	mem->rsrc_mem->r_s_cntrs_mem = (ring_shadow_counters_mem_t *)
+		((u8 *)mem->v_ob_mem + ((mem->p_pci_mem + r_s_cntrs) - mem->p_ob_mem));
+
+	print_debug("Shadow counters details from Host.\n");
+	print_debug("S CNTRS OFFSET: %0x\n", s_cntrs);
+	print_debug("R S CNTRS OFFSET: %0x\n", r_s_cntrs);
+	init_scs(mem);
+	}
+
+	{
+	u32 offset = 0;
+
+	print_debug("\nSENDING FW_INIT_CONFIG_COMPLETE\n");
+	offset = (u8 *)mem->rsrc_mem->r_s_c_cntrs_mem - (u8 *)mem->v_ib_mem;
+	mem->h_hs_mem->data.config.s_r_cntrs = offset;
+	print_debug("S R CNTRS OFFSET: %0x\n", offset);
+
+	offset = (u8 *) mem->rsrc_mem->s_c_cntrs_mem - (u8 *) mem->v_ib_mem;
+	mem->h_hs_mem->data.config.s_cntrs = offset;
+	print_debug("CNTRS OFFSET: %0x\n", offset);
+
+	offset = (u8 *) mem->rsrc_mem->ip_pool - (u8 *) mem->v_ib_mem;
+	mem->h_hs_mem->data.config.ip_pool = offset;
+
+	offset = (u8 *) &(mem->rsrc_mem->drv_resp_ring->intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
+	mem->h_hs_mem->data.config.resp_intr_ctrl_flag = offset;
+	}
+	mem->h_hs_mem->result = RESULT_OK;
+	mem->h_hs_mem->state = FW_INIT_CONFIG_COMPLETE;
+
+	/*c2x0_getc();*/
+}
+
+static void handshake(c_mem_layout_t *mem, u32 *cursor)
 {
 	u32 r_offset = 0;
 	print_debug("\n		HANDSHAKE\n");
@@ -429,140 +524,7 @@ static void handshake(c_mem_layout_t *mem, u32 *cursor)
 
 		switch (mem->c_hs_mem->state) {
 		case FW_INIT_CONFIG:
-			mem->c_hs_mem->state = DEFAULT;
-			print_debug("\n	FW_INIT_CONFIG:\n");
-			mem->rsrc_mem->ring_count =
-			    mem->c_hs_mem->data.config.num_of_rps;
-			{
-				u8 max_pri = mem->c_hs_mem->data.config.max_pri;
-				print_debug
-				    ("\t	Max pri			:%d\n",
-				     max_pri);
-
-				*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-				*cursor -= (max_pri * sizeof(priority_q_t));
-				/* Alloc memory for prio q first */
-				mem->rsrc_mem->p_q = (priority_q_t *) (*cursor);
-				init_p_q(mem->rsrc_mem->p_q, max_pri);
-			}
-
-			{
-				u8 max_rps =
-				    mem->c_hs_mem->data.config.num_of_rps;
-				u8 respr_count =
-					mem->c_hs_mem->data.config.num_of_fwresp_rings;
-				print_debug
-				    ("\t	Max rps			:%d\n",
-				     max_rps);
-
-				mem->rsrc_mem->ring_count = max_rps;
-
-				*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-				*cursor -= (max_rps * sizeof(app_ring_pair_t));	
-				mem->rsrc_mem->rps =
-				    (app_ring_pair_t *) *cursor;
-				mem->rsrc_mem->orig_rps = mem->rsrc_mem->rps;
-				init_rps(mem, max_rps, respr_count, cursor);
-			}
-			{
-				u32 req_mem_size =
-				    mem->c_hs_mem->data.config.req_mem_size;
-				print_debug("\t	Req mem size		:%d\n",
-					    req_mem_size);
-
-				*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-				*cursor                 -=  req_mem_size;
-				mem->rsrc_mem->req_mem = (void *)*cursor;
-				print_debug
-				    ("\t	Req mem addr		:%0x\n",
-				     mem->rsrc_mem->req_mem);
-			}
-			{
-				u32 resp_ring_off =
-				    mem->c_hs_mem->data.config.fw_resp_ring;
-				u32 depth = 
-					mem->c_hs_mem->data.config.fw_resp_ring_depth;
-				u8 count =
-					mem->c_hs_mem->data.config.num_of_fwresp_rings;						
-				print_debug
-				    ("\t	Resp ring off		:%0x\n",
-				     resp_ring_off);
-				*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-				*cursor -= (count * sizeof(drv_resp_ring_t));
-				*cursor -= (count * sizeof(u32 *));
-				mem->rsrc_mem->drv_resp_ring_count  =   count;
-				mem->rsrc_mem->intr_ctrl_flags      =   (u32 *)*cursor;
-				*cursor +=  (count * sizeof(u32 *));
-
-				mem->rsrc_mem->drv_resp_ring =
-				    (drv_resp_ring_t *) *cursor;
-
-				init_drv_resp_ring(mem, resp_ring_off, depth, count);
-				make_drv_resp_ring_circ_list(mem, count);
-			}
-
-			{
-				u32 s_cntrs =
-				    mem->c_hs_mem->data.config.s_cntrs;
-				u32 r_s_cntrs =
-				    mem->c_hs_mem->data.config.r_s_cntrs;
-				mem->rsrc_mem->s_cntrs_mem =
-				    (shadow_counters_mem_t *)
-				    ((u8 *)mem->v_ob_mem +
-				     ((mem->p_pci_mem + s_cntrs) -
-				      mem->p_ob_mem));
-				mem->rsrc_mem->r_s_cntrs_mem =
-				    (ring_shadow_counters_mem_t *)
-				    ((u8 *)mem->v_ob_mem +
-				     ((mem->p_pci_mem + r_s_cntrs) -
-				      mem->p_ob_mem));
-
-				print_debug
-				    ("\t Shadow counters details from Host.\n");
-				print_debug
-				    ("\t \t \t S CNTRS OFFSET		:%0x\n",
-				     s_cntrs);
-				print_debug
-				    ("\t \t \t R S CNTRS OFFSET		:%0x\n",
-				     r_s_cntrs);
-				init_scs(mem);
-			}
-
-			{
-				u32 offset = 0;
-
-				print_debug
-				    ("\n- SENDING FW_INIT_CONFIG_COMPLETE -\n");
-				offset =
-				    (u8 *)mem->rsrc_mem->r_s_c_cntrs_mem -
-				    (u8 *)mem->v_ib_mem;
-				mem->h_hs_mem->data.config.s_r_cntrs = offset;
-				print_debug
-				    ("\t \t \t S R CNTRS OFFSET		:%0x\n",
-				     offset);
-
-				offset =
-				    (u8 *) mem->rsrc_mem->s_c_cntrs_mem -
-				    (u8 *) mem->v_ib_mem;
-				mem->h_hs_mem->data.config.s_cntrs = offset;
-				print_debug
-				    ("\t \t \t S CNTRS OFFSET		:%0x\n",
-				     offset);
-
-				offset = (u8 *) mem->rsrc_mem->ip_pool - (u8 *) mem->v_ib_mem;
-				mem->h_hs_mem->data.config.ip_pool = offset;
-
-				offset =
-				    (u8 *) &(mem->rsrc_mem->drv_resp_ring->
-					      intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
-				mem->h_hs_mem->data.config.resp_intr_ctrl_flag =
-				    offset;
-			}
-			mem->h_hs_mem->result = RESULT_OK;
-			mem->h_hs_mem->state = FW_INIT_CONFIG_COMPLETE;
-
-			/*c2x0_getc();*/
-
+			hs_fw_init_config(mem, cursor);
 			break;
 
 		case FW_INIT_RING_PAIR:
