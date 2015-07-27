@@ -96,13 +96,10 @@ static void Memset(u8 *ptr, u8 val, u32 size)
 
 static void firmware_up(c_mem_layout_t *mem)
 {
-
 	mem->h_hs_mem->data.device.p_ib_mem_base_l = (u32) mem->p_ib_mem;
-	mem->h_hs_mem->data.device.p_ib_mem_base_h =
-	    (u32) (mem->p_ib_mem >> 32);
+	mem->h_hs_mem->data.device.p_ib_mem_base_h = (u32) (mem->p_ib_mem >> 32);
 	mem->h_hs_mem->data.device.p_ob_mem_base_l = (u32) mem->p_pci_mem;
-	mem->h_hs_mem->data.device.p_ob_mem_base_h =
-	    (u32) (mem->p_pci_mem >> 32);
+	mem->h_hs_mem->data.device.p_ob_mem_base_h = (u32) (mem->p_pci_mem >> 32);
 	mem->h_hs_mem->data.device.no_secs = (u32) mem->rsrc_mem->sec_eng_cnt;
 
 	mem->h_hs_mem->state = FIRMWARE_UP;
@@ -552,9 +549,7 @@ static void handshake(c_mem_layout_t *mem, u32 *cursor)
 				    ("\t \t \t S CNTRS OFFSET		:%0x\n",
 				     offset);
 
-				offset =
-				    (u8 *) mem->rsrc_mem->ip_pool -
-				    (u8 *) mem->v_ib_mem;
+				offset = (u8 *) mem->rsrc_mem->ip_pool - (u8 *) mem->v_ib_mem;
 				mem->h_hs_mem->data.config.ip_pool = offset;
 
 				offset =
@@ -635,14 +630,10 @@ static void handshake(c_mem_layout_t *mem, u32 *cursor)
 				{
 					u32 offset = 0;
 
-					offset =
-					    (u8 *) rp->req_r - (u8 *) mem->v_ib_mem;
+					offset = (u8 *) rp->req_r - (u8 *) mem->v_ib_mem;
 					mem->h_hs_mem->data.ring.req_r = offset;
-					offset =
-					    (u8 *) &(rp->intr_ctrl_flag) -
-					    (u8 *) mem->v_ib_mem;
-					mem->h_hs_mem->data.ring.
-					    intr_ctrl_flag = offset;
+					offset = (u8 *) &(rp->intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
+					mem->h_hs_mem->data.ring.intr_ctrl_flag = offset;
 				}
 			}
 			mem->h_hs_mem->result = RESULT_OK;
