@@ -473,51 +473,56 @@ void hs_fw_init_ring_pair(c_mem_layout_t *mem, u32 *cursor)
 
 void hs_fw_init_config(c_mem_layout_t *mem, u32 *cursor)
 {
+	u8 max_pri, max_rps, respr_count, count;
+	u32 req_mem_size, resp_ring_off, depth, s_cntrs, r_s_cntrs, offset;
+
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nFW_INIT_CONFIG\n");
+
 	mem->rsrc_mem->ring_count = mem->c_hs_mem->data.config.num_of_rps;
-	{
-	u8 max_pri = mem->c_hs_mem->data.config.max_pri;
+	max_pri = mem->c_hs_mem->data.config.max_pri;
 	print_debug("Max pri: %d\n", max_pri);
 
 	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-	*cursor -= (max_pri * sizeof(priority_q_t));
+	*cursor -= max_pri * sizeof(priority_q_t);
+
 	/* Alloc memory for prio q first */
 	mem->rsrc_mem->p_q = (priority_q_t *) (*cursor);
 	init_p_q(mem->rsrc_mem->p_q, max_pri);
-	}
 
-	{
-	u8 max_rps = mem->c_hs_mem->data.config.num_of_rps;
-	u8 respr_count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
-	print_debug("Max rps: %d\n", max_rps);
 
+	max_rps = mem->c_hs_mem->data.config.num_of_rps;
 	mem->rsrc_mem->ring_count = max_rps;
+	print_debug("Max rps: %d\n", max_rps);
 
 	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
 	*cursor -= (max_rps * sizeof(app_ring_pair_t));
+
 	mem->rsrc_mem->rps = (app_ring_pair_t *) *cursor;
 	mem->rsrc_mem->orig_rps = mem->rsrc_mem->rps;
+	respr_count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
 	init_rps(mem, max_rps, respr_count, cursor);
-	}
 
-	{
-	u32 req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
+
+	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
 	print_debug("Req mem size: %d\n", req_mem_size);
 
 	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
 	*cursor -=  req_mem_size;
+
 	mem->rsrc_mem->req_mem = (void *)*cursor;
 	print_debug("Req mem addr: %0x\n", mem->rsrc_mem->req_mem);
-	}
-	{
-	u32 resp_ring_off = mem->c_hs_mem->data.config.fw_resp_ring;
-	u32 depth = mem->c_hs_mem->data.config.fw_resp_ring_depth;
-	u8 count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
+
+
+	resp_ring_off = mem->c_hs_mem->data.config.fw_resp_ring;
+	depth = mem->c_hs_mem->data.config.fw_resp_ring_depth;
+	count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
 	print_debug("Resp ring off: %0x\n", resp_ring_off);
+
 	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-	*cursor -= (count * sizeof(drv_resp_ring_t));
-	*cursor -= (count * sizeof(u32 *));
+	*cursor -= count * sizeof(drv_resp_ring_t);
+	*cursor -= count * sizeof(u32 *);
+
 	mem->rsrc_mem->drv_resp_ring_count = count;
 	mem->rsrc_mem->intr_ctrl_flags = (u32 *)*cursor;
 	*cursor += count * sizeof(u32 *);
@@ -526,11 +531,10 @@ void hs_fw_init_config(c_mem_layout_t *mem, u32 *cursor)
 
 	init_drv_resp_ring(mem, resp_ring_off, depth, count);
 	make_drv_resp_ring_circ_list(mem, count);
-	}
 
-	{
-	u32 s_cntrs = mem->c_hs_mem->data.config.s_cntrs;
-	u32 r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
+
+	s_cntrs = mem->c_hs_mem->data.config.s_cntrs;
+	r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
 	mem->rsrc_mem->s_cntrs_mem = (shadow_counters_mem_t *)
 		((u8 *)mem->v_ob_mem + ((mem->p_pci_mem + s_cntrs) - mem->p_ob_mem));
 	mem->rsrc_mem->r_s_cntrs_mem = (ring_shadow_counters_mem_t *)
@@ -540,10 +544,7 @@ void hs_fw_init_config(c_mem_layout_t *mem, u32 *cursor)
 	print_debug("S CNTRS OFFSET: %0x\n", s_cntrs);
 	print_debug("R S CNTRS OFFSET: %0x\n", r_s_cntrs);
 	init_scs(mem);
-	}
 
-	{
-	u32 offset = 0;
 
 	print_debug("\nSENDING FW_INIT_CONFIG_COMPLETE\n");
 	offset = (u8 *)mem->rsrc_mem->r_s_c_cntrs_mem - (u8 *)mem->v_ib_mem;
@@ -559,7 +560,7 @@ void hs_fw_init_config(c_mem_layout_t *mem, u32 *cursor)
 
 	offset = (u8 *) &(mem->rsrc_mem->drv_resp_ring->intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.resp_intr_ctrl_flag = offset;
-	}
+
 	mem->h_hs_mem->result = RESULT_OK;
 	mem->h_hs_mem->state = FW_INIT_CONFIG_COMPLETE;
 
