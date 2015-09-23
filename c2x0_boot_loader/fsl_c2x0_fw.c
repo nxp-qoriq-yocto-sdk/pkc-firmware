@@ -258,7 +258,7 @@ static void init_drv_resp_ring(c_mem_layout_t *mem, u32 offset, u32 depth, u8 co
 {
     u8 loc = mem->rsrc_mem->ring_count;
     drv_resp_ring_t *ring   =   NULL;
-    i32 i = 0;
+    uint8_t i;
 
     for(i=0; i<count; i++) {
         ring    =   &(mem->rsrc_mem->drv_resp_ring[i]);
