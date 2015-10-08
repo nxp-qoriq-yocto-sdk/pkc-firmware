@@ -2058,7 +2058,7 @@ START:
 	 * but for now FW size is 512K, hence it will be
 	 * in lower part of L2 SRAM.
 	 */
-	c_mem->c_hs_mem = (c_hs_mem_t *)p_cursor;
+	c_mem->c_hs_mem = (struct crypto_c_hs_mem *)p_cursor;
 	p_cursor -= sizeof(c_mem_layout_t);
 	c_mem->free_mem -= sizeof(c_mem_layout_t);
 	print_debug("c_hs_mem: %0x\n", c_mem->c_hs_mem);

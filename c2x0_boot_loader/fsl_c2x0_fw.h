@@ -429,7 +429,7 @@ typedef struct resource {
 } resource_t;
 
 /* Handshake related data structures */
-typedef struct crypto_c_hs_mem {
+struct crypto_c_hs_mem {
 	u32 h_ob_mem_l;
 	u32 h_ob_mem_h;
 
@@ -464,7 +464,7 @@ typedef struct crypto_c_hs_mem {
 			u32 s_r_cntrs;
 		} ring;
 	} data;
-} crypto_c_hs_mem_t;
+};
 
 /*******************************************************************************
 Description : Defines the handshake memory layout on the host
@@ -498,7 +498,6 @@ typedef struct fsl_h_mem_handshake {
 } fsl_h_mem_handshake_t;
 
 typedef fsl_h_mem_handshake_t h_hs_mem_t;
-typedef crypto_c_hs_mem_t c_hs_mem_t;
 
 #define JR_SIZE_SHIFT   0
 #define JR_SIZE_MASK    0xffff0000
@@ -582,7 +581,7 @@ typedef struct c_mem_layout {
 
 	h_hs_mem_t __iomem *h_hs_mem;
 
-	c_hs_mem_t *c_hs_mem;
+	struct crypto_c_hs_mem *c_hs_mem;
 
 	resource_t *rsrc_mem;
 
