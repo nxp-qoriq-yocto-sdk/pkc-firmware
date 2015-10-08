@@ -65,8 +65,8 @@
 #define RESET_PIC_PIR_VALUE 0x1
 #endif
 
-static inline void rng_processing(c_mem_layout_t *c_mem);
-static inline void copy_kek_and_set_scr(c_mem_layout_t *c_mem);
+static inline void rng_processing(struct c_mem_layout *c_mem);
+static inline void copy_kek_and_set_scr(struct c_mem_layout *c_mem);
 
 #if 0
 /* Helper function which can be used to measure cpu ticks.
@@ -94,7 +94,7 @@ static void Memset(u8 *ptr, u8 val, u32 size)
 		*ptr++ = val;
 }
 
-static void firmware_up(c_mem_layout_t *mem)
+static void firmware_up(struct c_mem_layout *mem)
 {
 	mem->h_hs_mem->data.device.p_ib_mem_base_l = (u32) mem->p_ib_mem;
 	mem->h_hs_mem->data.device.p_ib_mem_base_h = (u32) (mem->p_ib_mem >> 32);
@@ -126,7 +126,7 @@ static app_ring_pair_t *next_ring(app_ring_pair_t *rp)
 }
 
 
-static inline void init_order_mem1(c_mem_layout_t *mem, u32 *cursor)
+static inline void init_order_mem1(struct c_mem_layout *mem, u32 *cursor)
 {
 	u32 i = 0;
 	app_ring_pair_t *rp =	NULL;
@@ -158,7 +158,7 @@ static inline void init_order_mem1(c_mem_layout_t *mem, u32 *cursor)
 	return;
 }
 
-static inline void init_order_mem(c_mem_layout_t *mem, u32 *cursor)
+static inline void init_order_mem(struct c_mem_layout *mem, u32 *cursor)
 {
 	app_ring_pair_t *rp = mem->rsrc_mem->rps;
 	app_ring_pair_t *rp_head = mem->rsrc_mem->rps;
@@ -194,7 +194,7 @@ NEXT_RP:
 	return;
 }
 
-static void init_rps(c_mem_layout_t *mem, u8 num, u8 respringcount, u32 *cursor)
+static void init_rps(struct c_mem_layout *mem, u8 num, u8 respringcount, u32 *cursor)
 {
 	u8 i = 0;
 	u8 j = 0;
@@ -254,7 +254,7 @@ static void init_rps(c_mem_layout_t *mem, u8 num, u8 respringcount, u32 *cursor)
 	}
 }
 
-static void init_drv_resp_ring(c_mem_layout_t *mem, u32 offset, u32 depth, u8 count)
+static void init_drv_resp_ring(struct c_mem_layout *mem, u32 offset, u32 depth, u8 count)
 {
     u8 loc = mem->rsrc_mem->ring_count;
     drv_resp_ring_t *ring   =   NULL;
@@ -284,7 +284,7 @@ static void init_drv_resp_ring(c_mem_layout_t *mem, u32 offset, u32 depth, u8 co
     }
 }
 
-static void make_drv_resp_ring_circ_list(c_mem_layout_t *mem, u32 count)
+static void make_drv_resp_ring_circ_list(struct c_mem_layout *mem, u32 count)
 {
     i32 i = 0;
 
@@ -294,7 +294,7 @@ static void make_drv_resp_ring_circ_list(c_mem_layout_t *mem, u32 count)
     mem->rsrc_mem->drv_resp_ring[i-1].next = &mem->rsrc_mem->drv_resp_ring[0];
 }
 
-static void init_scs(c_mem_layout_t *mem)
+static void init_scs(struct c_mem_layout *mem)
 {
 	u32 i = 0;
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
@@ -330,7 +330,7 @@ static void add_ring_to_pq(priority_q_t *p_q, app_ring_pair_t *rp, u8 pri)
 	rp->prio = pri;
 }
 
-static void make_rp_circ_list(c_mem_layout_t *mem)
+static void make_rp_circ_list(struct c_mem_layout *mem)
 {
 	priority_q_t *p_q = mem->rsrc_mem->p_q;
 	app_ring_pair_t *r = NULL;
@@ -347,7 +347,7 @@ static void make_rp_circ_list(c_mem_layout_t *mem)
 	mem->rsrc_mem->rps = r;
 }
 
-static void make_rp_prio_links(c_mem_layout_t *mem)
+static void make_rp_prio_links(struct c_mem_layout *mem)
 {
 	u8 i = 0;
 	u8 max_pri = 0;
@@ -392,7 +392,7 @@ static void make_rp_prio_links(c_mem_layout_t *mem)
 	mem->rsrc_mem->rps = r_head;
 }
 
-int hs_complete(c_mem_layout_t *mem, u32 *cursor)
+int hs_complete(struct c_mem_layout *mem, u32 *cursor)
 {
 	int hs_comp;
 
@@ -422,7 +422,7 @@ int hs_complete(c_mem_layout_t *mem, u32 *cursor)
 	return hs_comp;
 }
 
-void hs_fw_init_ring_pair(c_mem_layout_t *mem, u32 *cursor)
+void hs_fw_init_ring_pair(struct c_mem_layout *mem, u32 *cursor)
 {
 	u32 r_offset = 0;
 	mem->c_hs_mem->state = DEFAULT;
@@ -471,7 +471,7 @@ void hs_fw_init_ring_pair(c_mem_layout_t *mem, u32 *cursor)
 	/*c2x0_getc();*/
 }
 
-void hs_fw_init_config(c_mem_layout_t *mem, u32 *cursor)
+void hs_fw_init_config(struct c_mem_layout *mem, u32 *cursor)
 {
 	u8 max_pri, max_rps, respr_count, count;
 	u32 req_mem_size, resp_ring_off, depth, s_cntrs, r_s_cntrs, offset;
@@ -567,7 +567,7 @@ void hs_fw_init_config(c_mem_layout_t *mem, u32 *cursor)
 	/*c2x0_getc();*/
 }
 
-static void handshake(c_mem_layout_t *mem, u32 *cursor)
+static void handshake(struct c_mem_layout *mem, u32 *cursor)
 {
 	print_debug("\nHANDSHAKE\n");
 	print_debug("State address: %0x\n", &(mem->c_hs_mem->state));
@@ -700,7 +700,7 @@ static void make_sec_circ_list(sec_engine_t *sec, u8 count)
 	sec[i].next = &sec[0];
 }
 
-static inline void copy_kek_and_set_scr(c_mem_layout_t *c_mem)
+static inline void copy_kek_and_set_scr(struct c_mem_layout *c_mem)
 {
 	u32 k_value, i, j;
 	u8 sec_cnt;
@@ -867,7 +867,7 @@ static u32 init_rsrc_sec(sec_engine_t *sec, u32 *cursor)
 	return mem;
 }
 
-static void alloc_rsrc_mem(c_mem_layout_t *c_mem, u32 *pcursor, u32 *l2cursor)
+static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor, u32 *l2cursor)
 {
 	resource_t *rsrc  = c_mem->rsrc_mem;
 	u32 l2_cursor     = *l2cursor;
@@ -1047,7 +1047,7 @@ static inline void irja_signal_caam(sec_jr_t *jr, u32 cnt)
 	}
 }
 
-static inline u32 sel_sec_enqueue(c_mem_layout_t *c_mem, sec_engine_t **psec,
+static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem, sec_engine_t **psec,
 				  app_ring_pair_t *rp,  u32 *todeq)
 {
 	sec_engine_t *sec	= NULL;
@@ -1157,7 +1157,7 @@ static inline void inorder_dequeue(app_ring_pair_t *resp_ring, sec_jr_t *jr,
 	loop_inorder(resp_ring);
 }
 
-static inline u32 sec_dequeue(c_mem_layout_t *c_mem, sec_engine_t **deq_sec,
+static inline u32 sec_dequeue(struct c_mem_layout *c_mem, sec_engine_t **deq_sec,
 			      	u32 *todeq)
 {
 	sec_jr_t *jr = &(*deq_sec)->jr;
@@ -1228,7 +1228,7 @@ static inline void raise_intr(drv_resp_ring_t *r)
 }
 
 #ifndef HIGH_PERF
-void invalidate_pending_app_reqs(c_mem_layout_t *c_mem)
+void invalidate_pending_app_reqs(struct c_mem_layout *c_mem)
 {
 	indexes_mem_t *ring_indexes = NULL;
 	ring_counters_mem_t *ring_counters = NULL;
@@ -1309,7 +1309,7 @@ void invalidate_pending_app_reqs(c_mem_layout_t *c_mem)
 	}
 }
 
-void resetcounters(c_mem_layout_t *mem, u32 sec_id)
+void resetcounters(struct c_mem_layout *mem, u32 sec_id)
 {
 	u32 i = 0;
 
@@ -1375,7 +1375,7 @@ int check_addr_value(int addr)
 	return 0;
 }
 
-int process_debug_cmd_md(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+int process_debug_cmd_md(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req)
 {
 	cmd_op_t *cmd_op;
 	int addr, i, err;
@@ -1396,7 +1396,7 @@ int process_debug_cmd_md(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	return 0;
 }
 
-int process_debug_cmd_mw(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+int process_debug_cmd_mw(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req)
 {
 	int addr, err;
 
@@ -1410,7 +1410,7 @@ int process_debug_cmd_mw(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	return 0;
 }
 
-int process_debug_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+int process_debug_cmd(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req)
 {
 	int err = 0;
 	print1_debug(mem, "DEBUGGING IN FW\n");
@@ -1439,7 +1439,7 @@ int process_debug_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	return err;
 }
 
-void process_resetsec_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+void process_resetsec_cmd(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req)
 {
 	print1_debug(mem, "Resetting sec engine     :%d\n",
 			cmd_req->ip_info.sec_id);
@@ -1470,7 +1470,7 @@ void process_resetsec_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	}
 }
 
-void process_devstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+void process_devstat_cmd(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req)
 {
 	cmd_op_t *cmd_op;
 	app_ring_pair_t *ring_cursor;
@@ -1509,7 +1509,7 @@ void process_devstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	cmd_op->buffer.dev_stat_op.total_jobs_pending = total_job_processed;
 }
 
-void process_ringstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+void process_ringstat_cmd(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req)
 {
 	priority_q_t *p_q_cursor = NULL;
 	app_ring_pair_t *ring_cursor = NULL;
@@ -1573,7 +1573,7 @@ void process_ringstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	}
 }
 
-void process_pingdev_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+void process_pingdev_cmd(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req)
 {
 	cmd_op_t *cmd_op;
 
@@ -1584,7 +1584,7 @@ void process_pingdev_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	print1_debug(mem, "Sending Resp : %d to driver\n", cmd_op->buffer.ping_op.resp);
 }
 
-void process_secstat_cmd(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+void process_secstat_cmd(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req)
 {
 	cmd_op_t *cmd_op;
 	int i;
@@ -1637,7 +1637,7 @@ void process_resetdev_cmd()
  * Description  : Process the command from the host driver
  *
  ******************************************************************************/
-u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
+u32 process_command(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req)
 {
 	print1_debug(mem, "   ---- Command Ring Processing ----\n");
 	switch (cmd_req->cmd_type) {
@@ -1698,7 +1698,7 @@ u32 process_command(c_mem_layout_t *mem, cmd_ring_req_desc_t *cmd_req)
 	return 0;
 }
 
-static i32 cmd_ring_processing(c_mem_layout_t *mem)
+static i32 cmd_ring_processing(struct c_mem_layout *mem)
 {
 	app_ring_pair_t *cmdrp = mem->rsrc_mem->cmdrp;
 	u32 ri = cmdrp->idxs->r_index;
@@ -1875,7 +1875,7 @@ static inline void check_intr(app_ring_pair_t *r, u32 deq, u32 *processedcount)
 }
 
 #ifdef HIGH_PERF
-static void ring_processing_perf(c_mem_layout_t *c_mem)
+static void ring_processing_perf(struct c_mem_layout *c_mem)
 {
 /*	drv_resp_ring_t     *drv_r      =   c_mem->rsrc_mem->drv_resp_ring;	*/
 	app_ring_pair_t     *rp         =   c_mem->rsrc_mem->rps;
@@ -1916,7 +1916,7 @@ NEXTRING:
 
 #else
 
-static void ring_processing(c_mem_layout_t *c_mem)
+static void ring_processing(struct c_mem_layout *c_mem)
 {
 	u32 deq = 0, cnt = 0, ring_jobs = 0, processedcount = 0;
 	i32 res = 0, block_app_jobs = 0;
@@ -1988,7 +1988,7 @@ NEXTRING:
 }
 #endif
 
-static inline void rng_processing(c_mem_layout_t *c_mem)
+static inline void rng_processing(struct c_mem_layout *c_mem)
 {
 	u32     cnt =   0,  ring_jobs   =   0;
 
@@ -2030,7 +2030,7 @@ i32 fsl_c2x0_fw(void)
 	phys_addr_t p_addr = 0;
 	phys_addr_t p_aligned_addr = 0;
 
-	c_mem_layout_t *c_mem = NULL;
+	struct c_mem_layout *c_mem = NULL;
 
 #ifdef P4080_EP_TYPE
 	/* Not required for C2X0 */
@@ -2046,7 +2046,7 @@ START:
 	p_cursor -= L1_CACHE_LINE_SIZE;
 
 	print_debug("\nMemory Pointers\n");
-	c_mem = (c_mem_layout_t *) (p_cursor - sizeof(c_mem_layout_t));
+	c_mem = (struct c_mem_layout *) (p_cursor - sizeof(struct c_mem_layout));
 	print_debug("c_mem: %0x\n", c_mem);
 
 	c_mem->dgb_print = c_mem->err_print = 0;
@@ -2059,8 +2059,8 @@ START:
 	 * in lower part of L2 SRAM.
 	 */
 	c_mem->c_hs_mem = (struct crypto_c_hs_mem *)p_cursor;
-	p_cursor -= sizeof(c_mem_layout_t);
-	c_mem->free_mem -= sizeof(c_mem_layout_t);
+	p_cursor -= sizeof(struct c_mem_layout);
+	c_mem->free_mem -= sizeof(struct c_mem_layout);
 	print_debug("c_hs_mem: %0x\n", c_mem->c_hs_mem);
 
 	c_mem->v_ib_mem = L2_SRAM_VIRT_ADDR;

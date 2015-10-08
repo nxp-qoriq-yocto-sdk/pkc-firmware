@@ -560,9 +560,7 @@ Description :	Defines the memory layout on the device. Since the memory on the
 		structure so that accessing is easy.
 Fields      :
 *******************************************************************************/
-typedef struct c_mem_layout {
-	/*phys_addr_t   h_hs_mem_offset;*/
-
+struct c_mem_layout {
 	va_addr_t v_ib_mem;
 	va_addr_t v_ob_mem;
 	va_addr_t v_msi_mem;
@@ -570,7 +568,6 @@ typedef struct c_mem_layout {
 	phys_addr_t p_ib_mem;
 	phys_addr_t p_ob_mem;
 	phys_addr_t p_msi_mem;
-
 	phys_addr_t p_pci_mem;
 
 	/* Addresses of common pool for all the ring pairs */
@@ -588,7 +585,7 @@ typedef struct c_mem_layout {
 
 	int dgb_print;
 	int err_print;
-} c_mem_layout_t;
+};
 
 /*                  COMMAND RING STRUCTURE                  */
 
