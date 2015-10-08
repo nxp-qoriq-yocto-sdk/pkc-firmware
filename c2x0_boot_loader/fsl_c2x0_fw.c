@@ -2108,7 +2108,7 @@ START:
 		     MAS2_I | MAS2_G, 0, 3, BOOKE_PAGESZ_1G, 1);
 
 	c_mem->h_hs_mem =
-	    (h_hs_mem_t *) (((u8 *)c_mem->v_ob_mem + (p_addr - p_aligned_addr)));
+	    (struct fsl_h_mem_handshake *) (((u8 *)c_mem->v_ob_mem + (p_addr - p_aligned_addr)));
 	print_debug("h_hs_mem: %0x\n", c_mem->h_hs_mem);
 
 	print_debug("MSI DETAILS\n");

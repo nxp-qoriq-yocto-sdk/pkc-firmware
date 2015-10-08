@@ -470,7 +470,7 @@ struct crypto_c_hs_mem {
 Description : Defines the handshake memory layout on the host
 Fields      :
 *******************************************************************************/
-typedef struct fsl_h_mem_handshake {
+struct fsl_h_mem_handshake {
 	u8 state;
 	u8 result;
 
@@ -495,9 +495,7 @@ typedef struct fsl_h_mem_handshake {
 			u32 intr_ctrl_flag;
 		} ring;
 	} data;
-} fsl_h_mem_handshake_t;
-
-typedef fsl_h_mem_handshake_t h_hs_mem_t;
+};
 
 #define JR_SIZE_SHIFT   0
 #define JR_SIZE_MASK    0xffff0000
@@ -579,8 +577,7 @@ typedef struct c_mem_layout {
 	phys_addr_t p_buf_pool_mem;
 	va_addr_t v_buf_pool_mem;
 
-	h_hs_mem_t __iomem *h_hs_mem;
-
+	struct fsl_h_mem_handshake __iomem *h_hs_mem;
 	struct crypto_c_hs_mem *c_hs_mem;
 
 	resource_t *rsrc_mem;
