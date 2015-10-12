@@ -983,8 +983,6 @@ static void fix_p4080_reg_settings(void)
 	conditional_timed_wait_for_driver_jobs
 #endif
 
-#define RINGS_JOBS_ADDED(ring)		\
-	(ring->r_s_c_cntrs->jobs_added - ring->cntrs->jobs_processed)
 #define MOD_ADD(x, value, size)		((x+value) & (size-1))
 
 #ifdef TIMED_WAIT_FOR_JOBS
