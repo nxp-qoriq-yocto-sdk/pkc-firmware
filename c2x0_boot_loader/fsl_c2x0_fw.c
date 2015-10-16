@@ -47,7 +47,7 @@
 
 #ifndef ENHANCE_KERNEL_TEST
 #define SEC_ENQ_BUDGET  32
-#define MAX_DEQ_BUDGET  12
+#define MAX_DEQ_BUDGET  32
 #else
 #define SEC_ENQ_BUDGET	(-1UL)
 #define MAX_DEQ_BUDGET	(-1UL)
@@ -1742,124 +1742,117 @@ out:
 }
 #endif
 
-inline void Enq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *rp, u32 count)
+inline void Enq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *rp, uint32_t count)
 {
-    i32 i = 0, ri = 0, wi = 0, jrdepth = jr->size, rpdepth = rp->depth;
-    ri = rp->idxs->r_index;
-    wi = jr->tail;
+	uint32_t i;
+	uint32_t ri = rp->idxs->r_index;
+	uint32_t wi = jr->tail;
+	uint32_t rpdepth = rp->depth;
+	uint32_t jrdepth = jr->size;
 
-    for(i=0; i<count; i++) {
-	    print_debug("%s( ): Adding desc: %0llx from ri: %d  to sec at wi: %d \n",
-				__FUNCTION__, rp->req_r[ri].desc, ri, wi);
-        //check_desc_words(rp->req_r[ri].desc, rp->req_r[ri].desc);
-        jr->i_ring[wi].desc   = rp->req_r[ri].desc;
-        ri  =   (ri+1) &~ rpdepth;
-        wi  =   (wi+1) &~ jrdepth;
-    }
-    rp->idxs->r_index   =   ri;
-    jr->tail            =   wi;
-}
-
-inline static u32 enqueue_to_sec(sec_engine_t **sec, app_ring_pair_t *rp, u32 cnt)
-{
-    sec_engine_t *psec = *sec;
-    u32 secroom = in_be32(&(psec->jr.regs->irsa));
-    u32 room    = MIN(MIN(secroom, cnt), SEC_ENQ_BUDGET);
-
-    if(!secroom)
-        goto RET;
-
-    Enq_Circ_Cpy(&(psec->jr), rp, room);
-    out_be32(&(psec->jr.regs->irja), room);
-    rp->cntrs->jobs_processed += room;
-    rp->r_s_cntrs->req_jobs_processed = rp->cntrs->jobs_processed;
-
-RET:
-    *sec = psec->next;
-    return room;
-}
-
-inline void Deq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *r, u32 count)
-{
-	i32 i =0, wi = 0, ri = 0, jrdepth = jr->size, rdepth = r->depth;
-
-	print_debug("%s( ) cnt: %d\n",__FUNCTION__, count);
-	wi = r->idxs->w_index;
-	ri = jr->head;
-
-	print_debug("%s( ): Wi: %d, ri: %d\n", __FUNCTION__, wi, ri);
-	for(i=0; i<count; i++) {
-		print_debug("%s( ): Dequeued desc: %0llx from ri: %d storing at wi: %d \n",
-				__FUNCTION__, jr->o_ring[ri].desc, ri, wi);
-		r->resp_r[wi].desc      =   jr->o_ring[ri].desc;
-		r->resp_r[wi].result    =   jr->o_ring[ri].status;
-		wi  =   (wi + 1) &~(rdepth);
-		ri  =   (ri + 1) &~(jrdepth);
+	for(i = 0; i < count; i++) {
+		print_debug("%s: desc: %0llx from ri: %d to sec wi: %d \n",
+				__func__, rp->req_r[ri].desc, ri, wi);
+		jr->i_ring[wi].desc   = rp->req_r[ri].desc;
+		ri = (ri+1) &~ rpdepth;
+		wi = (wi+1) &~ jrdepth;
 	}
-	r->idxs->w_index    =   wi;
-	jr->head            =   ri;
+	rp->idxs->r_index = ri;
+	jr->tail          = wi;
+}
+
+inline static uint32_t enqueue_to_sec(sec_engine_t *sec, app_ring_pair_t *rp,
+					uint32_t in_jobs)
+{
+	uint32_t secroom = in_be32(&(sec->jr.regs->irsa));
+	uint32_t count = MIN(MIN(secroom, in_jobs), SEC_ENQ_BUDGET);
+
+	if(count > 0) {
+		Enq_Circ_Cpy(&(sec->jr), rp, count);
+		out_be32(&(sec->jr.regs->irja), count);
+		rp->cntrs->jobs_processed += count;
+		rp->r_s_cntrs->req_jobs_processed = rp->cntrs->jobs_processed;
+	}
+	return count;
+}
+
+inline void Deq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *rp, uint32_t count)
+{
+	uint32_t i;
+	uint32_t wi = rp->idxs->w_index;
+	uint32_t ri = jr->head;
+	uint32_t rdepth = rp->depth;
+	uint32_t jrdepth = jr->size;
+
+	for(i = 0; i < count; i++) {
+		print_debug("%s: desc: %0llx from ri: %d to host wi: %d \n",
+				__func__, jr->o_ring[ri].desc, ri, wi);
+		rp->resp_r[wi].desc   = jr->o_ring[ri].desc;
+		rp->resp_r[wi].result = jr->o_ring[ri].status;
+		wi = (wi + 1) &~(rdepth);
+		ri = (ri + 1) &~(jrdepth);
+	}
+	rp->idxs->w_index = wi;
+	jr->head          = ri;
 }
 
 inline void resp_ring_enqueue(sec_jr_t *jr, app_ring_pair_t *r, u32 cnt)
 {
-	print_debug("%s( ) room: %d\n", __FUNCTION__, cnt);
+	print_debug("%s room: %d\n", __FUNCTION__, cnt);
 	Deq_Circ_Cpy(jr, r, cnt);
 	r->cntrs->jobs_added  +=  cnt;
 	r->r_s_cntrs->resp_jobs_added = r->cntrs->jobs_added;
 	out_be32(&jr->regs->orjr, cnt);
 }
 
-
-inline static u32 dequeue_from_sec(sec_engine_t **sec, app_ring_pair_t **r)
+inline static uint32_t dequeue_from_sec(sec_engine_t *sec, app_ring_pair_t *rp)
 {
-	sec_engine_t    *psec   = *sec;
-	app_ring_pair_t *pr     = *r;
-	u32 secroom     = in_be32(&(psec->jr.regs->orsf));
-	u32 resproom    = pr->depth - (pr->cntrs->jobs_added - pr->r_s_c_cntrs->jobs_processed);
-	u32 room        = MIN(MIN(secroom, resproom), MAX_DEQ_BUDGET);
+	uint32_t secroom  = in_be32(&(sec->jr.regs->orsf));
+	uint32_t hostroom = rp->depth - (rp->cntrs->jobs_added - rp->r_s_c_cntrs->jobs_processed);
+	uint32_t count = MIN(MIN(secroom, hostroom), MAX_DEQ_BUDGET);
 
-	print_debug("%s( ): secroom: %d, respring: %d resproom: %d, room: %d \n",
-			__FUNCTION__, secroom, pr->id, resproom, room);
+	print_debug("%s: secroom: %d, hostroom: %d, count: %d \n",
+			__func__, secroom, hostroom, count);
 
-	if(!secroom)
-		goto SECCHANGE;
-	if(!resproom)
-		goto RESPCHANGE;
-
-	resp_ring_enqueue(&(psec->jr), pr, room);
-	*sec = psec->next;
-	*r   = pr->next;
-	goto RET;
-
-SECCHANGE:
-	*sec = psec->next;
-	goto RET;
-RESPCHANGE:
-	*r = pr->next;
-RET:
-	return room;
+	if (count) {
+		Deq_Circ_Cpy(&(sec->jr), rp, count);
+		rp->cntrs->jobs_added += count;
+		rp->r_s_cntrs->resp_jobs_added = rp->cntrs->jobs_added;
+		out_be32(&(sec->jr.regs->orjr), count);
+	}
+	return count;
 }
 
-
-static inline void raise_intr_app_ring(app_ring_pair_t *r)
+static inline void raise_intr_app_ring(app_ring_pair_t *rp)
 {
-	print_debug("%s( ): MSI addr: %0x, MSI data:%0x \n",
-			__FUNCTION__, r->msi_addr, r->msi_data);
-	r->intr_ctrl_flag = 1;
-	out_le16(r->msi_addr, r->msi_data);
+	print_debug("%s: MSI addr: %0x, MSI data:%0x \n",
+			__func__, rp->msi_addr, rp->msi_data);
+	rp->intr_ctrl_flag = 1;
+	out_le16(rp->msi_addr, rp->msi_data);
+}
+
+static inline uint32_t irq_is_due(uint32_t deq_cnt, app_ring_pair_t *rp,
+				uint32_t irq_timeout)
+{
+	uint32_t raise_irq;
+	uint32_t host_jobs = rp->cntrs->jobs_added - rp->r_s_c_cntrs->jobs_processed;
+
+	raise_irq = (deq_cnt > 0) && (!rp->intr_ctrl_flag);
+	raise_irq |= (host_jobs != 0 ) && (irq_timeout == 0);
+
+	return raise_irq;
 }
 
 static inline void check_intr(app_ring_pair_t *r, u32 deq, u32 *processedcount)
 {
-#ifndef HIGH_PERF
 	if(deq) {
-		 print_debug("%s( ): Dequeued: %d\n", __FUNCTION__, deq);
+		print_debug("%s( ): Dequeued: %d\n", __FUNCTION__, deq);
 	}
 	if(deq && r->intr_ctrl_flag) {
 		print_debug("%s( ): Dequeued: %d intr ctrl flag: %d\n",
 				__FUNCTION__, deq, r->intr_ctrl_flag);
 	}
-#endif
+
 	if(deq && (!r->intr_ctrl_flag)) {
 		raise_intr_app_ring(r);
 	} else {
@@ -1875,45 +1868,45 @@ static inline void check_intr(app_ring_pair_t *r, u32 deq, u32 *processedcount)
 #ifdef HIGH_PERF
 static void ring_processing_perf(struct c_mem_layout *c_mem)
 {
-/*	drv_resp_ring_t     *drv_r      =   c_mem->rsrc_mem->drv_resp_ring;	*/
-	app_ring_pair_t     *rp         =   c_mem->rsrc_mem->rps;
-	app_ring_pair_t     *resp_r     =   c_mem->rsrc_mem->rps;
-	sec_engine_t        *enq_sec    =   c_mem->rsrc_mem->sec;
-	sec_engine_t        *deq_sec    =   c_mem->rsrc_mem->sec;
+	app_ring_pair_t *recv_r = c_mem->rsrc_mem->rps;
+	app_ring_pair_t *resp_r = c_mem->rsrc_mem->rps;
+	sec_engine_t *enq_sec = c_mem->rsrc_mem->sec;
+	sec_engine_t *deq_sec = c_mem->rsrc_mem->sec;
+	uint32_t deq_cnt;
+	uint32_t enq_cnt;
+	uint32_t irq_timeout = IRQ_TIMEOUT;
+	uint32_t in_jobs;
+	int32_t in_flight = 0;
 
-	u32 cnt = 0, totcount = 0, /* totenqcnt = 0, */ totdeqcnt = 0, deqcnt = 0, processedcount = 0;	
+	while (1) {
+		deq_cnt = dequeue_from_sec(deq_sec, resp_r);
+		in_flight -= deq_cnt;
 
-LOOP:
-	cnt =   rp->r_s_c_cntrs->jobs_added - rp->cntrs->jobs_processed;
+		if (irq_is_due(deq_cnt, resp_r, irq_timeout)) {
+			raise_intr_app_ring(resp_r);
+			resp_r->intr_ctrl_flag = 1;
+			irq_timeout = IRQ_TIMEOUT;
+		} else if (irq_timeout > 0) {
+			irq_timeout -= 1;
+		} else {
+			irq_timeout = 0;
+		}
 
-	if(!cnt)
-	        goto DEQ;
+		in_jobs = recv_r->r_s_c_cntrs->jobs_added - recv_r->cntrs->jobs_processed;
+		if (in_jobs > 0) {
+			enq_cnt = enqueue_to_sec(enq_sec, recv_r, in_jobs);
+			in_flight += enq_cnt;
+		}
 
-	print_debug("%s( ): Count of jobs added %d\n", __FUNCTION__, cnt);
-	totcount += cnt;
-	/*totenqcnt += cnt;*/
-
-	/* Enqueue jobs to sec engine */
-	enqueue_to_sec(&enq_sec, rp, cnt);
-DEQ:
-	if(!totcount)
-	        goto NEXTRING;
-
-	/* Dequeue jobs from sec engine */
-	deqcnt = dequeue_from_sec(&deq_sec, &resp_r);
-	totdeqcnt += deqcnt;
-	totcount  -= deqcnt;
-
-	/* Check interrupt */
-	check_intr(resp_r, deqcnt, &processedcount);
-
-NEXTRING:
-	rp = rp->next;
-	goto LOOP;
+		/* change sec and rings */
+		recv_r = recv_r->next;
+		resp_r = resp_r->next;
+		enq_sec = enq_sec->next;
+		deq_sec = deq_sec->next;
+	}
 }
 
 #else
-
 static void ring_processing(struct c_mem_layout *c_mem)
 {
 	u32 deq = 0, cnt = 0, ring_jobs = 0, processedcount = 0;

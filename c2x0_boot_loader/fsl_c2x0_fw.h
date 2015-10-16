@@ -111,6 +111,9 @@
 #define APP_RING_PROP_PRIO_MASK     0XF0
 #define APP_RING_PROP_PRIO_SHIFT    4
 
+/* Watchdog counter to signal the host with an interrupt if it looks stuck */
+#define IRQ_TIMEOUT 10000
+
 /* General Macros */
 #define true            1
 #define RESULT_OK       1
