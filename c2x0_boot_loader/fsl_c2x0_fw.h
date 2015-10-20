@@ -449,7 +449,7 @@ struct crypto_c_hs_mem {
 			u8 num_of_rps;
 			u8 max_pri;
 			u8 num_of_fwresp_rings;
-			u16 req_mem_size;
+			u32 req_mem_size;
 			u32 drv_resp_ring;
 			u32 fw_resp_ring;
 			u32 s_cntrs;
