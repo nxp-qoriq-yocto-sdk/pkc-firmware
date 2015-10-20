@@ -1799,12 +1799,12 @@ inline void resp_ring_enqueue(sec_jr_t *jr, app_ring_pair_t *r, u32 cnt)
 
 inline static uint32_t dequeue_from_sec(sec_engine_t *sec, app_ring_pair_t *rp)
 {
-	uint32_t secroom  = in_be32(&(sec->jr.regs->orsf));
+	uint32_t out_jobs  = in_be32(&(sec->jr.regs->orsf));
 	uint32_t hostroom = rp->depth - (rp->cntrs->jobs_added - rp->r_s_c_cntrs->jobs_processed);
-	uint32_t count = MIN(secroom, hostroom);
+	uint32_t count = MIN(out_jobs, hostroom);
 
-	print_debug("%s: secroom: %d, hostroom: %d, count: %d \n",
-			__func__, secroom, hostroom, count);
+	print_debug("%s: out_jobs: %d, hostroom: %d, count: %d \n",
+			__func__, out_jobs, hostroom, count);
 
 	if (count) {
 		Deq_Circ_Cpy(&(sec->jr), rp, count);
