@@ -55,10 +55,6 @@ ifeq ($(PRINT_DEBUG), y)
 CFLAGS += -DPRINT_DEBUG
 endif
 
-ifeq ($(ENHANCE_KERNEL_TEST), y)
-CFLAGS += -DENHANCE_KERNEL_TEST
-endif
-
 CFLAGS += -mno-strict-align
 
 SRCS	:= $(START:.o=.S) $(SOBJS:.o=.S) $(COBJS:.o=.c)

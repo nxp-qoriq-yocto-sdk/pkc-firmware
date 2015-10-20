@@ -45,14 +45,6 @@
 
 #define BITS_PER_BYTE 8
 
-#ifndef ENHANCE_KERNEL_TEST
-#define SEC_ENQ_BUDGET  32
-#define MAX_DEQ_BUDGET  32
-#else
-#define SEC_ENQ_BUDGET	(-1UL)
-#define MAX_DEQ_BUDGET	(-1UL)
-#endif
-
 #ifdef P4080_EP_TYPE
 #define RESET_REG_ADDR      0xfe0e00b0
 #define RESET_REG_VALUE     0x2
@@ -1765,7 +1757,7 @@ inline static uint32_t enqueue_to_sec(sec_engine_t *sec, app_ring_pair_t *rp,
 					uint32_t in_jobs)
 {
 	uint32_t secroom = in_be32(&(sec->jr.regs->irsa));
-	uint32_t count = MIN(MIN(secroom, in_jobs), SEC_ENQ_BUDGET);
+	uint32_t count = MIN(secroom, in_jobs);
 
 	if(count > 0) {
 		Enq_Circ_Cpy(&(sec->jr), rp, count);
@@ -1809,7 +1801,7 @@ inline static uint32_t dequeue_from_sec(sec_engine_t *sec, app_ring_pair_t *rp)
 {
 	uint32_t secroom  = in_be32(&(sec->jr.regs->orsf));
 	uint32_t hostroom = rp->depth - (rp->cntrs->jobs_added - rp->r_s_c_cntrs->jobs_processed);
-	uint32_t count = MIN(MIN(secroom, hostroom), MAX_DEQ_BUDGET);
+	uint32_t count = MIN(secroom, hostroom);
 
 	print_debug("%s: secroom: %d, hostroom: %d, count: %d \n",
 			__func__, secroom, hostroom, count);
