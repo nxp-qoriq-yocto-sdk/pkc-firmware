@@ -39,7 +39,7 @@
 #include "fsl_c2x0_fw.h"
 
 #define WAIT_FOR_STATE_CHANGE(x)	{ while (DEFAULT == x) SYNC_MEM }
-#define MIN(x, y)                        (x*(x < y) + y*(x >= y))
+#define MIN(a,b) ((a)<(b) ? (a):(b))
 #define LINEAR_ROOM(wi, depth, room)     MIN((depth-wi), room)
 #define MOD_INC(x, size)                 ((++x) & (size-1))
 
