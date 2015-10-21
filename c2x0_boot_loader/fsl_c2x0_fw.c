@@ -1788,15 +1788,6 @@ inline void Deq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *rp, uint32_t count)
 	jr->head          = ri;
 }
 
-inline void resp_ring_enqueue(sec_jr_t *jr, app_ring_pair_t *r, u32 cnt)
-{
-	print_debug("%s room: %d\n", __FUNCTION__, cnt);
-	Deq_Circ_Cpy(jr, r, cnt);
-	r->cntrs->jobs_added  +=  cnt;
-	r->r_s_cntrs->resp_jobs_added = r->cntrs->jobs_added;
-	out_be32(&jr->regs->orjr, cnt);
-}
-
 inline static uint32_t dequeue_from_sec(sec_engine_t *sec, app_ring_pair_t *rp)
 {
 	uint32_t out_jobs  = in_be32(&(sec->jr.regs->orsf));
@@ -1833,28 +1824,6 @@ static inline uint32_t irq_is_due(uint32_t deq_cnt, app_ring_pair_t *rp,
 	raise_irq |= (host_jobs != 0 ) && (irq_timeout == 0);
 
 	return raise_irq;
-}
-
-static inline void check_intr(app_ring_pair_t *r, u32 deq, u32 *processedcount)
-{
-	if(deq) {
-		print_debug("%s( ): Dequeued: %d\n", __FUNCTION__, deq);
-	}
-	if(deq && r->intr_ctrl_flag) {
-		print_debug("%s( ): Dequeued: %d intr ctrl flag: %d\n",
-				__FUNCTION__, deq, r->intr_ctrl_flag);
-	}
-
-	if(deq && (!r->intr_ctrl_flag)) {
-		raise_intr_app_ring(r);
-	} else {
-		if(r->cntrs->jobs_added - r->r_s_c_cntrs->jobs_processed) {
-			if(*processedcount != r->r_s_c_cntrs->jobs_processed) {
-				*processedcount = r->r_s_c_cntrs->jobs_processed;
-				raise_intr_app_ring(r);
-			}
-		}
-	}
 }
 
 #ifdef HIGH_PERF
@@ -1899,6 +1868,28 @@ static void ring_processing_perf(struct c_mem_layout *c_mem)
 }
 
 #else
+static inline void check_intr(app_ring_pair_t *r, u32 deq, u32 *processedcount)
+{
+	if(deq) {
+		print_debug("%s( ): Dequeued: %d\n", __FUNCTION__, deq);
+	}
+	if(deq && r->intr_ctrl_flag) {
+		print_debug("%s( ): Dequeued: %d intr ctrl flag: %d\n",
+				__FUNCTION__, deq, r->intr_ctrl_flag);
+	}
+
+	if(deq && (!r->intr_ctrl_flag)) {
+		raise_intr_app_ring(r);
+	} else {
+		if(r->cntrs->jobs_added - r->r_s_c_cntrs->jobs_processed) {
+			if(*processedcount != r->r_s_c_cntrs->jobs_processed) {
+				*processedcount = r->r_s_c_cntrs->jobs_processed;
+				raise_intr_app_ring(r);
+			}
+		}
+	}
+}
+
 static void ring_processing(struct c_mem_layout *c_mem)
 {
 	u32 deq = 0, cnt = 0, ring_jobs = 0, processedcount = 0;
