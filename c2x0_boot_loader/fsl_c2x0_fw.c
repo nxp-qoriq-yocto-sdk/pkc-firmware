@@ -414,9 +414,8 @@ int hs_complete(struct c_mem_layout *mem, u32 *cursor)
 	return hs_comp;
 }
 
-void hs_fw_init_ring_pair(struct c_mem_layout *mem, u32 *cursor)
+uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 {
-	u32 r_offset = 0;
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nFW_INIT_RING_PAIR\n");
 	{
@@ -461,6 +460,8 @@ void hs_fw_init_ring_pair(struct c_mem_layout *mem, u32 *cursor)
 	mem->h_hs_mem->result = RESULT_OK;
 	mem->h_hs_mem->state = FW_INIT_RING_PAIR_COMPLETE;
 	/*c2x0_getc();*/
+
+	return r_offset;
 }
 
 void hs_fw_init_config(struct c_mem_layout *mem, u32 *cursor)
@@ -561,6 +562,7 @@ void hs_fw_init_config(struct c_mem_layout *mem, u32 *cursor)
 
 static void handshake(struct c_mem_layout *mem, u32 *cursor)
 {
+	uint32_t r_offset = 0;
 	print_debug("\nHANDSHAKE\n");
 	print_debug("State address: %0x\n", &(mem->c_hs_mem->state));
 
@@ -577,7 +579,7 @@ static void handshake(struct c_mem_layout *mem, u32 *cursor)
 			break;
 
 		case FW_INIT_RING_PAIR:
-			hs_fw_init_ring_pair(mem, cursor);
+			r_offset = hs_fw_init_ring_pair(mem, r_offset);
 			break;
 
 		case FW_HS_COMPLETE:
