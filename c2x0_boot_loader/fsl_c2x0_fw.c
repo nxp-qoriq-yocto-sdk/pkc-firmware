@@ -117,39 +117,6 @@ static app_ring_pair_t *next_ring(app_ring_pair_t *rp)
     return rp->rp_links[rp->c_link];
 }
 
-
-static inline void init_order_mem1(struct c_mem_layout *mem, u32 *cursor)
-{
-	u32 i = 0;
-	app_ring_pair_t *rp =	NULL;
-	u32 total_rps = mem->rsrc_mem->ring_count;
-
-	print_debug("init_order_mem \n");
-	print_debug("Total no of app ring: %d\n", total_rps);
-	for( i=0; i<total_rps; i++ )
-	{
-		rp = &(mem->rsrc_mem->rps[i]);
-		print_debug("First rp: %d\n", rp->id);
-		/* Check if the rp is ordered */
-		if(!((rp->props & APP_RING_PROP_ORDER_MASK)
-                            >> APP_RING_PROP_ORDER_SHIFT))
-		{
-			print_debug("Order bit is not set for ring: %d\n", rp->id);
-			continue;
-		}
-
-		print_debug("Order bit is set for ring: %d\n", rp->id);
-		rp->order_j_d_index = 0;
-		print_debug("Ring: %d depth: %d, rp: %x\n", i, rp->depth, rp);
-		*cursor -= (rp->depth / BITS_PER_BYTE);
-		rp->resp_j_done_flag = (u8 *)*cursor;
-		print_debug("Resp job done flag: %x\n", rp->resp_j_done_flag);
-		Memset(rp->resp_j_done_flag, 0, (rp->depth/BITS_PER_BYTE));
-	} 
-
-	return;
-}
-
 static inline void init_order_mem(struct c_mem_layout *mem, u32 *cursor)
 {
 	app_ring_pair_t *rp = mem->rsrc_mem->rps;
