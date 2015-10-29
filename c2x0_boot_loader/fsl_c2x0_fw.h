@@ -406,7 +406,7 @@ Fields      :	sec_eng_cnt	: Number of sec engines
 		p_q	: Linked list of priority queues created
 
 *******************************************************************************/
-typedef struct resource {
+struct resource {
 	u8 sec_eng_cnt;
 	u8 ring_count;
 	u8 drv_resp_ring_count;
@@ -429,7 +429,7 @@ typedef struct resource {
 	ring_shadow_counters_mem_t *r_s_cntrs_mem;
 	shadow_counters_mem_t *s_cntrs_mem;
 
-} resource_t;
+};
 
 /* Handshake related data structures */
 struct crypto_c_hs_mem {
@@ -580,7 +580,7 @@ struct c_mem_layout {
 	struct fsl_h_mem_handshake __iomem *h_hs_mem;
 	struct crypto_c_hs_mem *c_hs_mem;
 
-	resource_t *rsrc_mem;
+	struct resource *rsrc_mem;
 
 	u32 free_mem;
 	u64 intr_ticks;

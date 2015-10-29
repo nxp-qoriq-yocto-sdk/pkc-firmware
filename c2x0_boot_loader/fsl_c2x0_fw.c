@@ -830,7 +830,7 @@ static u32 init_rsrc_sec(sec_engine_t *sec, u32 *cursor)
 
 static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor, u32 *l2cursor)
 {
-	resource_t *rsrc  = c_mem->rsrc_mem;
+	struct resource *rsrc  = c_mem->rsrc_mem;
 	u32 l2_cursor     = *l2cursor;
 	u32 p_cursor      = *pcursor;
 	sec_engine_t *sec = NULL;
@@ -841,7 +841,7 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor, u32 *l2curs
 	print_debug("\nalloc_rsrc_mem\n");
 	print_debug("rsrc addr: %0x\n", rsrc);
 
-	Memset( (u8 *)rsrc, 0, sizeof(resource_t));
+	Memset((u8 *)rsrc, 0, sizeof(struct resource));
 
 	dev_id_addr = (u32 *) (CCSR_VIRT_ADDR + 0xe0000 + 0xa4);
 	sec_nums = in_be32(dev_id_addr);
@@ -2080,8 +2080,8 @@ START:
 
 	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
 
-	p_cursor -= sizeof(resource_t);
-	c_mem->rsrc_mem = (resource_t *) p_cursor;
+	p_cursor -= sizeof(struct resource);
+	c_mem->rsrc_mem = (struct resource *) p_cursor;
 
 	/* From here allocations will start on L2 part of the cache */
 	l2_cursor = L2_SRAM_VIRT_ADDR;
