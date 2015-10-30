@@ -850,7 +850,6 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor, u32 *l2curs
 		sec_nums = 1;
 
 	rsrc->sec_eng_cnt = sec_nums;
-	/*rsrc->sec_eng_cnt     =       SEC_ENG_COUNT;*/
 
 	/* Initialize the SEC engine
 	 * All the required memory for SEC engine will be allocated in L2 SRAM
