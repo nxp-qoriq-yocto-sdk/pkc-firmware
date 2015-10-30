@@ -167,9 +167,9 @@ typedef struct sec_jr_regs {
 	u32 jrcr;
 } sec_jr_regs_t;
 
-typedef struct sec_ip_ring {
+struct sec_ip_ring {
 	dma_addr_t desc;
-} sec_ip_ring_t;
+};
 
 struct sec_op_ring {
 	dma_addr_t desc;
@@ -188,10 +188,10 @@ struct sec_jr {
 	u32 enq_cnt;
 	u32 deq_cnt;
 	u32 id;
-	sec_ip_ring_t *i_ring;
+	struct sec_ip_ring *i_ring;
 	struct sec_op_ring *o_ring;
 #if 0
-	sec_ip_ring_t i_ring[SEC_JR_DEPTH];
+	struct sec_ip_ring i_ring[SEC_JR_DEPTH];
 	struct sec_op_ring o_ring[SEC_JR_DEPTH];
 #endif
 };

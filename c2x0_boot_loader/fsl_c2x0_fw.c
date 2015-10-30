@@ -805,11 +805,13 @@ static u32 init_rsrc_sec(struct sec_engine *sec, u32 *cursor)
 
 	sec->jr.id = sec->id;
 	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
-	p_cursor -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH * sizeof(sec_ip_ring_t)));
-	sec->jr.i_ring = (sec_ip_ring_t *) p_cursor;
+	p_cursor -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH *
+			sizeof(struct sec_ip_ring)));
+	sec->jr.i_ring = (struct sec_ip_ring *) p_cursor;
 
-	mem += SEC_JR_DEPTH * sizeof(sec_ip_ring_t);
-	Memset( (u8 *)sec->jr.i_ring, 0, (SEC_JR_DEPTH * sizeof(sec_ip_ring_t)));
+	mem += SEC_JR_DEPTH * sizeof(struct sec_ip_ring);
+	Memset((u8 *)sec->jr.i_ring, 0, (SEC_JR_DEPTH *
+			sizeof(struct sec_ip_ring)));
 	print_debug("sec ip ring: %0x\n", sec->jr.i_ring);
 
 	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
@@ -976,7 +978,8 @@ static inline u32 conditional_timed_wait_for_driver_jobs(u32 *x, u32 *y)
 
 #endif
 
-static inline void Enq_Cpy(sec_ip_ring_t *sec_i, req_ring_t *req_r, u32 count)
+static inline void Enq_Cpy(struct sec_ip_ring *sec_i, req_ring_t *req_r,
+		u32 count)
 {
 	while (count--)
 		*(u64 *) sec_i++ = *(u64 *) req_r++;
