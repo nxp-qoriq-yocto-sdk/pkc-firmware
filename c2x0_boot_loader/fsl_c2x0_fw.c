@@ -996,7 +996,7 @@ inline i32 circ_room(u32 wi, u32 ri, u32 w_depth, u32 r_depth, u32 count)
 	return MIN(val1, val2);
 }
 
-static inline void irja_signal_caam(sec_jr_t *jr, u32 cnt)
+static inline void irja_signal_caam(struct sec_jr *jr, u32 cnt)
 {
 #define IRJA_CAAM_SIGNAL_THRESHOLD  10
 	if (jr->enq_cnt >= IRJA_CAAM_SIGNAL_THRESHOLD) {
@@ -1009,7 +1009,7 @@ static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem,
 		struct sec_engine **psec, app_ring_pair_t *rp,  u32 *todeq)
 {
 	struct sec_engine *sec	= NULL;
-	sec_jr_t *jr		= NULL;
+	struct sec_jr *jr		= NULL;
 	dma_addr_t desc		= 0;
 	u64 sec_sel		= 0;
 	u32 secroom		= 0;
@@ -1092,8 +1092,8 @@ static inline void loop_inorder(app_ring_pair_t *resp_ring)
 	} while(flag);
 }
 
-static inline void inorder_dequeue(app_ring_pair_t *resp_ring, sec_jr_t *jr, 
-									u32 ri, u32 wi)
+static inline void inorder_dequeue(app_ring_pair_t *resp_ring,
+		struct sec_jr *jr, u32 ri, u32 wi)
 {
 	u8  *pos_ptr = NULL;
 	u32 byte_pos = 0;
@@ -1118,7 +1118,7 @@ static inline void inorder_dequeue(app_ring_pair_t *resp_ring, sec_jr_t *jr,
 static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 		struct sec_engine **deq_sec, u32 *todeq)
 {
-	sec_jr_t *jr = &(*deq_sec)->jr;
+	struct sec_jr *jr = &(*deq_sec)->jr;
 	u32 cnt = in_be32(&jr->regs->orsf);
 	u32 room = 0;
 	u32 wi = 0;
@@ -1403,7 +1403,7 @@ void process_resetsec_cmd(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req
 			cmd_req->ip_info.sec_id);
 	sec_reset(mem->rsrc_mem->sec[cmd_req->ip_info.sec_id].info);
 	{
-	sec_jr_t *sec_jr = &(mem->rsrc_mem->sec->jr);
+	struct sec_jr *sec_jr = &(mem->rsrc_mem->sec->jr);
 	print1_debug(mem, "Before SEC i/p ring virtual address	:%0x\n",
 			sec_jr->i_ring);
 	print1_debug(mem, "SEC Output ring virtual address         :%0x\n",
@@ -1411,7 +1411,7 @@ void process_resetsec_cmd(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req
 	}
 	sec_eng_hw_init(&(mem->rsrc_mem->sec[cmd_req->ip_info.sec_id]));
 	{
-	sec_jr_t *sec_jr = &(mem->rsrc_mem->sec->jr);
+	struct sec_jr *sec_jr = &(mem->rsrc_mem->sec->jr);
 	print1_debug(mem, "After  fsl_sec_init SEC Input ring virtual address   :%0x\n",
 			sec_jr->i_ring);
 	print1_debug(mem, "SEC Output ring virtual address     :%0x\n",
@@ -1420,7 +1420,7 @@ void process_resetsec_cmd(struct c_mem_layout *mem, cmd_ring_req_desc_t *cmd_req
 	resetcounters(mem, cmd_req->ip_info.sec_id);
 	{
 	i32 secid = cmd_req->ip_info.sec_id;
-	sec_jr_t *sec_jr = &(mem->rsrc_mem->sec[secid].jr);
+	struct sec_jr *sec_jr = &(mem->rsrc_mem->sec[secid].jr);
 	print1_debug(mem, "After resetcounters SEC Input ring virtual address         :%0x\n",
 			sec_jr->i_ring);
 	print1_debug(mem, "SEC Output ring virtual address         :%0x\n",
@@ -1702,7 +1702,7 @@ out:
 }
 #endif
 
-inline void Enq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *rp, uint32_t count)
+inline void Enq_Circ_Cpy(struct sec_jr *jr, app_ring_pair_t *rp, uint32_t count)
 {
 	uint32_t i;
 	uint32_t ri = rp->idxs->r_index;
@@ -1736,7 +1736,7 @@ static inline uint32_t enqueue_to_sec(struct sec_engine *sec,
 	return count;
 }
 
-inline void Deq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *rp, uint32_t count)
+inline void Deq_Circ_Cpy(struct sec_jr *jr, app_ring_pair_t *rp, uint32_t count)
 {
 	uint32_t i;
 	uint32_t wi = rp->idxs->w_index;

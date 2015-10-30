@@ -178,7 +178,7 @@ struct sec_op_ring {
 
 typedef struct sec_op_ring sec_op_ring_t;
 
-typedef struct sec_jr {
+struct sec_jr {
 	sec_jr_regs_t *regs;
 	u32 size;
 	u32 head;
@@ -194,7 +194,7 @@ typedef struct sec_jr {
 	sec_ip_ring_t i_ring[SEC_JR_DEPTH];
 	struct sec_op_ring o_ring[SEC_JR_DEPTH];
 #endif
-} sec_jr_t;
+};
 
 #define DEFAULT_CLOCK 400
 #define ACTUAL_CLOCK 400
@@ -242,7 +242,7 @@ struct sec_engine {
 	kek_regs_t *kek;
 	u32 *scfg;
 	u32 *rdsta;
-	sec_jr_t jr;
+	struct sec_jr jr;
 	struct sec_engine *next;
 };
 
