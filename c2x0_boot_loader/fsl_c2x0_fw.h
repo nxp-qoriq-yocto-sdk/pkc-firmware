@@ -232,7 +232,7 @@ typedef struct dev_ctx dev_ctx_t;
 #endif
 
 /* The container data structure be in platform SRAM */
-typedef struct sec_engine {
+struct sec_engine {
 	u8 id;
 	u8 dequeue_resp;
 	u32 tot_req_cnt;	/* TOTAL JOBS ENQUEUED IN SEC */
@@ -244,7 +244,7 @@ typedef struct sec_engine {
 	u32 *rdsta;
 	sec_jr_t jr;
 	struct sec_engine *next;
-} sec_engine_t;
+};
 
 /*******************************************************************************
 Description : Defines the application ring request entry
@@ -348,7 +348,7 @@ typedef struct app_ring_pair {
 	u8 *resp_j_done_flag;
 	void *ip_pool;
 	void *msi_addr;
-	sec_engine_t *sec;
+	struct sec_engine *sec;
 	indexes_mem_t *idxs;
 	ring_counters_mem_t *cntrs;
 	ring_counters_mem_t *r_s_c_cntrs;
@@ -413,7 +413,7 @@ struct resource {
 
 	void *req_mem;
 	void *ip_pool;
-	sec_engine_t *sec;
+	struct sec_engine *sec;
 	priority_q_t *p_q;
 	app_ring_pair_t *rps;
 	app_ring_pair_t *orig_rps;/* STORES ORIG RP PTR BEFORE ORGNIZING RPs */

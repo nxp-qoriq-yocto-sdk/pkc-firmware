@@ -593,7 +593,7 @@ i32 sec_reset(ccsr_sec_t *sec)
 	return ( timeout ? 0 : -1 );
 }
 
-static void sec_eng_hw_init(sec_engine_t *sec) 
+static void sec_eng_hw_init(struct sec_engine *sec)
 {
 	u32 jrcfg = 0;
 	u32 mcr = 0;
@@ -653,7 +653,7 @@ static void sec_eng_hw_init(sec_engine_t *sec)
 	return; 
 }
 
-static void make_sec_circ_list(sec_engine_t *sec, u8 count)
+static void make_sec_circ_list(struct sec_engine *sec, u8 count)
 {
 	i32 i = 0;
 	for (i = 0; i < (count - 1); i++)
@@ -665,7 +665,7 @@ static inline void copy_kek_and_set_scr(struct c_mem_layout *c_mem)
 {
 	u32 k_value, i, j;
 	u8 sec_cnt;
-	sec_engine_t *sec[3];
+	struct sec_engine *sec[3];
 	struct kek_regs *kek[3];
 
 	sec_cnt = c_mem->rsrc_mem->sec_eng_cnt;
@@ -687,7 +687,7 @@ static inline void copy_kek_and_set_scr(struct c_mem_layout *c_mem)
 		out_be32(sec[i]->scfg, 0x00000703);
 }
 
-static void init_rng(sec_engine_t *sec)
+static void init_rng(struct sec_engine *sec)
 {
 	u32 x;
 	u32 delay;
@@ -746,7 +746,7 @@ static void init_rng(sec_engine_t *sec)
 
 }
 
-static void init_sec_regs_offset(sec_engine_t *sec)
+static void init_sec_regs_offset(struct sec_engine *sec)
 {
 	i32 id = sec->id;
 #define CCSR_VIRT_ADDR		0xffe00000
@@ -798,7 +798,7 @@ static void init_sec_regs_offset(sec_engine_t *sec)
 	init_rng(sec);
 }
 
-static u32 init_rsrc_sec(sec_engine_t *sec, u32 *cursor)
+static u32 init_rsrc_sec(struct sec_engine *sec, u32 *cursor)
 {
 	u32 p_cursor = *cursor;
 	u32 mem = 0;
@@ -833,7 +833,7 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor, u32 *l2curs
 	struct resource *rsrc  = c_mem->rsrc_mem;
 	u32 l2_cursor     = *l2cursor;
 	u32 p_cursor      = *pcursor;
-	sec_engine_t *sec = NULL;
+	struct sec_engine *sec = NULL;
 	i32 i            = 0;
 	u32 sec_nums     = 0;
 	u32 *dev_id_addr = NULL;
@@ -854,17 +854,17 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor, u32 *l2curs
 
 	/* Initialize the SEC engine
 	 * All the required memory for SEC engine will be allocated in L2 SRAM
-	 * Max we may need = 3sec engines * (sizeof(sec_engine_t)) --
+	 * Max we may need = 3sec engines * (sizeof(struct sec_engine)) --
 	 * Given 128 as depth of rings the max size required is
 	 * approx 2624 bytes.
 	 */
 	p_cursor -= ALIGN_TO_L1_CACHE_LINE(
-					(sec_nums * sizeof(sec_engine_t)));
-	rsrc->sec = (sec_engine_t *) (p_cursor);
-	Memset( (u8 *)rsrc->sec, 0, sizeof(sec_engine_t) * sec_nums);
+					(sec_nums * sizeof(struct sec_engine)));
+	rsrc->sec = (struct sec_engine *) (p_cursor);
+	Memset((u8 *)rsrc->sec, 0, sizeof(struct sec_engine) * sec_nums);
 	print_debug("sec addr: %0x\n", rsrc->sec);
 
-	c_mem->free_mem -= sec_nums * sizeof(sec_engine_t);
+	c_mem->free_mem -= sec_nums * sizeof(struct sec_engine);
 	make_sec_circ_list(rsrc->sec, sec_nums);
 
 	/* Call for hardware init of sec engine */
@@ -1006,10 +1006,10 @@ static inline void irja_signal_caam(sec_jr_t *jr, u32 cnt)
 	}
 }
 
-static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem, sec_engine_t **psec,
-				  app_ring_pair_t *rp,  u32 *todeq)
+static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem,
+		struct sec_engine **psec, app_ring_pair_t *rp,  u32 *todeq)
 {
-	sec_engine_t *sec	= NULL;
+	struct sec_engine *sec	= NULL;
 	sec_jr_t *jr		= NULL;
 	dma_addr_t desc		= 0;
 	u64 sec_sel		= 0;
@@ -1116,8 +1116,8 @@ static inline void inorder_dequeue(app_ring_pair_t *resp_ring, sec_jr_t *jr,
 	loop_inorder(resp_ring);
 }
 
-static inline u32 sec_dequeue(struct c_mem_layout *c_mem, sec_engine_t **deq_sec,
-			      	u32 *todeq)
+static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
+		struct sec_engine **deq_sec, u32 *todeq)
 {
 	sec_jr_t *jr = &(*deq_sec)->jr;
 	u32 cnt = in_be32(&jr->regs->orsf);
@@ -1722,8 +1722,8 @@ inline void Enq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *rp, uint32_t count)
 	jr->tail          = wi;
 }
 
-inline static uint32_t enqueue_to_sec(sec_engine_t *sec, app_ring_pair_t *rp,
-					uint32_t in_jobs)
+static inline uint32_t enqueue_to_sec(struct sec_engine *sec,
+		app_ring_pair_t *rp, uint32_t in_jobs)
 {
 	uint32_t secroom = in_be32(&(sec->jr.regs->irsa));
 	uint32_t count = MIN(secroom, in_jobs);
@@ -1757,7 +1757,8 @@ inline void Deq_Circ_Cpy(sec_jr_t *jr, app_ring_pair_t *rp, uint32_t count)
 	jr->head          = ri;
 }
 
-inline static uint32_t dequeue_from_sec(sec_engine_t *sec, app_ring_pair_t *rp)
+static inline uint32_t dequeue_from_sec(struct sec_engine *sec,
+		app_ring_pair_t *rp)
 {
 	uint32_t out_jobs  = in_be32(&(sec->jr.regs->orsf));
 	uint32_t hostroom = rp->depth - (rp->cntrs->jobs_added - rp->r_s_c_cntrs->jobs_processed);
@@ -1800,8 +1801,8 @@ static void ring_processing_perf(struct c_mem_layout *c_mem)
 {
 	app_ring_pair_t *recv_r = c_mem->rsrc_mem->rps;
 	app_ring_pair_t *resp_r = c_mem->rsrc_mem->rps;
-	sec_engine_t *enq_sec = c_mem->rsrc_mem->sec;
-	sec_engine_t *deq_sec = c_mem->rsrc_mem->sec;
+	struct sec_engine *enq_sec = c_mem->rsrc_mem->sec;
+	struct sec_engine *deq_sec = c_mem->rsrc_mem->sec;
 	uint32_t deq_cnt;
 	uint32_t enq_cnt;
 	uint32_t irq_timeout = IRQ_TIMEOUT;
@@ -1865,8 +1866,8 @@ static void ring_processing(struct c_mem_layout *c_mem)
 	i32 res = 0, block_app_jobs = 0;
 	u32 block_req = 0;
 
-	sec_engine_t *enq_sec = c_mem->rsrc_mem->sec;
-	sec_engine_t *deq_sec = c_mem->rsrc_mem->sec;
+	struct sec_engine *enq_sec = c_mem->rsrc_mem->sec;
+	struct sec_engine *deq_sec = c_mem->rsrc_mem->sec;
 	app_ring_pair_t *rp = c_mem->rsrc_mem->rps;
 
 RP_START:
@@ -1936,7 +1937,7 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 	u32     cnt =   0,  ring_jobs   =   0;
 
 	app_ring_pair_t     *rp         =   c_mem->rsrc_mem->rps;
-	sec_engine_t        *sec        =   c_mem->rsrc_mem->sec;
+	struct sec_engine        *sec        =   c_mem->rsrc_mem->sec;
 	u32                 *r_deq_cnt  =   NULL;
 	u32                 deq         =   0;
 
