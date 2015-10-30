@@ -985,7 +985,7 @@ static inline void Enq_Cpy(struct sec_ip_ring *sec_i, req_ring_t *req_r,
 		*(u64 *) sec_i++ = *(u64 *) req_r++;
 }
 
-static inline void Deq_Cpy(resp_ring_t *resp_r, sec_op_ring_t *sec_o,
+static inline void Deq_Cpy(resp_ring_t *resp_r, struct sec_op_ring *sec_o,
 			   u32 count)
 {
 	memcpy(resp_r, sec_o, (sizeof(resp_ring_t) * count));

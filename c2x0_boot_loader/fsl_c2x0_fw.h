@@ -176,8 +176,6 @@ struct sec_op_ring {
 	u32 status;
 } __packed;
 
-typedef struct sec_op_ring sec_op_ring_t;
-
 struct sec_jr {
 	sec_jr_regs_t *regs;
 	u32 size;
