@@ -613,7 +613,7 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 #define JRREGS_OFFSET   0x1000
 #define C2X0_CONFIG_SYS_FSL_JR0_ADDR \
 	(CCSR_VIRT_ADDR + SEC0_OFFSET + JRREGS_OFFSET)
-	sec->jr.regs = (sec_jr_regs_t *) C2X0_CONFIG_SYS_FSL_JR0_ADDR;
+	sec->jr.regs = (struct sec_jr_regs *) C2X0_CONFIG_SYS_FSL_JR0_ADDR;
 
 #define C2X0_SECINFO_ADDR       (CCSR_VIRT_ADDR + SEC0_OFFSET)
 	sec->info = (ccsr_sec_t *) C2X0_SECINFO_ADDR;
@@ -756,7 +756,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 #define SEC0_OFFSET				0x80000
 #define C2X0_SEC0_JR0_ADDR	(CCSR_VIRT_ADDR + SEC0_OFFSET + JRREGS_OFFSET)
 #define C2X0_SEC0_INFO_ADDR	(CCSR_VIRT_ADDR + SEC0_OFFSET)
-		sec->jr.regs = (sec_jr_regs_t *) C2X0_SEC0_JR0_ADDR;
+		sec->jr.regs = (struct sec_jr_reg *) C2X0_SEC0_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) C2X0_SEC0_INFO_ADDR;
 		sec->rng =
 		    (rng_regs_t *) (CCSR_VIRT_ADDR + SEC0_OFFSET + 0x00600);
@@ -769,7 +769,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 #define SEC1_OFFSET				0xa0000
 #define C2X0_SEC1_JR0_ADDR      (CCSR_VIRT_ADDR + SEC1_OFFSET + JRREGS_OFFSET)
 #define C2X0_SEC1_INFO_ADDR     (CCSR_VIRT_ADDR + SEC1_OFFSET)
-		sec->jr.regs = (sec_jr_regs_t *) C2X0_SEC1_JR0_ADDR;
+		sec->jr.regs = (struct sec_jr_regs *) C2X0_SEC1_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) C2X0_SEC1_INFO_ADDR;
 		sec->rng =
 		    (rng_regs_t *) (CCSR_VIRT_ADDR + SEC1_OFFSET + 0x00600);
@@ -782,7 +782,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 #define SEC2_OFFSET             0xc0000
 #define C2X0_SEC2_JR0_ADDR      (CCSR_VIRT_ADDR + SEC2_OFFSET + JRREGS_OFFSET)
 #define C2X0_SEC2_INFO_ADDR     (CCSR_VIRT_ADDR + SEC2_OFFSET)
-		sec->jr.regs = (sec_jr_regs_t *) C2X0_SEC2_JR0_ADDR;
+		sec->jr.regs = (struct sec_jr_regs *) C2X0_SEC2_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) C2X0_SEC2_INFO_ADDR;
 		sec->rng =
 		    (rng_regs_t *) (CCSR_VIRT_ADDR + SEC2_OFFSET + 0x00600);

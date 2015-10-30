@@ -136,7 +136,7 @@ typedef unsigned long i64;
 /* 32 bit virtual address */
 typedef u32 va_addr_t;
 
-typedef struct sec_jr_regs {
+struct sec_jr_regs {
 	u32 irba_h;
 	u32 irba_l;
 	u32 rsvd1;
@@ -165,7 +165,7 @@ typedef struct sec_jr_regs {
 	u32 orwi;
 	u32 rsvd11;
 	u32 jrcr;
-} sec_jr_regs_t;
+};
 
 struct sec_ip_ring {
 	dma_addr_t desc;
@@ -177,7 +177,7 @@ struct sec_op_ring {
 } __packed;
 
 struct sec_jr {
-	sec_jr_regs_t *regs;
+	struct sec_jr_regs *regs;
 	u32 size;
 	u32 head;
 	u32 tail;
