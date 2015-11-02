@@ -40,18 +40,34 @@
 
 #define CCSR_VIRT_ADDR		0xffe00000
 #define JRREGS_OFFSET		0x1000
+#define RNG_OFFSET			0x00600
+#define KEK_OFFSET			0x00400
+#define SCFG_OFFSET			0x0000C
+#define RDSTA_OFFSET		0x006c0
 
 #define SEC0_OFFSET			0x80000
-#define C2X0_SEC0_JR0_ADDR	(CCSR_VIRT_ADDR + SEC0_OFFSET + JRREGS_OFFSET)
-#define C2X0_SEC0_INFO_ADDR	(CCSR_VIRT_ADDR + SEC0_OFFSET)
+#define SEC0_BASE_ADDR		(CCSR_VIRT_ADDR + SEC0_OFFSET)
+#define SEC0_JR0_ADDR		(SEC0_BASE_ADDR + JRREGS_OFFSET)
+#define SEC0_RNG_ADDR		(SEC0_BASE_ADDR + RNG_OFFSET)
+#define SEC0_KEK_ADDR		(SEC0_BASE_ADDR + KEK_OFFSET)
+#define SEC0_SCFG_ADDR		(SEC0_BASE_ADDR + SCFG_OFFSET)
+#define SEC0_RDSTA_ADDR		(SEC0_BASE_ADDR + RDSTA_OFFSET)
 
 #define SEC1_OFFSET			0xa0000
-#define C2X0_SEC1_JR0_ADDR	(CCSR_VIRT_ADDR + SEC1_OFFSET + JRREGS_OFFSET)
-#define C2X0_SEC1_INFO_ADDR	(CCSR_VIRT_ADDR + SEC1_OFFSET)
+#define SEC1_BASE_ADDR		(CCSR_VIRT_ADDR + SEC1_OFFSET)
+#define SEC1_JR0_ADDR		(SEC1_BASE_ADDR + JRREGS_OFFSET)
+#define SEC1_RNG_ADDR		(SEC1_BASE_ADDR + RNG_OFFSET)
+#define SEC1_KEK_ADDR		(SEC1_BASE_ADDR + KEK_OFFSET)
+#define SEC1_SCFG_ADDR		(SEC1_BASE_ADDR + SCFG_OFFSET)
+#define SEC1_RDSTA_ADDR		(SEC1_BASE_ADDR + RDSTA_OFFSET)
 
 #define SEC2_OFFSET			0xc0000
-#define C2X0_SEC2_JR0_ADDR	(CCSR_VIRT_ADDR + SEC2_OFFSET + JRREGS_OFFSET)
-#define C2X0_SEC2_INFO_ADDR	(CCSR_VIRT_ADDR + SEC2_OFFSET)
+#define SEC2_BASE_ADDR		(CCSR_VIRT_ADDR + SEC2_OFFSET)
+#define SEC2_JR0_ADDR		(SEC2_BASE_ADDR + JRREGS_OFFSET)
+#define SEC2_RNG_ADDR		(SEC2_BASE_ADDR + RNG_OFFSET)
+#define SEC2_KEK_ADDR		(SEC2_BASE_ADDR + KEK_OFFSET)
+#define SEC2_SCFG_ADDR		(SEC2_BASE_ADDR + SCFG_OFFSET)
+#define SEC2_RDSTA_ADDR		(SEC2_BASE_ADDR + RDSTA_OFFSET)
 
 #define WAIT_FOR_STATE_CHANGE(x)	{ while (DEFAULT == x) SYNC_MEM }
 #define MIN(a,b) ((a)<(b) ? (a):(b))
@@ -765,40 +781,32 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 {
 	i32 id = sec->id;
 
-
 	switch (id) {
 	case SEC_ENG_1:
-		sec->jr.regs = (struct sec_jr_reg *) C2X0_SEC0_JR0_ADDR;
-		sec->info = (ccsr_sec_t *) C2X0_SEC0_INFO_ADDR;
-		sec->rng =
-		    (rng_regs_t *) (CCSR_VIRT_ADDR + SEC0_OFFSET + 0x00600);
-		sec->kek =
-		    (kek_regs_t *) (CCSR_VIRT_ADDR + SEC0_OFFSET + 0x00400);
-		sec->scfg = (u32 *) (CCSR_VIRT_ADDR + SEC0_OFFSET + 0x0000C);
-		sec->rdsta = (u32 *) (CCSR_VIRT_ADDR + SEC0_OFFSET + 0x006c0);
+		sec->jr.regs = (struct sec_jr_reg *) SEC0_JR0_ADDR;
+		sec->info = (ccsr_sec_t *) SEC0_BASE_ADDR;
+		sec->rng = (rng_regs_t *) SEC0_RNG_ADDR;
+		sec->kek = (kek_regs_t *) SEC0_KEK_ADDR;
+		sec->scfg = (u32 *) SEC0_SCFG_ADDR;
+		sec->rdsta = (u32 *) SEC0_RDSTA_ADDR;
 		break;
 
 	case SEC_ENG_2:
-		sec->jr.regs = (struct sec_jr_regs *) C2X0_SEC1_JR0_ADDR;
-		sec->info = (ccsr_sec_t *) C2X0_SEC1_INFO_ADDR;
-		sec->rng =
-		    (rng_regs_t *) (CCSR_VIRT_ADDR + SEC1_OFFSET + 0x00600);
-		sec->kek =
-		    (kek_regs_t *) (CCSR_VIRT_ADDR + SEC1_OFFSET + 0x00400);
-		sec->scfg = (u32 *) (CCSR_VIRT_ADDR + SEC1_OFFSET + 0x0000C);
-		sec->rdsta = (u32 *) (CCSR_VIRT_ADDR + SEC1_OFFSET + 0x006c0);
+		sec->jr.regs = (struct sec_jr_reg *) SEC1_JR0_ADDR;
+		sec->info = (ccsr_sec_t *) SEC1_BASE_ADDR;
+		sec->rng = (rng_regs_t *) SEC1_RNG_ADDR;
+		sec->kek = (kek_regs_t *) SEC1_KEK_ADDR;
+		sec->scfg = (u32 *) SEC1_SCFG_ADDR;
+		sec->rdsta = (u32 *) SEC1_RDSTA_ADDR;
 		break;
 
 	case SEC_ENG_3:
-
-		sec->jr.regs = (struct sec_jr_regs *) C2X0_SEC2_JR0_ADDR;
-		sec->info = (ccsr_sec_t *) C2X0_SEC2_INFO_ADDR;
-		sec->rng =
-		    (rng_regs_t *) (CCSR_VIRT_ADDR + SEC2_OFFSET + 0x00600);
-		sec->kek =
-		    (kek_regs_t *) (CCSR_VIRT_ADDR + SEC2_OFFSET + 0x00400);
-		sec->scfg = (u32 *) (CCSR_VIRT_ADDR + SEC2_OFFSET + 0x0000C);
-		sec->rdsta = (u32 *) (CCSR_VIRT_ADDR + SEC2_OFFSET + 0x006c0);
+		sec->jr.regs = (struct sec_jr_reg *) SEC2_JR0_ADDR;
+		sec->info = (ccsr_sec_t *) SEC2_BASE_ADDR;
+		sec->rng = (rng_regs_t *) SEC2_RNG_ADDR;
+		sec->kek = (kek_regs_t *) SEC2_KEK_ADDR;
+		sec->scfg = (u32 *) SEC2_SCFG_ADDR;
+		sec->rdsta = (u32 *) SEC2_RDSTA_ADDR;
 		break;
 
 	default:
