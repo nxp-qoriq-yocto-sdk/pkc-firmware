@@ -38,6 +38,21 @@
 #include "uboot_print.h"
 #include "fsl_c2x0_fw.h"
 
+#define CCSR_VIRT_ADDR		0xffe00000
+#define JRREGS_OFFSET		0x1000
+
+#define SEC0_OFFSET			0x80000
+#define C2X0_SEC0_JR0_ADDR	(CCSR_VIRT_ADDR + SEC0_OFFSET + JRREGS_OFFSET)
+#define C2X0_SEC0_INFO_ADDR	(CCSR_VIRT_ADDR + SEC0_OFFSET)
+
+#define SEC1_OFFSET			0xa0000
+#define C2X0_SEC1_JR0_ADDR	(CCSR_VIRT_ADDR + SEC1_OFFSET + JRREGS_OFFSET)
+#define C2X0_SEC1_INFO_ADDR	(CCSR_VIRT_ADDR + SEC1_OFFSET)
+
+#define SEC2_OFFSET			0xc0000
+#define C2X0_SEC2_JR0_ADDR	(CCSR_VIRT_ADDR + SEC2_OFFSET + JRREGS_OFFSET)
+#define C2X0_SEC2_INFO_ADDR	(CCSR_VIRT_ADDR + SEC2_OFFSET)
+
 #define WAIT_FOR_STATE_CHANGE(x)	{ while (DEFAULT == x) SYNC_MEM }
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define LINEAR_ROOM(wi, depth, room)     MIN((depth-wi), room)
@@ -749,13 +764,10 @@ static void init_rng(struct sec_engine *sec)
 static void init_sec_regs_offset(struct sec_engine *sec)
 {
 	i32 id = sec->id;
-#define CCSR_VIRT_ADDR		0xffe00000
-#define JRREGS_OFFSET		0x1000
+
+
 	switch (id) {
 	case SEC_ENG_1:
-#define SEC0_OFFSET				0x80000
-#define C2X0_SEC0_JR0_ADDR	(CCSR_VIRT_ADDR + SEC0_OFFSET + JRREGS_OFFSET)
-#define C2X0_SEC0_INFO_ADDR	(CCSR_VIRT_ADDR + SEC0_OFFSET)
 		sec->jr.regs = (struct sec_jr_reg *) C2X0_SEC0_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) C2X0_SEC0_INFO_ADDR;
 		sec->rng =
@@ -765,10 +777,8 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->scfg = (u32 *) (CCSR_VIRT_ADDR + SEC0_OFFSET + 0x0000C);
 		sec->rdsta = (u32 *) (CCSR_VIRT_ADDR + SEC0_OFFSET + 0x006c0);
 		break;
+
 	case SEC_ENG_2:
-#define SEC1_OFFSET				0xa0000
-#define C2X0_SEC1_JR0_ADDR      (CCSR_VIRT_ADDR + SEC1_OFFSET + JRREGS_OFFSET)
-#define C2X0_SEC1_INFO_ADDR     (CCSR_VIRT_ADDR + SEC1_OFFSET)
 		sec->jr.regs = (struct sec_jr_regs *) C2X0_SEC1_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) C2X0_SEC1_INFO_ADDR;
 		sec->rng =
@@ -778,10 +788,9 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->scfg = (u32 *) (CCSR_VIRT_ADDR + SEC1_OFFSET + 0x0000C);
 		sec->rdsta = (u32 *) (CCSR_VIRT_ADDR + SEC1_OFFSET + 0x006c0);
 		break;
+
 	case SEC_ENG_3:
-#define SEC2_OFFSET             0xc0000
-#define C2X0_SEC2_JR0_ADDR      (CCSR_VIRT_ADDR + SEC2_OFFSET + JRREGS_OFFSET)
-#define C2X0_SEC2_INFO_ADDR     (CCSR_VIRT_ADDR + SEC2_OFFSET)
+
 		sec->jr.regs = (struct sec_jr_regs *) C2X0_SEC2_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) C2X0_SEC2_INFO_ADDR;
 		sec->rng =
@@ -791,6 +800,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->scfg = (u32 *) (CCSR_VIRT_ADDR + SEC2_OFFSET + 0x0000C);
 		sec->rdsta = (u32 *) (CCSR_VIRT_ADDR + SEC2_OFFSET + 0x006c0);
 		break;
+
 	default:
 		print_error("\n Invalid Sec Id... :%d\n", id);
 	}
