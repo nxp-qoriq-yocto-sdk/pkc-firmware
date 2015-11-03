@@ -200,7 +200,7 @@ struct sec_jr {
 #define RNG4_ENT_DLY1  2600
 #define RNG4_ENT_DLY2  2800
 
-typedef struct rng_regs {
+struct rng_regs {
 	uint32_t rtmctl;
 	uint32_t rtscmisc;
 	uint32_t rtpkrrng;
@@ -210,7 +210,7 @@ typedef struct rng_regs {
 	uint32_t rtfreqmin;
 	uint32_t rtfreqmax;
 	uint32_t rtscml;
-} rng_regs_t;
+};
 
 typedef struct kek_regs {
 	uint32_t jdkek;
@@ -236,7 +236,7 @@ struct sec_engine {
 	u32 tot_req_cnt;	/* TOTAL JOBS ENQUEUED IN SEC */
 	u32 tot_resp_cnt;	/* TOTAL JOBS DEQUEUED IN SEC */
 	ccsr_sec_t *info;
-	rng_regs_t *rng;
+	struct rng_regs *rng;
 	kek_regs_t *kek;
 	u32 *scfg;
 	u32 *rdsta;
