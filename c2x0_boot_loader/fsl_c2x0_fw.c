@@ -70,6 +70,7 @@
 #define SEC2_RDSTA_ADDR		(SEC2_BASE_ADDR + RDSTA_OFFSET)
 
 #define MCFGR_PS_SHIFT		16
+#define MCFGR_PS_MASK		(1 << MCFGR_PS_SHIFT)
 #define JR_INTMASK			0x00000001
 
 
@@ -631,7 +632,7 @@ i32 sec_reset(ccsr_sec_t *sec)
 static void sec_eng_hw_init(struct sec_engine *sec)
 {
 	u32 jrcfg = 0;
-	u32 mcr = 0;
+	u32 mcr;
 
 	phys_addr_t ip_r_base = 0;
 	phys_addr_t op_r_base = 0;
@@ -641,8 +642,10 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 
 	sec->jr.size = SEC_JR_DEPTH;
 
+	/* set the pointer size to be 36 bits */
 	mcr = in_be32(&sec->info->mcfgr);
-	out_be32(&sec->info->mcfgr, mcr | 1 << MCFGR_PS_SHIFT);
+	mcr |= MCFGR_PS_MASK;
+	out_be32(&sec->info->mcfgr, mcr);
 
 	/* Initialising the jr regs */
 	out_be32(&sec->jr.regs->irba_h, ip_r_base >> 32);
