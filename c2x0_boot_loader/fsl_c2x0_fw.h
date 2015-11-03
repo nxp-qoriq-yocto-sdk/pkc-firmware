@@ -212,11 +212,11 @@ struct rng_regs {
 	uint32_t rtscml;
 };
 
-typedef struct kek_regs {
+struct kek_regs {
 	uint32_t jdkek;
 	uint32_t tdkek;
 	uint32_t tdsk;
-} kek_regs_t;
+};
 
 #define MULTIPLE_RESP_RINGS
 
@@ -237,7 +237,7 @@ struct sec_engine {
 	u32 tot_resp_cnt;	/* TOTAL JOBS DEQUEUED IN SEC */
 	ccsr_sec_t *info;
 	struct rng_regs *rng;
-	kek_regs_t *kek;
+	struct kek_regs *kek;
 	u32 *scfg;
 	u32 *rdsta;
 	struct sec_jr jr;

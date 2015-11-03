@@ -786,7 +786,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->jr.regs = (struct sec_jr_reg *) SEC0_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) SEC0_BASE_ADDR;
 		sec->rng = (struct rng_regs *) SEC0_RNG_ADDR;
-		sec->kek = (kek_regs_t *) SEC0_KEK_ADDR;
+		sec->kek = (struct kek_regs *) SEC0_KEK_ADDR;
 		sec->scfg = (u32 *) SEC0_SCFG_ADDR;
 		sec->rdsta = (u32 *) SEC0_RDSTA_ADDR;
 		break;
@@ -795,7 +795,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->jr.regs = (struct sec_jr_reg *) SEC1_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) SEC1_BASE_ADDR;
 		sec->rng = (struct rng_regs *) SEC1_RNG_ADDR;
-		sec->kek = (kek_regs_t *) SEC1_KEK_ADDR;
+		sec->kek = (struct kek_regs *) SEC1_KEK_ADDR;
 		sec->scfg = (u32 *) SEC1_SCFG_ADDR;
 		sec->rdsta = (u32 *) SEC1_RDSTA_ADDR;
 		break;
@@ -804,7 +804,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->jr.regs = (struct sec_jr_reg *) SEC2_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) SEC2_BASE_ADDR;
 		sec->rng = (struct rng_regs *) SEC2_RNG_ADDR;
-		sec->kek = (kek_regs_t *) SEC2_KEK_ADDR;
+		sec->kek = (struct kek_regs *) SEC2_KEK_ADDR;
 		sec->scfg = (u32 *) SEC2_SCFG_ADDR;
 		sec->rdsta = (u32 *) SEC2_RDSTA_ADDR;
 		break;
