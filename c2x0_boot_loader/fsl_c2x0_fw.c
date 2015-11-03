@@ -638,19 +638,8 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 	op_r_base |= (u32) (sec->jr.o_ring);
 
 	sec->jr.size = SEC_JR_DEPTH;
-#if 0
-#define CCSR_VIRT_ADDR  0xffe00000
-#define SEC0_OFFSET     0x80000
-#define JRREGS_OFFSET   0x1000
-#define C2X0_CONFIG_SYS_FSL_JR0_ADDR \
-	(CCSR_VIRT_ADDR + SEC0_OFFSET + JRREGS_OFFSET)
-	sec->jr.regs = (struct sec_jr_regs *) C2X0_CONFIG_SYS_FSL_JR0_ADDR;
 
-#define C2X0_SECINFO_ADDR       (CCSR_VIRT_ADDR + SEC0_OFFSET)
-	sec->info = (ccsr_sec_t *) C2X0_SECINFO_ADDR;
-#endif
 	mcr = in_be32(&sec->info->mcfgr);
-
 #define MCFGR_PS_SHIFT          16
 	out_be32(&sec->info->mcfgr, mcr | 1 << MCFGR_PS_SHIFT);
 
