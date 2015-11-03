@@ -636,8 +636,6 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 	phys_addr_t ip_r_base = 0;
 	phys_addr_t op_r_base = 0;
 
-	/* print_debug("\n Sec engine hw init....\n"); */
-
 	ip_r_base |= (u32) (sec->jr.i_ring);
 	op_r_base |= (u32) (sec->jr.o_ring);
 
