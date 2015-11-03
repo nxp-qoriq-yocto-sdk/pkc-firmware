@@ -631,7 +631,7 @@ i32 sec_reset(ccsr_sec_t *sec)
 
 static void sec_eng_hw_init(struct sec_engine *sec)
 {
-	u32 jrcfg = 0;
+	u32 jrcfg;
 	u32 mcr;
 
 	phys_addr_t ip_r_base = 0;
@@ -664,10 +664,10 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 	sec->jr.tail = 0;
 
 	SYNC_MEM
-	    jrcfg = in_be32(&sec->jr.regs->jrcfg1);
 
-	/* Disabling interrupt from sec */
-	jrcfg = jrcfg | JR_INTMASK;
+	/* disabling interrupt from SEC */
+	jrcfg = in_be32(&sec->jr.regs->jrcfg1);
+	jrcfg |= JR_INTMASK;
 	out_be32(&sec->jr.regs->jrcfg1, jrcfg);
 
 	SYNC_MEM
