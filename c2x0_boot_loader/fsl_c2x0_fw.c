@@ -69,6 +69,10 @@
 #define SEC2_SCFG_ADDR		(SEC2_BASE_ADDR + SCFG_OFFSET)
 #define SEC2_RDSTA_ADDR		(SEC2_BASE_ADDR + RDSTA_OFFSET)
 
+#define MCFGR_PS_SHIFT		16
+#define JR_INTMASK			0x00000001
+
+
 #define WAIT_FOR_STATE_CHANGE(x)	{ while (DEFAULT == x) SYNC_MEM }
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define LINEAR_ROOM(wi, depth, room)     MIN((depth-wi), room)
@@ -640,7 +644,6 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 	sec->jr.size = SEC_JR_DEPTH;
 
 	mcr = in_be32(&sec->info->mcfgr);
-#define MCFGR_PS_SHIFT          16
 	out_be32(&sec->info->mcfgr, mcr | 1 << MCFGR_PS_SHIFT);
 
 	/* Initialising the jr regs */
@@ -660,7 +663,6 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 	sec->jr.tail = 0;
 
 	SYNC_MEM
-#define JR_INTMASK    0x00000001
 	    jrcfg = in_be32(&sec->jr.regs->jrcfg1);
 
 	/* Disabling interrupt from sec */
