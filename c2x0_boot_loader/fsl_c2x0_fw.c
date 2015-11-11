@@ -71,6 +71,7 @@
 
 #define MCFGR_PS_SHIFT		16
 #define MCFGR_PS_MASK		(1 << MCFGR_PS_SHIFT)
+#define MCFGR_LARGE_BURST	0x4
 #define JR_INTMASK			0x00000001
 
 
@@ -645,6 +646,7 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 	/* set the pointer size to be 36 bits */
 	mcr = in_be32(&sec->info->mcfgr);
 	mcr |= MCFGR_PS_MASK;
+	mcr |= MCFGR_LARGE_BURST;
 	out_be32(&sec->info->mcfgr, mcr);
 
 	/* Initialising the jr regs */
