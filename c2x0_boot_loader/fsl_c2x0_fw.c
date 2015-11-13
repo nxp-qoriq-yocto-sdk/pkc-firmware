@@ -94,6 +94,13 @@
 #define RESET_PIC_PIR_VALUE 0x1
 #endif
 
+/*
+ * Stack Pointer - start right below the firmware and is used to allocate
+ * memory in a stack like manner; grows from top to bottom
+ */
+static u32 stack_ptr = PLATFORM_SRAM_VIRT_ADDR + PLATFORM_SRAM_SIZE
+			- FIRMWARE_SIZE;
+
 static inline void rng_processing(struct c_mem_layout *c_mem);
 static inline void copy_kek_and_set_scr(struct c_mem_layout *c_mem);
 
@@ -154,7 +161,7 @@ static app_ring_pair_t *next_ring(app_ring_pair_t *rp)
     return rp->rp_links[rp->c_link];
 }
 
-static inline void init_order_mem(struct c_mem_layout *mem, u32 *cursor)
+static inline void init_order_mem(struct c_mem_layout *mem)
 {
 	app_ring_pair_t *rp = mem->rsrc_mem->rps;
 	app_ring_pair_t *rp_head = mem->rsrc_mem->rps;
@@ -175,8 +182,8 @@ static inline void init_order_mem(struct c_mem_layout *mem, u32 *cursor)
 
 		print_debug("Order bit is set for ring: %d\n", rp->id);
 		rp->order_j_d_index = 0;
-		*cursor -= (rp->depth / BITS_PER_BYTE);
-		rp->resp_j_done_flag = (u8 *)*cursor;
+		stack_ptr -= (rp->depth / BITS_PER_BYTE);
+		rp->resp_j_done_flag = (u8 *) stack_ptr;
 		print_debug("Resp job done flag: %x\n", rp->resp_j_done_flag);
 		Memset(rp->resp_j_done_flag, 0, (rp->depth/BITS_PER_BYTE));
 NEXT_RP:
@@ -190,7 +197,7 @@ NEXT_RP:
 	return;
 }
 
-static void init_rps(struct c_mem_layout *mem, u8 num, u8 respringcount, u32 *cursor)
+static void init_rps(struct c_mem_layout *mem, u8 num, u8 respringcount)
 {
 	u8 i = 0;
 	u8 j = 0;
@@ -198,29 +205,29 @@ static void init_rps(struct c_mem_layout *mem, u8 num, u8 respringcount, u32 *cu
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
 
 	print_debug("Init Ring Pairs:\n");
-	*cursor -=  (sizeof(indexes_mem_t) * (num+respringcount));
-	mem->rsrc_mem->idxs_mem = (indexes_mem_t *)*cursor;
+	stack_ptr -=  (sizeof(indexes_mem_t) * (num+respringcount));
+	mem->rsrc_mem->idxs_mem = (indexes_mem_t *) stack_ptr;
 	Memset((u8 *)mem->rsrc_mem->idxs_mem, 0, (sizeof(indexes_mem_t) * (num + respringcount)));
 	print_debug("Indexes mem: %0x\n", mem->rsrc_mem->idxs_mem);
 
-	*cursor -=  (sizeof(counters_mem_t));		
-	mem->rsrc_mem->cntrs_mem = (counters_mem_t *)*cursor;
+	stack_ptr -=  (sizeof(counters_mem_t));
+	mem->rsrc_mem->cntrs_mem = (counters_mem_t *) stack_ptr;
 	Memset((u8 *)mem->rsrc_mem->cntrs_mem, 0, sizeof(counters_mem_t));
 	print_debug("Counters mem: %0x\n", mem->rsrc_mem->cntrs_mem);
 
-	*cursor -=  (sizeof(counters_mem_t));
-	mem->rsrc_mem->s_c_cntrs_mem = (counters_mem_t *)*cursor;
+	stack_ptr -=  (sizeof(counters_mem_t));
+	mem->rsrc_mem->s_c_cntrs_mem = (counters_mem_t *) stack_ptr;
 	Memset((u8 *)mem->rsrc_mem->s_c_cntrs_mem, 0, sizeof(counters_mem_t));
 	print_debug("S C Counters mem: %0x\n", mem->rsrc_mem->s_c_cntrs_mem);
 
-	*cursor -=  (sizeof(ring_counters_mem_t) * (num+respringcount));
-	mem->rsrc_mem->r_cntrs_mem = (ring_counters_mem_t *)*cursor;
+	stack_ptr -=  (sizeof(ring_counters_mem_t) * (num+respringcount));
+	mem->rsrc_mem->r_cntrs_mem = (ring_counters_mem_t *) stack_ptr;
 	Memset((u8 *)mem->rsrc_mem->r_cntrs_mem, 0,
 	       (sizeof(ring_counters_mem_t) * (num + respringcount)));
 	print_debug("R counters mem: %0x\n", mem->rsrc_mem->r_cntrs_mem);
 
-	*cursor -= (sizeof(ring_counters_mem_t) * (num+respringcount));
-	mem->rsrc_mem->r_s_c_cntrs_mem = (ring_counters_mem_t *)*cursor;
+	stack_ptr -= (sizeof(ring_counters_mem_t) * (num+respringcount));
+	mem->rsrc_mem->r_s_c_cntrs_mem = (ring_counters_mem_t *) stack_ptr;
 	Memset((u8 *)mem->rsrc_mem->r_s_c_cntrs_mem, 0,
 	       (sizeof(ring_counters_mem_t) * (num + respringcount)));
 	print_debug("R S C counters mem: %0x\n", mem->rsrc_mem->r_s_c_cntrs_mem);
@@ -388,7 +395,7 @@ static void make_rp_prio_links(struct c_mem_layout *mem)
 	mem->rsrc_mem->rps = r_head;
 }
 
-int hs_complete(struct c_mem_layout *mem, u32 *cursor)
+int hs_complete(struct c_mem_layout *mem)
 {
 	int hs_comp;
 
@@ -401,8 +408,8 @@ int hs_complete(struct c_mem_layout *mem, u32 *cursor)
 	make_rp_prio_links(mem);
 	make_rp_circ_list(mem);
 
-	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-	init_order_mem(mem, cursor);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	init_order_mem(mem);
 
 	print_debug("\nHS_COMPLETE:\n");
 
@@ -468,7 +475,7 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 	return r_offset;
 }
 
-void hs_fw_init_config(struct c_mem_layout *mem, u32 *cursor)
+void hs_fw_init_config(struct c_mem_layout *mem)
 {
 	u8 max_pri, max_rps, respr_count, count;
 	u32 req_mem_size, resp_ring_off, depth, s_cntrs, r_s_cntrs, offset;
@@ -480,11 +487,11 @@ void hs_fw_init_config(struct c_mem_layout *mem, u32 *cursor)
 	max_pri = mem->c_hs_mem->data.config.max_pri;
 	print_debug("Max pri: %d\n", max_pri);
 
-	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-	*cursor -= max_pri * sizeof(priority_q_t);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr -= max_pri * sizeof(priority_q_t);
 
 	/* Alloc memory for prio q first */
-	mem->rsrc_mem->p_q = (priority_q_t *) (*cursor);
+	mem->rsrc_mem->p_q = (priority_q_t *) stack_ptr;
 	init_p_q(mem->rsrc_mem->p_q, max_pri);
 
 
@@ -492,22 +499,22 @@ void hs_fw_init_config(struct c_mem_layout *mem, u32 *cursor)
 	mem->rsrc_mem->ring_count = max_rps;
 	print_debug("Max rps: %d\n", max_rps);
 
-	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-	*cursor -= (max_rps * sizeof(app_ring_pair_t));
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr -= (max_rps * sizeof(app_ring_pair_t));
 
-	mem->rsrc_mem->rps = (app_ring_pair_t *) *cursor;
+	mem->rsrc_mem->rps = (app_ring_pair_t *) stack_ptr;
 	mem->rsrc_mem->orig_rps = mem->rsrc_mem->rps;
 	respr_count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
-	init_rps(mem, max_rps, respr_count, cursor);
+	init_rps(mem, max_rps, respr_count);
 
 
 	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
 	print_debug("Req mem size: %d\n", req_mem_size);
 
-	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-	*cursor -=  req_mem_size;
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr -=  req_mem_size;
 
-	mem->rsrc_mem->req_mem = (void *)*cursor;
+	mem->rsrc_mem->req_mem = (void *) stack_ptr;
 	print_debug("Req mem addr: %0x\n", mem->rsrc_mem->req_mem);
 
 
@@ -516,15 +523,15 @@ void hs_fw_init_config(struct c_mem_layout *mem, u32 *cursor)
 	count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
 	print_debug("Resp ring off: %0x\n", resp_ring_off);
 
-	*cursor = ALIGN_TO_L1_CACHE_LINE_REV(*cursor);
-	*cursor -= count * sizeof(drv_resp_ring_t);
-	*cursor -= count * sizeof(u32 *);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr -= count * sizeof(drv_resp_ring_t);
+	stack_ptr -= count * sizeof(u32 *);
 
 	mem->rsrc_mem->drv_resp_ring_count = count;
-	mem->rsrc_mem->intr_ctrl_flags = (u32 *)*cursor;
-	*cursor += count * sizeof(u32 *);
+	mem->rsrc_mem->intr_ctrl_flags = (u32 *) stack_ptr;
+	stack_ptr += count * sizeof(u32 *);
 
-	mem->rsrc_mem->drv_resp_ring = (drv_resp_ring_t *) *cursor;
+	mem->rsrc_mem->drv_resp_ring = (drv_resp_ring_t *) stack_ptr;
 
 	init_drv_resp_ring(mem, resp_ring_off, depth, count);
 	make_drv_resp_ring_circ_list(mem, count);
@@ -564,7 +571,7 @@ void hs_fw_init_config(struct c_mem_layout *mem, u32 *cursor)
 	/*c2x0_getc();*/
 }
 
-static void handshake(struct c_mem_layout *mem, u32 *cursor)
+static void handshake(struct c_mem_layout *mem)
 {
 	uint32_t r_offset = 0;
 	print_debug("\nHANDSHAKE\n");
@@ -579,7 +586,7 @@ static void handshake(struct c_mem_layout *mem, u32 *cursor)
 
 		switch (mem->c_hs_mem->state) {
 		case FW_INIT_CONFIG:
-			hs_fw_init_config(mem, cursor);
+			hs_fw_init_config(mem);
 			break;
 
 		case FW_INIT_RING_PAIR:
@@ -587,7 +594,7 @@ static void handshake(struct c_mem_layout *mem, u32 *cursor)
 			break;
 
 		case FW_HS_COMPLETE:
-			if (hs_complete(mem, cursor))
+			if (hs_complete(mem))
 				return;
 			break;
 
@@ -810,25 +817,25 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 	init_rng(sec);
 }
 
-static u32 init_rsrc_sec(struct sec_engine *sec, u32 *cursor)
+static u32 init_rsrc_sec(struct sec_engine *sec)
 {
-	u32 p_cursor = *cursor;
 	u32 mem = 0;
 
 	sec->jr.id = sec->id;
-	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
-	p_cursor -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH *
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH *
 			sizeof(struct sec_ip_ring)));
-	sec->jr.i_ring = (struct sec_ip_ring *) p_cursor;
+	sec->jr.i_ring = (struct sec_ip_ring *) stack_ptr;
 
 	mem += SEC_JR_DEPTH * sizeof(struct sec_ip_ring);
 	Memset((u8 *)sec->jr.i_ring, 0, (SEC_JR_DEPTH *
 			sizeof(struct sec_ip_ring)));
 	print_debug("sec ip ring: %0x\n", sec->jr.i_ring);
 
-	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
-	p_cursor -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH * sizeof(struct sec_op_ring)));
-	sec->jr.o_ring = (struct sec_op_ring *)p_cursor;
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH *
+			sizeof(struct sec_op_ring)));
+	sec->jr.o_ring = (struct sec_op_ring *)stack_ptr;
 	mem += SEC_JR_DEPTH * sizeof(struct sec_op_ring);
 	Memset((u8 *)sec->jr.o_ring, 0, (SEC_JR_DEPTH * sizeof(struct sec_op_ring)));
 	print_debug("sec op ring: %0x\n", sec->jr.o_ring);
@@ -837,15 +844,12 @@ static u32 init_rsrc_sec(struct sec_engine *sec, u32 *cursor)
 	init_sec_regs_offset(sec);
 	sec_eng_hw_init(sec);
 
-	*cursor = p_cursor;
-
 	return mem;
 }
 
-static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor)
+static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 {
 	struct resource *rsrc  = c_mem->rsrc_mem;
-	u32 p_cursor      = *pcursor;
 	struct sec_engine *sec = NULL;
 	i32 i            = 0;
 	u32 sec_nums     = 0;
@@ -870,9 +874,9 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor)
 	 * Given 128 as depth of rings the max size required is
 	 * approx 2624 bytes.
 	 */
-	p_cursor -= ALIGN_TO_L1_CACHE_LINE(
+	stack_ptr -= ALIGN_TO_L1_CACHE_LINE(
 					(sec_nums * sizeof(struct sec_engine)));
-	rsrc->sec = (struct sec_engine *) (p_cursor);
+	rsrc->sec = (struct sec_engine *) (stack_ptr);
 	Memset((u8 *)rsrc->sec, 0, sizeof(struct sec_engine) * sec_nums);
 	print_debug("sec addr: %0x\n", rsrc->sec);
 
@@ -883,7 +887,7 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor)
 	sec = rsrc->sec;
 	for (i = 0; i < sec_nums; i++) {
 		sec->id = (i + 1);
-		c_mem->free_mem -= init_rsrc_sec(sec, &p_cursor);
+		c_mem->free_mem -= init_rsrc_sec(sec);
 		sec = sec->next;
 	}
 
@@ -893,7 +897,6 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor)
 	c_mem->free_mem -= (DEFAULT_POOL_SIZE);
 	print_debug("ip pool addr: %0x\n", rsrc->ip_pool);
 #endif
-	*pcursor = p_cursor;
 }
 
 #ifdef P4080_EP_TYPE
@@ -1980,7 +1983,6 @@ DEQ:
 
 i32 fsl_c2x0_fw(void)
 {
-	u32 p_cursor = 0;
 	phys_addr_t p_addr = 0;
 	phys_addr_t p_aligned_addr = 0;
 
@@ -1993,14 +1995,14 @@ i32 fsl_c2x0_fw(void)
 #ifndef HIGH_PERF
 START:
 #endif
-	p_cursor = PLATFORM_SRAM_VIRT_ADDR + PLATFORM_SRAM_SIZE - FIRMWARE_SIZE;
-	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
 
 	/* One cache line for handshake (HS) memory */
-	p_cursor -= L1_CACHE_LINE_SIZE;
+	stack_ptr -= L1_CACHE_LINE_SIZE;
 
 	print_debug("\nMemory Pointers\n");
-	c_mem = (struct c_mem_layout *) (p_cursor - sizeof(struct c_mem_layout));
+	c_mem = (struct c_mem_layout *)(stack_ptr -
+			sizeof(struct c_mem_layout));
 	print_debug("c_mem: %0x\n", c_mem);
 
 	c_mem->dgb_print = c_mem->err_print = 0;
@@ -2012,8 +2014,8 @@ START:
 	 * but for now FW size is 512K, hence it will be
 	 * in lower part of L2 SRAM.
 	 */
-	c_mem->c_hs_mem = (struct crypto_c_hs_mem *)p_cursor;
-	p_cursor -= sizeof(struct c_mem_layout);
+	c_mem->c_hs_mem = (struct crypto_c_hs_mem *)stack_ptr;
+	stack_ptr -= sizeof(struct c_mem_layout);
 	c_mem->free_mem -= sizeof(struct c_mem_layout);
 	print_debug("c_hs_mem: %0x\n", c_mem->c_hs_mem);
 
@@ -2089,13 +2091,14 @@ START:
 		     MAS3_SX | MAS3_SW | MAS3_SR, MAS2_I | MAS2_G, 0, 2,
 		     BOOKE_PAGESZ_1M, 1);
 
-	p_cursor = ALIGN_TO_L1_CACHE_LINE_REV(p_cursor);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
 
-	p_cursor -= sizeof(struct resource);
-	c_mem->rsrc_mem = (struct resource *) p_cursor;
+	stack_ptr -= sizeof(struct resource);
+	c_mem->rsrc_mem = (struct resource *) stack_ptr;
 
 	/* From here allocations will start on L2 part of the cache */
-	alloc_rsrc_mem(c_mem, &p_cursor);
+
+	alloc_rsrc_mem(c_mem);
 
 	/* Default the state */
 	c_mem->c_hs_mem->state = DEFAULT;
@@ -2105,7 +2108,7 @@ START:
 	c_mem->intr_timeout_ticks = usec2ticks(10);
 
 	/* Start the handshake */
-	handshake(c_mem, &p_cursor);
+	handshake(c_mem);
 
 	if ((NULL == c_mem->rsrc_mem->p_q) ||
 	    (NULL == c_mem->rsrc_mem->p_q->ring)) {
