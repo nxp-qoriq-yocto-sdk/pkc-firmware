@@ -842,10 +842,9 @@ static u32 init_rsrc_sec(struct sec_engine *sec, u32 *cursor)
 	return mem;
 }
 
-static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor, u32 *l2cursor)
+static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor)
 {
 	struct resource *rsrc  = c_mem->rsrc_mem;
-	u32 l2_cursor     = *l2cursor;
 	u32 p_cursor      = *pcursor;
 	struct sec_engine *sec = NULL;
 	i32 i            = 0;
@@ -889,13 +888,11 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem, u32 *pcursor, u32 *l2curs
 	}
 
 #ifdef COMMON_IP_BUFFER_POOL
-	rsrc->ip_pool = (void *)(l2_cursor);
+	rsrc->ip_pool = (void *)(L2_SRAM_VIRT_ADDR);
 	Memset(rsrc->ip_pool, 0, DEFAULT_POOL_SIZE);
-	l2_cursor += ALIGN_TO_L1_CACHE_LINE(DEFAULT_POOL_SIZE);
 	c_mem->free_mem -= (DEFAULT_POOL_SIZE);
 	print_debug("ip pool addr: %0x\n", rsrc->ip_pool);
 #endif
-	*l2cursor = l2_cursor;
 	*pcursor = p_cursor;
 }
 
@@ -1983,7 +1980,6 @@ DEQ:
 
 i32 fsl_c2x0_fw(void)
 {
-	u32 l2_cursor = 0;
 	u32 p_cursor = 0;
 	phys_addr_t p_addr = 0;
 	phys_addr_t p_aligned_addr = 0;
@@ -2099,8 +2095,7 @@ START:
 	c_mem->rsrc_mem = (struct resource *) p_cursor;
 
 	/* From here allocations will start on L2 part of the cache */
-	l2_cursor = L2_SRAM_VIRT_ADDR;
-	alloc_rsrc_mem(c_mem, &p_cursor , &l2_cursor);
+	alloc_rsrc_mem(c_mem, &p_cursor);
 
 	/* Default the state */
 	c_mem->c_hs_mem->state = DEFAULT;
