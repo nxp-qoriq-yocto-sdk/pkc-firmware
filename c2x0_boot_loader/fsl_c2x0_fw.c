@@ -777,7 +777,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 
 	switch (id) {
 	case SEC_ENG_1:
-		sec->jr.regs = (struct sec_jr_reg *) SEC0_JR0_ADDR;
+		sec->jr.regs = (struct sec_jr_regs *) SEC0_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) SEC0_BASE_ADDR;
 		sec->rng = (struct rng_regs *) SEC0_RNG_ADDR;
 		sec->kek = (struct kek_regs *) SEC0_KEK_ADDR;
@@ -786,7 +786,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		break;
 
 	case SEC_ENG_2:
-		sec->jr.regs = (struct sec_jr_reg *) SEC1_JR0_ADDR;
+		sec->jr.regs = (struct sec_jr_regs *) SEC1_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) SEC1_BASE_ADDR;
 		sec->rng = (struct rng_regs *) SEC1_RNG_ADDR;
 		sec->kek = (struct kek_regs *) SEC1_KEK_ADDR;
@@ -795,7 +795,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		break;
 
 	case SEC_ENG_3:
-		sec->jr.regs = (struct sec_jr_reg *) SEC2_JR0_ADDR;
+		sec->jr.regs = (struct sec_jr_regs *) SEC2_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) SEC2_BASE_ADDR;
 		sec->rng = (struct rng_regs *) SEC2_RNG_ADDR;
 		sec->kek = (struct kek_regs *) SEC2_KEK_ADDR;
