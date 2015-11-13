@@ -95,6 +95,14 @@
 #endif
 
 /*
+ * Note: all global variables must be initialized; any uninitialized variable
+ * or variables initialized by zero are automatically placed in the .bss section
+ * of the object file which currently is placed at load time in a memory
+ * location that is not accessible via the LAW windows.
+ * Remove this note when .bss section is moved to a memory area visible by LAWs.
+ */
+
+/*
  * Stack Pointer - start right below the firmware and is used to allocate
  * memory in a stack like manner; grows from top to bottom
  */
