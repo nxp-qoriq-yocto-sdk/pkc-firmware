@@ -417,7 +417,6 @@ struct resource {
 	app_ring_pair_t *orig_rps;/* STORES ORIG RP PTR BEFORE ORGNIZING RPs */
 	app_ring_pair_t *cmdrp;
 	drv_resp_ring_t *drv_resp_ring;
-	uint32_t        *intr_ctrl_flags;
 
 	indexes_mem_t *idxs_mem;
 	ring_counters_mem_t *r_cntrs_mem;

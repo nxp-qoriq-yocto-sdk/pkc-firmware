@@ -533,17 +533,12 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 
 	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
 	stack_ptr -= count * sizeof(drv_resp_ring_t);
-	stack_ptr -= count * sizeof(u32 *);
 
 	mem->rsrc_mem->drv_resp_ring_count = count;
-	mem->rsrc_mem->intr_ctrl_flags = (u32 *) stack_ptr;
-	stack_ptr += count * sizeof(u32 *);
-
 	mem->rsrc_mem->drv_resp_ring = (drv_resp_ring_t *) stack_ptr;
 
 	init_drv_resp_ring(mem, resp_ring_off, depth, count);
 	make_drv_resp_ring_circ_list(mem, count);
-
 
 	s_cntrs = mem->c_hs_mem->data.config.s_cntrs;
 	r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
@@ -556,7 +551,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	print_debug("S CNTRS OFFSET: %0x\n", s_cntrs);
 	print_debug("R S CNTRS OFFSET: %0x\n", r_s_cntrs);
 	init_scs(mem);
-
 
 	print_debug("\nSENDING FW_INIT_CONFIG_COMPLETE\n");
 	offset = (u8 *)mem->rsrc_mem->r_s_c_cntrs_mem - (u8 *)mem->v_ib_mem;
