@@ -1960,7 +1960,7 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 	u32     cnt =   0,  ring_jobs   =   0;
 
 	app_ring_pair_t     *rp         =   c_mem->rsrc_mem->rps;
-	struct sec_engine        *sec        =   c_mem->rsrc_mem->sec;
+	struct sec_engine   *sec        =   c_mem->rsrc_mem->sec;
 	u32                 *r_deq_cnt  =   NULL;
 	u32                 deq         =   0;
 
@@ -1975,11 +1975,11 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 	
 	r_deq_cnt   =   &(rp->cntrs->jobs_processed);
 	cnt = WAIT_FOR_DRIVER_JOBS(&(rp->r_s_c_cntrs->jobs_added), r_deq_cnt);
-
-	if (cnt)
-		ring_jobs    =  sel_sec_enqueue(c_mem, &sec, rp, &deq);
-	else
+	if (cnt == 0) {
 		return;
+	}
+
+	ring_jobs    =  sel_sec_enqueue(c_mem, &sec, rp, &deq);
 
 DEQ:
 	ring_jobs   =  sec_dequeue(c_mem, &sec, &deq);
@@ -2010,8 +2010,7 @@ START:
 	stack_ptr -= L1_CACHE_LINE_SIZE;
 
 	print_debug("\nMemory Pointers\n");
-	c_mem = (struct c_mem_layout *)(stack_ptr -
-			sizeof(struct c_mem_layout));
+	c_mem = (struct c_mem_layout *)(stack_ptr - sizeof(struct c_mem_layout));
 	print_debug("c_mem: %0x\n", c_mem);
 
 	c_mem->dgb_print = c_mem->err_print = 0;
