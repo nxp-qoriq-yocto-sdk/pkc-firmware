@@ -75,7 +75,7 @@
 #define JR_INTMASK			0x00000001
 
 
-#define WAIT_FOR_STATE_CHANGE(x)	{ while (DEFAULT == x) SYNC_MEM }
+#define WAIT_FOR_STATE_CHANGE(x)	{ while (DEFAULT == x) SYNC_MEM; }
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define LINEAR_ROOM(wi, depth, room)     MIN((depth-wi), room)
 #define MOD_INC(x, size)                 ((++x) & (size-1))
@@ -125,7 +125,8 @@ static u64 readtb(void)
 	asm volatile ("mfspr %0, 526" : "=r" (tbl));
 	asm volatile ("mfspr %0, 527" : "=r" (tbh));
 
-	SYNC_MEM tb = ((u64) tbh << 32) | tbl;
+	SYNC_MEM;
+	tb = ((u64) tbh << 32) | tbl;
 
 	return tb;
 }
@@ -149,7 +150,7 @@ static void firmware_up(struct c_mem_layout *mem)
 	mem->h_hs_mem->state = FIRMWARE_UP;
 	print_debug("\n\n\nFIRMWARE UP\n");
 
-	SYNC_MEM
+	SYNC_MEM;
 }
 
 static void init_p_q(priority_q_t *p_q, u8 num)
@@ -674,14 +675,14 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 	sec->jr.head = 0;
 	sec->jr.tail = 0;
 
-	SYNC_MEM
+	SYNC_MEM;
 
 	/* disabling interrupt from SEC */
 	jrcfg = in_be32(&sec->jr.regs->jrcfg1);
 	jrcfg |= JR_INTMASK;
 	out_be32(&sec->jr.regs->jrcfg1, jrcfg);
 
-	SYNC_MEM
+	SYNC_MEM;
 	print_debug("\nSec hw eng init done for id: %d....\n", sec->id);
 
 	return; 
@@ -919,7 +920,7 @@ static void fix_p4080_reg_settings(void)
 	/* 1) Disabling PCIe controller 2 LAW */
 	ccsr = (u32 *) (0xfe000c88);
 	*ccsr = 0;
-	SYNC_MEM
+	SYNC_MEM;
 	/* 2) Modifying the PCIe controller 1 LAW to be of 16G size
 	 * PCIe controller 1 LAW will start from 0XA00000000
 	 * instead of known 0XC00000000 */
@@ -927,21 +928,24 @@ static void fix_p4080_reg_settings(void)
 	*ccsr = 0X0000000c;
 	ccsr = (u32 *) (0xfe000c68);
 	*ccsr = 0x80000021;
-	SYNC_MEM
+	SYNC_MEM;
 	/* Enabling the inbound address translation register */
 	ccsr = (u32 *) (0xfe200de0);
 	*ccsr = 0x000fff00;
-	SYNC_MEM ccsr = (u32 *) (0xfe200df0);
+	SYNC_MEM;
+	ccsr = (u32 *) (0xfe200df0);
 	*ccsr = 0xa0f55013;
-	SYNC_MEM
+	SYNC_MEM;
 	/* Enabling the outbound translation address register */
 	ccsr = (u32 *) (0xfe200c20);
 	*ccsr = 0x00;
-	SYNC_MEM ccsr = (u32 *) (0xfe200c28);
+	SYNC_MEM;
+	ccsr = (u32 *) (0xfe200c28);
 	*ccsr = 0X00c00000;
-	SYNC_MEM ccsr = (u32 *) (0xfe200c30);
+	SYNC_MEM;
+	ccsr = (u32 *) (0xfe200c30);
 	*ccsr = 0x80044021;
-	SYNC_MEM
+	SYNC_MEM;
 }
 #endif
 
@@ -953,7 +957,7 @@ static void fix_p4080_reg_settings(void)
 #ifndef TIMED_WAIT_FOR_JOBS
 #define WAIT_FOR_DRIVER_JOBS(x, y)	\
 	while (BUDGET_NO_OF_TOT_JOBS > (x-y))	\
-		 SYNC_MEM
+		 SYNC_MEM;
 #else
 #define WAIT_FOR_DRIVER_JOBS		\
 	conditional_timed_wait_for_driver_jobs
@@ -986,8 +990,11 @@ static inline u32 conditional_timed_wait_for_driver_jobs(u32 *x, u32 *y)
 	timeout_ticks = usec2ticks(HOST_JOB_WAIT_TIME_OUT);
 
 	while ((getticks() - start_ticks < timeout_ticks)
-	       && ((*x - *y) < BUDGET_NO_OF_TOT_JOBS))
-		SYNC_MEM return *x - *y;
+	       && ((*x - *y) < BUDGET_NO_OF_TOT_JOBS)) {
+		SYNC_MEM;
+	}
+
+	return *x - *y;
 }
 
 #endif

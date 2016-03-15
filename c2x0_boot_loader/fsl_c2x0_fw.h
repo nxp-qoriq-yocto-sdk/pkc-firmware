@@ -122,7 +122,7 @@
 #define SEC_ENG_2 2
 #define SEC_ENG_3 3
 
-#define SYNC_MEM        asm volatile("sync" : : : "memory");
+#define SYNC_MEM        asm volatile("sync" : : : "memory")
 
 #define MCFGR_SWRST       ((u32)(1)<<31)	/* Software Reset */
 #define MCFGR_DMA_RST     ((u32)(1)<<28)	/* DMA Reset */
