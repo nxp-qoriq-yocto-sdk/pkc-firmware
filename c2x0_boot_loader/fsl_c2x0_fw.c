@@ -2029,13 +2029,6 @@ START:
 	c_mem->p_pci_mem = CONFIG_SYS_PCIE1_MEM_PHYS;
 	print_debug("p_pci_mem: %0llx\n", c_mem->p_pci_mem);
 
-	/* TLB exist only for 1G  */
-	c_mem->v_ob_mem = CONFIG_SYS_PCIE1_MEM_VIRT;
-	print_debug("v_ob_mem: %0x\n", c_mem->v_ob_mem);
-
-	c_mem->v_msi_mem = CONFIG_SYS_PCIE1_MSI_MEM_VIRT;
-	print_debug("v_msi_mem: %0x\n", c_mem->v_msi_mem);
-
 	print_debug("\nOB MEM DETAILS\n");
 	/* Driver would have updated the offset of its
 	 * created memory inside the outbound window
@@ -2056,6 +2049,10 @@ START:
 	p_aligned_addr = (p_addr & OB_TLB_SIZE_MASK);
 	c_mem->p_ob_mem = (CONFIG_SYS_PCIE1_MEM_PHYS + p_aligned_addr);
 	print_debug("1G Aligned host ob mem addr: %0llx\n", c_mem->p_ob_mem);
+
+	/* TLB exist only for 1G  */
+	c_mem->v_ob_mem = CONFIG_SYS_PCIE1_MEM_VIRT;
+	print_debug("v_ob_mem: %0x\n", c_mem->v_ob_mem);
 
 	/* Set the TLB here for this 1G */
 	/* Using TLB 3 */
@@ -2083,6 +2080,9 @@ START:
 	/* Physical address should be within 16G window */
 	c_mem->p_msi_mem = c_mem->p_pci_mem + p_aligned_addr;
 	print_debug("p_msi_mem: %0llx\n", c_mem->p_msi_mem);
+
+	c_mem->v_msi_mem = CONFIG_SYS_PCIE1_MSI_MEM_VIRT;
+	print_debug("v_msi_mem: %0x\n", c_mem->v_msi_mem);
 
 	/* Set the TLB here for this 1M */
 	/* Using TLB 2 */
