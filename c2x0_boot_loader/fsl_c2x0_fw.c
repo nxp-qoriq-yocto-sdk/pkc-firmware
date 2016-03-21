@@ -2026,9 +2026,7 @@ START:
 	print_debug("p_ib_mem: %0llx\n", c_mem->p_ib_mem);
 
 	/*PCIE1 controller physical address-outbound window will be set to 16G*/
-	c_mem->p_ob_mem = CONFIG_SYS_PCIE1_MEM_PHYS;
 	c_mem->p_pci_mem = CONFIG_SYS_PCIE1_MEM_PHYS;
-	print_debug("p_ob_mem: %0llx\n", c_mem->p_ob_mem);
 	print_debug("p_pci_mem: %0llx\n", c_mem->p_pci_mem);
 
 	/* TLB exist only for 1G  */
