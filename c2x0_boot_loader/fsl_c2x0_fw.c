@@ -820,17 +820,14 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 	init_rng(sec);
 }
 
-static u32 init_rsrc_sec(struct sec_engine *sec)
+static void init_rsrc_sec(struct sec_engine *sec)
 {
-	u32 mem = 0;
-
 	sec->jr.id = sec->id;
 	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
 	stack_ptr -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH *
 			sizeof(struct sec_ip_ring)));
 	sec->jr.i_ring = (struct sec_ip_ring *) stack_ptr;
 
-	mem += SEC_JR_DEPTH * sizeof(struct sec_ip_ring);
 	Memset((u8 *)sec->jr.i_ring, 0, (SEC_JR_DEPTH *
 			sizeof(struct sec_ip_ring)));
 	print_debug("sec ip ring: %0x\n", sec->jr.i_ring);
@@ -839,15 +836,12 @@ static u32 init_rsrc_sec(struct sec_engine *sec)
 	stack_ptr -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH *
 			sizeof(struct sec_op_ring)));
 	sec->jr.o_ring = (struct sec_op_ring *)stack_ptr;
-	mem += SEC_JR_DEPTH * sizeof(struct sec_op_ring);
 	Memset((u8 *)sec->jr.o_ring, 0, (SEC_JR_DEPTH * sizeof(struct sec_op_ring)));
 	print_debug("sec op ring: %0x\n", sec->jr.o_ring);
 
 	/* Call for hardware init of sec engine */
 	init_sec_regs_offset(sec);
 	sec_eng_hw_init(sec);
-
-	return mem;
 }
 
 static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
@@ -883,21 +877,22 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 	Memset((u8 *)rsrc->sec, 0, sizeof(struct sec_engine) * sec_nums);
 	print_debug("sec addr: %0x\n", rsrc->sec);
 
-	c_mem->free_mem -= sec_nums * sizeof(struct sec_engine);
 	make_sec_circ_list(rsrc->sec, sec_nums);
 
 	/* Call for hardware init of sec engine */
 	sec = rsrc->sec;
 	for (i = 0; i < sec_nums; i++) {
 		sec->id = (i + 1);
-		c_mem->free_mem -= init_rsrc_sec(sec);
+		init_rsrc_sec(sec);
 		sec = sec->next;
 	}
 
+	c_mem->free_mem = TOTAL_CARD_MEMORY - (0x100000000ull - stack_ptr);
+
 #ifdef COMMON_IP_BUFFER_POOL
-	rsrc->ip_pool = (void *)(L2_SRAM_VIRT_ADDR);
+	rsrc->ip_pool = (void *)L2_SRAM_VIRT_ADDR;
 	Memset(rsrc->ip_pool, 0, DEFAULT_POOL_SIZE);
-	c_mem->free_mem -= (DEFAULT_POOL_SIZE);
+	c_mem->free_mem -= DEFAULT_POOL_SIZE;
 	print_debug("ip pool addr: %0x\n", rsrc->ip_pool);
 #endif
 }
@@ -2014,7 +2009,6 @@ START:
 	print_debug("c_mem: %0x\n", c_mem);
 
 	c_mem->dgb_print = c_mem->err_print = 0;
-	c_mem->free_mem = TOTAL_CARD_MEMORY - FIRMWARE_SIZE;
 
 	/* Allocating top cache line size number of bytes
 	 * for handshake - so that it can get re-used
@@ -2024,7 +2018,6 @@ START:
 	 */
 	c_mem->c_hs_mem = (struct crypto_c_hs_mem *)stack_ptr;
 	stack_ptr -= sizeof(struct c_mem_layout);
-	c_mem->free_mem -= sizeof(struct c_mem_layout);
 	print_debug("c_hs_mem: %0x\n", c_mem->c_hs_mem);
 
 	c_mem->v_ib_mem = L2_SRAM_VIRT_ADDR;
@@ -2114,6 +2107,9 @@ START:
 	/* Init the intr time counters */
 	c_mem->intr_ticks = 0;
 	c_mem->intr_timeout_ticks = usec2ticks(10);
+
+	print_debug("\nTOTAL memory:\t%8d bytes\n", TOTAL_CARD_MEMORY);
+	print_debug("FREE memory:\t%8d bytes\n", c_mem->free_mem);
 
 	/* Start the handshake */
 	handshake(c_mem);
