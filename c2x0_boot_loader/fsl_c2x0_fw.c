@@ -69,6 +69,8 @@
 #define SEC2_SCFG_ADDR		(SEC2_BASE_ADDR + SCFG_OFFSET)
 #define SEC2_RDSTA_ADDR		(SEC2_BASE_ADDR + RDSTA_OFFSET)
 
+#define GUTS_SVR		(CCSR_VIRT_ADDR + 0xe0000 + 0xa4)
+
 #define MCFGR_PS_SHIFT		16
 #define MCFGR_PS_MASK		(1 << MCFGR_PS_SHIFT)
 #define MCFGR_LARGE_BURST	0x4
@@ -853,15 +855,13 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 	struct sec_engine *sec = NULL;
 	i32 i            = 0;
 	u32 sec_nums     = 0;
-	u32 *dev_id_addr = NULL;
 
 	print_debug("\nalloc_rsrc_mem\n");
 	print_debug("rsrc addr: %0x\n", rsrc);
 
 	Memset((u8 *)rsrc, 0, sizeof(struct resource));
 
-	dev_id_addr = (u32 *) (CCSR_VIRT_ADDR + 0xe0000 + 0xa4);
-	sec_nums = in_be32(dev_id_addr);
+	sec_nums = in_be32((u32 *)GUTS_SVR);
 	sec_nums = (sec_nums & 0xF000) >> 12;
 	if (!sec_nums)
 		sec_nums = 1;
