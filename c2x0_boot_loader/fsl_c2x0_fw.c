@@ -74,6 +74,9 @@
 #define MCFGR_LARGE_BURST	0x4
 #define JR_INTMASK			0x00000001
 
+#define OB_TLB_SIZE_MASK    ((~(0)) << 30)
+#define MSI_TLB_SIZE_MASK    ((~((u32)0)) << 20)
+
 
 #define WAIT_FOR_STATE_CHANGE(x)	{ while (DEFAULT == x) SYNC_MEM; }
 #define MIN(a,b) ((a)<(b) ? (a):(b))
@@ -1987,10 +1990,11 @@ DEQ:
 
 i32 fsl_c2x0_fw(void)
 {
-	phys_addr_t p_addr = 0;
-	phys_addr_t p_aligned_addr = 0;
+	phys_addr_t p_addr;
+	phys_addr_t p_aligned_addr;
 
 	struct c_mem_layout *c_mem = NULL;
+	u32 c_hs_mem;
 
 #ifdef P4080_EP_TYPE
 	/* Not required for C2X0 */
@@ -2000,102 +2004,84 @@ i32 fsl_c2x0_fw(void)
 START:
 #endif
 	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	print_debug("Allocation starts 28K below top: %x\n", stack_ptr);
 
 	/* One cache line for handshake (HS) memory */
 	stack_ptr -= L1_CACHE_LINE_SIZE;
+	c_hs_mem = stack_ptr;
+	print_debug("\nDevice handshake memory: %x\n", stack_ptr);
 
-	print_debug("\nMemory Pointers\n");
-	c_mem = (struct c_mem_layout *)(stack_ptr - sizeof(struct c_mem_layout));
-	print_debug("c_mem: %0x\n", c_mem);
-
-	c_mem->dgb_print = c_mem->err_print = 0;
-
-	/* Allocating top cache line size number of bytes
-	 * for handshake - so that it can get re-used
-	 * Ideally the hs mem should be in the platform SRAM
-	 * but for now FW size is 512K, hence it will be
-	 * in lower part of L2 SRAM.
-	 */
-	c_mem->c_hs_mem = (struct crypto_c_hs_mem *)stack_ptr;
 	stack_ptr -= sizeof(struct c_mem_layout);
-	print_debug("c_hs_mem: %0x\n", c_mem->c_hs_mem);
-
+	c_mem = (struct c_mem_layout *)stack_ptr;
+	c_mem->dgb_print = c_mem->err_print = 0;
+	c_mem->c_hs_mem = (struct crypto_c_hs_mem *)c_hs_mem;
 	c_mem->v_ib_mem = L2_SRAM_VIRT_ADDR;
 	c_mem->p_ib_mem = L2_SRAM_VIRT_ADDR;	/* Phy addr is same as v addr */
-	print_debug("v_ib_mem: %0x\n", c_mem->v_ib_mem);
-	print_debug("p_ib_mem: %0llx\n", c_mem->p_ib_mem);
-
 	/*PCIE1 controller physical address-outbound window will be set to 16G*/
 	c_mem->p_pci_mem = CONFIG_SYS_PCIE1_MEM_PHYS;
-	print_debug("p_pci_mem: %0llx\n", c_mem->p_pci_mem);
 
-	print_debug("\nOB MEM DETAILS\n");
-	/* Driver would have updated the offset of its
-	 * created memory inside the outbound window
-	 * Calculate the address valid in our domain -
-	 * The offset will definitely be 1G aligned so simple
-	 * addition should give the 1G aligned address.
+	print_debug("\nc_mem_layout\n", c_mem);
+	print_debug("c_mem    : %10x\n", c_mem);
+	print_debug("c_hs_mem : %10x\n", c_mem->c_hs_mem);
+	print_debug("v_ib_mem : %10x\n", c_mem->v_ib_mem);
+	print_debug("p_ib_mem : %10llx\n", c_mem->p_ib_mem);
+	print_debug("p_pci_mem: %10llx\n", c_mem->p_pci_mem);
+
+	/* OB MEM
+	 * Driver would have updated the offset of its created memory inside
+	 * the outbound window. Calculate the address valid in our domain
+	 * The offset will definitely be 1G aligned so simple addition should
+	 * give the 1G aligned address
 	 */
-	print_debug("Host ob mem l: %0x\n", c_mem->c_hs_mem->h_ob_mem_l);
-	print_debug("Host ob mem h: %0x\n", c_mem->c_hs_mem->h_ob_mem_h);
-	/* Calculate one 36bit address from H & L parts of it */
-	p_addr = c_mem->c_hs_mem->h_ob_mem_h;
-	p_addr = (p_addr << 32) | c_mem->c_hs_mem->h_ob_mem_l;
-	print_debug("Host ob 64 Bit address: %0llx\n", p_addr);
-
+	p_addr = (phys_addr_t)c_mem->c_hs_mem->h_ob_mem_h << 32;
+	p_addr |= c_mem->c_hs_mem->h_ob_mem_l;
 	/* Since we have 1G TLB open for rings - get the 1G aligned
 	 * address for this physical address */
-#define OB_TLB_SIZE_MASK    ((~(0)) << 30)
-	p_aligned_addr = (p_addr & OB_TLB_SIZE_MASK);
-	c_mem->p_ob_mem = (CONFIG_SYS_PCIE1_MEM_PHYS + p_aligned_addr);
-	print_debug("1G Aligned host ob mem addr: %0llx\n", c_mem->p_ob_mem);
+	p_aligned_addr = p_addr & OB_TLB_SIZE_MASK;
+	c_mem->p_ob_mem = c_mem->p_pci_mem + p_aligned_addr;
+	c_mem->v_ob_mem = CONFIG_SYS_PCIE1_MEM_VIRT; /* TLB exist only for 1G */
+	c_mem->h_hs_mem = (struct fsl_h_mem_handshake *)
+			((u8 *)c_mem->v_ob_mem + (p_addr - p_aligned_addr));
 
-	/* TLB exist only for 1G  */
-	c_mem->v_ob_mem = CONFIG_SYS_PCIE1_MEM_VIRT;
-	print_debug("v_ob_mem: %0x\n", c_mem->v_ob_mem);
+	print_debug("\nOB MEM DETAILS\n");
+	print_debug("Host ob mem l          : %10x\n", c_mem->c_hs_mem->h_ob_mem_l);
+	print_debug("Host ob mem h          : %10x\n", c_mem->c_hs_mem->h_ob_mem_h);
+	print_debug("Host ob mem 64 bit addr: %10llx\n", p_addr);
+	print_debug("Host ob mem aligned 1G : %10llx\n", p_aligned_addr);
+	print_debug("p_ob_mem               : %10llx\n", c_mem->p_ob_mem);
+	print_debug("v_ob_mem               : %10x\n", c_mem->v_ob_mem);
+	print_debug("h_hs_mem               : %10x\n", c_mem->h_hs_mem);
 
-	/* Set the TLB here for this 1G */
-	/* Using TLB 3 */
-	c2x0_set_tlb(1, c_mem->v_ob_mem, c_mem->p_ob_mem, MAS3_SW | MAS3_SR,
-		     MAS2_I | MAS2_G, 0, 3, BOOKE_PAGESZ_1G, 1);
-
-	c_mem->h_hs_mem =
-	    (struct fsl_h_mem_handshake *) (((u8 *)c_mem->v_ob_mem + (p_addr - p_aligned_addr)));
-	print_debug("h_hs_mem: %0x\n", c_mem->h_hs_mem);
-
-	print_debug("MSI DETAILS\n");
-	print_debug("MSI mem l: %0x\n", c_mem->c_hs_mem->h_msi_mem_l);
-	print_debug("MSI mem h: %0x\n", c_mem->c_hs_mem->h_msi_mem_h);
-
-	/* Form the 64 bit address */
-	p_addr = c_mem->c_hs_mem->h_msi_mem_h;
-	p_addr = (p_addr << 32) | c_mem->c_hs_mem->h_msi_mem_l;
-	print_debug("MSI mem 64 bit address: %0llx\n", p_addr);
-
+	/* MSI details */
+	p_addr = (phys_addr_t)c_mem->c_hs_mem->h_msi_mem_h << 32;
+	p_addr |= c_mem->c_hs_mem->h_msi_mem_l;
 	/* Since we have 1M TLB open for MSI window -
 	 * get the 1M aligned address for this physical address */
-#define MSI_TLB_SIZE_MASK    ((~((u32)0)) << 20)
-	p_aligned_addr = (p_addr & MSI_TLB_SIZE_MASK);
-
+	p_aligned_addr = p_addr & MSI_TLB_SIZE_MASK;
 	/* Physical address should be within 16G window */
 	c_mem->p_msi_mem = c_mem->p_pci_mem + p_aligned_addr;
-	print_debug("p_msi_mem: %0llx\n", c_mem->p_msi_mem);
-
 	c_mem->v_msi_mem = CONFIG_SYS_PCIE1_MSI_MEM_VIRT;
-	print_debug("v_msi_mem: %0x\n", c_mem->v_msi_mem);
 
-	/* Set the TLB here for this 1M */
-	/* Using TLB 2 */
+	print_debug("\nMSI DETAILS\n");
+	print_debug("MSI mem l          : %10x\n", c_mem->c_hs_mem->h_msi_mem_l);
+	print_debug("MSI mem h          : %10x\n", c_mem->c_hs_mem->h_msi_mem_h);
+	print_debug("MSI mem 64 bit addr: %10llx\n", p_addr);
+	print_debug("MSI aligned 1M     : %10llx\n", p_aligned_addr);
+	print_debug("p_msi_mem          : %10llx\n", c_mem->p_msi_mem);
+	print_debug("v_msi_mem          : %10x\n", c_mem->v_msi_mem);
+
+	/* Set the TLB here for the OB mem 1G - Using TLB 3 */
+	c2x0_set_tlb(1, c_mem->v_ob_mem, c_mem->p_ob_mem,
+			MAS3_SW | MAS3_SR, MAS2_I | MAS2_G, 0, 3,
+			BOOKE_PAGESZ_1G, 1);
+	/* Set the TLB here for MSI 1M - Using TLB 2 */
 	c2x0_set_tlb(1, c_mem->v_msi_mem, c_mem->p_msi_mem,
-		     MAS3_SX | MAS3_SW | MAS3_SR, MAS2_I | MAS2_G, 0, 2,
-		     BOOKE_PAGESZ_1M, 1);
+			MAS3_SX | MAS3_SW | MAS3_SR, MAS2_I | MAS2_G, 0, 2,
+			BOOKE_PAGESZ_1M, 1);
 
 	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
-
 	stack_ptr -= sizeof(struct resource);
 	c_mem->rsrc_mem = (struct resource *) stack_ptr;
-
-	/* From here allocations will start on L2 part of the cache */
 
 	alloc_rsrc_mem(c_mem);
 
