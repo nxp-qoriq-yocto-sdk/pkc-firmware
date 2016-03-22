@@ -422,7 +422,7 @@ int hs_complete(struct c_mem_layout *mem)
 	make_rp_prio_links(mem);
 	make_rp_circ_list(mem);
 
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	init_order_mem(mem);
 
 	print_debug("\nHS_COMPLETE:\n");
@@ -501,7 +501,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	max_pri = mem->c_hs_mem->data.config.max_pri;
 	print_debug("Max pri: %d\n", max_pri);
 
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	stack_ptr -= max_pri * sizeof(priority_q_t);
 
 	/* Alloc memory for prio q first */
@@ -513,7 +513,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	mem->rsrc_mem->ring_count = max_rps;
 	print_debug("Max rps: %d\n", max_rps);
 
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	stack_ptr -= (max_rps * sizeof(app_ring_pair_t));
 
 	mem->rsrc_mem->rps = (app_ring_pair_t *) stack_ptr;
@@ -525,7 +525,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
 	print_debug("Req mem size: %d\n", req_mem_size);
 
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	stack_ptr -=  req_mem_size;
 
 	mem->rsrc_mem->req_mem = (void *) stack_ptr;
@@ -537,7 +537,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
 	print_debug("Resp ring off: %0x\n", resp_ring_off);
 
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	stack_ptr -= count * sizeof(drv_resp_ring_t);
 
 	mem->rsrc_mem->drv_resp_ring_count = count;
@@ -828,21 +828,20 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 static void init_rsrc_sec(struct sec_engine *sec)
 {
 	sec->jr.id = sec->id;
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
-	stack_ptr -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH *
-			sizeof(struct sec_ip_ring)));
+
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
+	stack_ptr -=  SEC_JR_DEPTH * sizeof(struct sec_ip_ring);
 	sec->jr.i_ring = (struct sec_ip_ring *) stack_ptr;
 
-	Memset((u8 *)sec->jr.i_ring, 0, (SEC_JR_DEPTH *
-			sizeof(struct sec_ip_ring)));
-	print_debug("sec ip ring: %0x\n", sec->jr.i_ring);
-
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
-	stack_ptr -=  ALIGN_TO_L1_CACHE_LINE((SEC_JR_DEPTH *
-			sizeof(struct sec_op_ring)));
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
+	stack_ptr -=  SEC_JR_DEPTH * sizeof(struct sec_op_ring);
 	sec->jr.o_ring = (struct sec_op_ring *)stack_ptr;
-	Memset((u8 *)sec->jr.o_ring, 0, (SEC_JR_DEPTH * sizeof(struct sec_op_ring)));
-	print_debug("sec op ring: %0x\n", sec->jr.o_ring);
+
+	Memset((u8 *)sec->jr.i_ring, 0, SEC_JR_DEPTH * sizeof(struct sec_ip_ring));
+	Memset((u8 *)sec->jr.o_ring, 0, SEC_JR_DEPTH * sizeof(struct sec_op_ring));
+
+	print_debug("sec ip ring: %10x\n", sec->jr.i_ring);
+	print_debug("sec op ring: %10x\n", sec->jr.o_ring);
 
 	/* Call for hardware init of sec engine */
 	init_sec_regs_offset(sec);
@@ -874,8 +873,8 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 	 * Given 128 as depth of rings the max size required is
 	 * approx 2624 bytes.
 	 */
-	stack_ptr -= ALIGN_TO_L1_CACHE_LINE(
-					(sec_nums * sizeof(struct sec_engine)));
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
+	stack_ptr -= sec_nums * sizeof(struct sec_engine);
 	rsrc->sec = (struct sec_engine *) (stack_ptr);
 	Memset((u8 *)rsrc->sec, 0, sizeof(struct sec_engine) * sec_nums);
 	print_debug("sec addr: %0x\n", rsrc->sec);
@@ -2003,7 +2002,7 @@ i32 fsl_c2x0_fw(void)
 #ifndef HIGH_PERF
 START:
 #endif
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	print_debug("Allocation starts 28K below top: %x\n", stack_ptr);
 
 	/* One cache line for handshake (HS) memory */
@@ -2079,7 +2078,7 @@ START:
 			MAS3_SX | MAS3_SW | MAS3_SR, MAS2_I | MAS2_G, 0, 2,
 			BOOKE_PAGESZ_1M, 1);
 
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE_REV(stack_ptr);
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	stack_ptr -= sizeof(struct resource);
 	c_mem->rsrc_mem = (struct resource *) stack_ptr;
 

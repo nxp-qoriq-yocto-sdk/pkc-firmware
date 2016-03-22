@@ -97,9 +97,7 @@
 #define __cache_line_aligned__		\
 	__attribute__((__aligned__(L1_CACHE_LINE_SIZE)))
 
-#define ALIGN_TO_L1_CACHE_LINE(x)       \
-	(((x)+(L1_CACHE_LINE_SIZE-1)) & ~(L1_CACHE_LINE_SIZE-1))
-#define ALIGN_TO_L1_CACHE_LINE_REV(x)   (x & ~(L1_CACHE_LINE_SIZE-1))
+#define ALIGN_TO_L1_CACHE_LINE(x)   (x & ~(L1_CACHE_LINE_SIZE-1))
 
 /* Application ring properties */
 #define APP_RING_PROP_ORDER_MASK    0x01
