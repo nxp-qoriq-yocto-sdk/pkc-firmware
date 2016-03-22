@@ -324,16 +324,17 @@ static void make_drv_resp_ring_circ_list(struct c_mem_layout *mem, u32 count)
 
 static void init_shadow_counters(struct c_mem_layout *mem)
 {
-	u32 i = 0;
+	u32 i;
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
+
 	print_debug("Init R S mem....\n");
 	for (i = 0; i < mem->rsrc_mem->ring_count; i++) {
 		rps[i].r_s_cntrs = &(mem->rsrc_mem->r_s_cntrs_mem[i]);
-		print_debug("Ring: %d	R S Cntrs: %0x\n", i, rps[i].r_s_cntrs);
+		print_debug("Ring %d        R S Cntrs: %0x\n", i, rps[i].r_s_cntrs);
 	}
 
 	mem->rsrc_mem->drv_resp_ring->r_s_cntrs = &(mem->rsrc_mem->r_s_cntrs_mem[i]);
-	print_debug("Driver resp ring R S Cntrs: %0x\n", mem->rsrc_mem->drv_resp_ring->r_s_cntrs);
+	print_debug("Response ring R S Cntrs: %0x\n", mem->rsrc_mem->drv_resp_ring->r_s_cntrs);
 }
 
 static void add_ring_to_pq(priority_q_t *p_q, app_ring_pair_t *rp, u8 pri)
@@ -562,29 +563,34 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 		((u8 *)mem->h_hs_mem + r_s_cntrs);
 
 	print_debug("Shadow counters details from Host.\n");
-	print_debug("S CNTRS OFFSET: %0x\n", s_cntrs);
-	print_debug("R S CNTRS OFFSET: %0x\n", r_s_cntrs);
+	print_debug("S CNTRS OFFSET  : %10x\n", s_cntrs);
+	print_debug("R S CNTRS OFFSET: %10x\n", r_s_cntrs);
+	print_debug("The same counters mapped in local addresses:\n");
+	print_debug("S CNTRS         : %10p\n", mem->rsrc_mem->s_cntrs_mem);
+	print_debug("R S CNTRS       : %10p\n\n", mem->rsrc_mem->r_s_cntrs_mem);
+
 	init_shadow_counters(mem);
 
+	/* communicate to the host the offsets of the counters allocated earlier */
 	print_debug("\nSENDING FW_INIT_CONFIG_COMPLETE\n");
 	offset = (u8 *)mem->rsrc_mem->r_s_c_cntrs_mem - (u8 *)mem->v_ib_mem;
 	mem->h_hs_mem->data.config.s_r_cntrs = offset;
-	print_debug("S R CNTRS OFFSET: %0x\n", offset);
+	print_debug("S R CNTRS OFFSET: %10x\n", offset);
 
 	offset = (u8 *) mem->rsrc_mem->s_c_cntrs_mem - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.s_cntrs = offset;
-	print_debug("CNTRS OFFSET: %0x\n", offset);
+	print_debug("S_CNTRS OFFSET  : %10x\n", offset);
 
 	offset = (u8 *) mem->rsrc_mem->ip_pool - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.ip_pool = offset;
+	print_debug("ip_pool         : %10x\n", offset);
 
 	offset = (u8 *) &(mem->rsrc_mem->drv_resp_ring->intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.resp_intr_ctrl_flag = offset;
+	print_debug("intr_ctrl_flag  : %10x\n", offset);
 
 	mem->h_hs_mem->result = RESULT_OK;
 	mem->h_hs_mem->state = FW_INIT_CONFIG_COMPLETE;
-
-	/*c2x0_getc();*/
 }
 
 static void handshake(struct c_mem_layout *mem)
@@ -696,7 +702,7 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 	out_be32(&sec->jr.regs->jrcfg1, jrcfg);
 
 	SYNC_MEM;
-	print_debug("\nSec hw eng init done for id: %d....\n", sec->id);
+	print_debug("Sec hw eng init done for id: %d\n\n", sec->id);
 
 	return; 
 }
@@ -863,9 +869,6 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 	i32 i            = 0;
 	u32 sec_nums     = 0;
 
-	print_debug("\nalloc_rsrc_mem\n");
-	print_debug("rsrc addr: %0x\n", rsrc);
-
 	Memset((u8 *)rsrc, 0, sizeof(struct resource));
 
 	sec_nums = in_be32((u32 *)GUTS_SVR);
@@ -885,7 +888,10 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 	stack_ptr -= sec_nums * sizeof(struct sec_engine);
 	rsrc->sec = (struct sec_engine *) (stack_ptr);
 	Memset((u8 *)rsrc->sec, 0, sizeof(struct sec_engine) * sec_nums);
-	print_debug("sec addr: %0x\n", rsrc->sec);
+
+	print_debug("\nalloc_rsrc_mem\n");
+	print_debug("rsrc addr: %10x\n", rsrc);
+	print_debug("sec addr : %10x\n\n", rsrc->sec);
 
 	make_sec_circ_list(rsrc->sec, sec_nums);
 
