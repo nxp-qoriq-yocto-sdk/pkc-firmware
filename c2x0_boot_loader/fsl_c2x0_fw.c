@@ -2047,7 +2047,7 @@ START:
 	p_aligned_addr = p_addr & OB_TLB_SIZE_MASK;
 	c_mem->p_ob_mem = c_mem->p_pci_mem + p_aligned_addr;
 	c_mem->v_ob_mem = CONFIG_SYS_PCIE1_MEM_VIRT; /* TLB exist only for 1G */
-	c_mem->h_hs_mem = (struct fsl_h_mem_handshake *)
+	c_mem->h_hs_mem = (struct host_handshake_mem *)
 			((u8 *)c_mem->v_ob_mem + (p_addr - p_aligned_addr));
 
 	print_debug("\nOB MEM DETAILS\n");

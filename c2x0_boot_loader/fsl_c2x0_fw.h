@@ -468,7 +468,7 @@ struct dev_handshake_mem {
 Description : Defines the handshake memory layout on the host
 Fields      :
 *******************************************************************************/
-struct fsl_h_mem_handshake {
+struct host_handshake_mem {
 	u8 state;
 	u8 result;
 
@@ -572,7 +572,7 @@ struct c_mem_layout {
 	phys_addr_t p_buf_pool_mem;
 	va_addr_t v_buf_pool_mem;
 
-	struct fsl_h_mem_handshake __iomem *h_hs_mem;
+	struct host_handshake_mem __iomem *h_hs_mem;
 	struct dev_handshake_mem *c_hs_mem;
 
 	struct resource *rsrc_mem;
