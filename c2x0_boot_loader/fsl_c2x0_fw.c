@@ -39,12 +39,20 @@
 #include "fsl_c2x0_fw.h"
 
 #define CCSR_VIRT_ADDR		0xffe00000
-#define JRREGS_OFFSET		0x1000
-#define RNG_OFFSET			0x00600
-#define KEK_OFFSET			0x00400
-#define SCFG_OFFSET			0x0000C
-#define RDSTA_OFFSET		0x006c0
+#define JRREGS_OFFSET		0x1000	/* Input Ring Base Address for JR 0 */
+#define RNG_OFFSET		0x600	/* RNG TRNG Miscellaneous Control */
+#define KEK_OFFSET		0x400	/* Key Encryption Key */
+#define SCFG_OFFSET		0xC	/* Security Configuration */
+#define RDSTA_OFFSET		0x6c0	/* RNG DRNG Status Register */
 
+/*
+ * To access a register in a specific SEC engine, use the following SEC
+ * register base addresses:
+ * SEC Register Descriptions
+ * 8_0000h-9_FFFCh : SEC 1
+ * A_0000h-B_FFFCh : SEC 2 (SEC 2 is not implemented in C291)
+ * C_0000h-D_FFFCh : SEC 3 (SEC 3 is not implemented in C291 or C292)
+ */
 #define SEC0_OFFSET			0x80000
 #define SEC0_BASE_ADDR		(CCSR_VIRT_ADDR + SEC0_OFFSET)
 #define SEC0_JR0_ADDR		(SEC0_BASE_ADDR + JRREGS_OFFSET)
