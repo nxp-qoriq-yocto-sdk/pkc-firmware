@@ -2021,7 +2021,7 @@ START:
 	stack_ptr -= sizeof(struct c_mem_layout);
 	c_mem = (struct c_mem_layout *)stack_ptr;
 	c_mem->dgb_print = c_mem->err_print = 0;
-	c_mem->c_hs_mem = (struct crypto_c_hs_mem *)c_hs_mem;
+	c_mem->c_hs_mem = (struct dev_handshake_mem *)c_hs_mem;
 	c_mem->v_ib_mem = L2_SRAM_VIRT_ADDR;
 	c_mem->p_ib_mem = L2_SRAM_VIRT_ADDR;	/* Phy addr is same as v addr */
 	/*PCIE1 controller physical address-outbound window will be set to 16G*/

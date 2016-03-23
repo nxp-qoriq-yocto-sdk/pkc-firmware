@@ -427,7 +427,7 @@ struct resource {
 };
 
 /* Handshake related data structures */
-struct crypto_c_hs_mem {
+struct dev_handshake_mem {
 	u32 h_ob_mem_l;
 	u32 h_ob_mem_h;
 
@@ -573,7 +573,7 @@ struct c_mem_layout {
 	va_addr_t v_buf_pool_mem;
 
 	struct fsl_h_mem_handshake __iomem *h_hs_mem;
-	struct crypto_c_hs_mem *c_hs_mem;
+	struct dev_handshake_mem *c_hs_mem;
 
 	struct resource *rsrc_mem;
 
