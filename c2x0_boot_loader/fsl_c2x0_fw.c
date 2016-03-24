@@ -262,7 +262,7 @@ static void init_rps(struct c_mem_layout *mem, u8 num, u8 respringcount)
 		rps[i].r_s_cntrs = NULL;
 
 		rps[i].idxs = &(mem->rsrc_mem->idxs_mem[i]);
-		rps[i].cntrs = &(mem->rsrc_mem->r_cntrs_mem[i]);
+		rps[i].r_cntrs = &(mem->rsrc_mem->r_cntrs_mem[i]);
 		rps[i].r_s_c_cntrs = &(mem->rsrc_mem->r_s_c_cntrs_mem[i]);
 		rps[i].ip_pool = mem->rsrc_mem->ip_pool;
 		rps[i].intr_ctrl_flag = 0;
@@ -275,7 +275,7 @@ static void init_rps(struct c_mem_layout *mem, u8 num, u8 respringcount)
 
 		print_debug("\nRing %d details\n", i);
 		print_debug("\tIdxs addr  : %10p\n", rps[i].idxs);
-		print_debug("\tCntrs      : %10p\n", rps[i].cntrs);
+		print_debug("\tR cntrs    : %10p\n", rps[i].r_cntrs);
 		print_debug("\tR S C cntrs: %10p\n", rps[i].r_s_c_cntrs);
 		print_debug("\tIp pool    : %10p\n", rps[i].ip_pool);
 	}
@@ -1086,8 +1086,8 @@ static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem,
 	jr->tail = MOD_ADD(wi, 1, jr->size);
 	rp->idxs->r_index = MOD_ADD(ri, 1, rp->depth);
 
-	rp->cntrs->jobs_processed += 1;
-	rp->r_s_cntrs->req_jobs_processed = rp->cntrs->jobs_processed;
+	rp->r_cntrs->jobs_processed += 1;
+	rp->r_s_cntrs->req_jobs_processed = rp->r_cntrs->jobs_processed;
 	out_be32(&(jr->regs->irja), 1);
 
 RET:
@@ -1114,7 +1114,7 @@ static inline void loop_inorder(app_ring_pair_t *resp_ring)
 		print_debug("Flag value: %x\n", flag);
 		if (0x1 == flag) {
 			*pos_ptr &= ~(1 << bit_pos);
-			resp_ring->cntrs->jobs_added += 1;
+			resp_ring->r_cntrs->jobs_added += 1;
 			resp_ring->order_j_d_index = 
 				(resp_ring->order_j_d_index + 1) % resp_ring->depth;
 		}
@@ -1169,7 +1169,7 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 		resp_ring = &(c_mem->rsrc_mem->orig_rps[rid]);
 
 		room =
-		    resp_ring->depth - (resp_ring->cntrs->jobs_added -
+		    resp_ring->depth - (resp_ring->r_cntrs->jobs_added -
 					resp_ring->r_s_c_cntrs->jobs_processed);
 		if (!room)
 			return ret_cnt;
@@ -1184,7 +1184,7 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 			wi = resp_ring->idxs->w_index;
 			Deq_Cpy(&(resp_ring->resp_r[wi]), &jr->o_ring[ri], 1);
 			resp_ring->idxs->w_index = MOD_ADD(wi, 1, resp_ring->depth);
-			resp_ring->cntrs->jobs_added += 1;
+			resp_ring->r_cntrs->jobs_added += 1;
 		}
 
 		ri = MOD_ADD(ri, 1, jr->size);
@@ -1192,7 +1192,7 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 		jr->deq_cnt += 1;
 
 		resp_ring->r_s_cntrs->resp_jobs_added =
-		    resp_ring->cntrs->jobs_added;
+		    resp_ring->r_cntrs->jobs_added;
 
 		out_be32(&jr->regs->orjr, 1);
 		*todeq -= 1;
@@ -1759,8 +1759,8 @@ static inline uint32_t enqueue_to_sec(struct sec_engine *sec,
 	if(count > 0) {
 		Enq_Circ_Cpy(&(sec->jr), rp, count);
 		out_be32(&(sec->jr.regs->irja), count);
-		rp->cntrs->jobs_processed += count;
-		rp->r_s_cntrs->req_jobs_processed = rp->cntrs->jobs_processed;
+		rp->r_cntrs->jobs_processed += count;
+		rp->r_s_cntrs->req_jobs_processed = rp->r_cntrs->jobs_processed;
 	}
 	return count;
 }
@@ -1789,7 +1789,7 @@ static inline uint32_t dequeue_from_sec(struct sec_engine *sec,
 		app_ring_pair_t *rp)
 {
 	uint32_t out_jobs  = in_be32(&(sec->jr.regs->orsf));
-	uint32_t hostroom = rp->depth - (rp->cntrs->jobs_added - rp->r_s_c_cntrs->jobs_processed);
+	uint32_t hostroom = rp->depth - (rp->r_cntrs->jobs_added - rp->r_s_c_cntrs->jobs_processed);
 	uint32_t count = MIN(out_jobs, hostroom);
 
 	print_debug("%s: out_jobs: %d, hostroom: %d, count: %d \n",
@@ -1797,8 +1797,8 @@ static inline uint32_t dequeue_from_sec(struct sec_engine *sec,
 
 	if (count) {
 		Deq_Circ_Cpy(&(sec->jr), rp, count);
-		rp->cntrs->jobs_added += count;
-		rp->r_s_cntrs->resp_jobs_added = rp->cntrs->jobs_added;
+		rp->r_cntrs->jobs_added += count;
+		rp->r_s_cntrs->resp_jobs_added = rp->r_cntrs->jobs_added;
 		out_be32(&(sec->jr.regs->orjr), count);
 	}
 	return count;
@@ -1816,7 +1816,7 @@ static inline uint32_t irq_is_due(uint32_t deq_cnt, app_ring_pair_t *rp,
 				uint32_t irq_timeout)
 {
 	uint32_t raise_irq;
-	uint32_t host_jobs = rp->cntrs->jobs_added - rp->r_s_c_cntrs->jobs_processed;
+	uint32_t host_jobs = rp->r_cntrs->jobs_added - rp->r_s_c_cntrs->jobs_processed;
 
 	raise_irq = (deq_cnt > 0) && (!rp->intr_ctrl_flag);
 	raise_irq |= (host_jobs != 0 ) && (irq_timeout == 0);
@@ -1851,7 +1851,7 @@ static void ring_processing_perf(struct c_mem_layout *c_mem)
 			irq_timeout = 0;
 		}
 
-		in_jobs = recv_r->r_s_c_cntrs->jobs_added - recv_r->cntrs->jobs_processed;
+		in_jobs = recv_r->r_s_c_cntrs->jobs_added - recv_r->r_cntrs->jobs_processed;
 		if (in_jobs > 0) {
 			enq_cnt = enqueue_to_sec(enq_sec, recv_r, in_jobs);
 			in_flight += enq_cnt;
@@ -1978,7 +1978,7 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 		rp = rp->next;
 	} while (1 != rp->id);
 	
-	r_deq_cnt   =   &(rp->cntrs->jobs_processed);
+	r_deq_cnt   =   &(rp->r_cntrs->jobs_processed);
 	cnt = WAIT_FOR_DRIVER_JOBS(&(rp->r_s_c_cntrs->jobs_added), r_deq_cnt);
 	if (cnt == 0) {
 		return;

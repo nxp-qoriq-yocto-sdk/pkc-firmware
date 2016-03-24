@@ -348,14 +348,14 @@ typedef struct app_ring_pair {
 	void *msi_addr;
 	struct sec_engine *sec;
 	indexes_mem_t *idxs;
-	ring_counters_mem_t *cntrs;
+	ring_counters_mem_t *r_cntrs;
 	ring_counters_mem_t *r_s_c_cntrs;
 	ring_shadow_counters_mem_t *r_s_cntrs;
 
 	u8 id;
-    u8 prio;
-    u8 c_link;
-    u8 max_next_link;
+	u8 prio;
+	u8 c_link;
+	u8 max_next_link;
 	u8 props;
 	u16 msi_data;
 	u32 depth;
@@ -363,8 +363,7 @@ typedef struct app_ring_pair {
 	u32 order_j_d_index;
 
 	struct app_ring_pair *next;
-
-    struct app_ring_pair *rp_links[FSL_CRYPTO_MAX_RING_PAIRS];
+	struct app_ring_pair *rp_links[FSL_CRYPTO_MAX_RING_PAIRS];
 } app_ring_pair_t;
 
 /*******************************************************************************
