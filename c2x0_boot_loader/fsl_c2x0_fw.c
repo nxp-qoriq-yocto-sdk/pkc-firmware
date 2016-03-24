@@ -221,37 +221,38 @@ NEXT_RP:
 
 static void init_rps(struct c_mem_layout *mem, u8 num, u8 respringcount)
 {
-	u8 i = 0;
-	u8 j = 0;
-/*	u8	*idxs = NULL, *cntrs = NULL, *s_c_cntrs = NULL; */
+	u8 i;
+	u8 j;
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
+	u32 total_rings = num + respringcount;
 
 	print_debug("Init Ring Pairs:\n");
-	stack_ptr -=  (sizeof(indexes_mem_t) * (num+respringcount));
+	stack_ptr -= sizeof(indexes_mem_t) * total_rings;
 	mem->rsrc_mem->idxs_mem = (indexes_mem_t *) stack_ptr;
-	Memset((u8 *)mem->rsrc_mem->idxs_mem, 0, (sizeof(indexes_mem_t) * (num + respringcount)));
+	Memset((u8 *)mem->rsrc_mem->idxs_mem, 0,
+			sizeof(indexes_mem_t) * total_rings);
 	print_debug("Indexes mem: %0x\n", mem->rsrc_mem->idxs_mem);
 
-	stack_ptr -=  (sizeof(counters_mem_t));
+	stack_ptr -= sizeof(counters_mem_t);
 	mem->rsrc_mem->cntrs_mem = (counters_mem_t *) stack_ptr;
 	Memset((u8 *)mem->rsrc_mem->cntrs_mem, 0, sizeof(counters_mem_t));
 	print_debug("Counters mem: %0x\n", mem->rsrc_mem->cntrs_mem);
 
-	stack_ptr -=  (sizeof(counters_mem_t));
+	stack_ptr -= sizeof(counters_mem_t);
 	mem->rsrc_mem->s_c_cntrs_mem = (counters_mem_t *) stack_ptr;
 	Memset((u8 *)mem->rsrc_mem->s_c_cntrs_mem, 0, sizeof(counters_mem_t));
 	print_debug("S C Counters mem: %0x\n", mem->rsrc_mem->s_c_cntrs_mem);
 
-	stack_ptr -=  (sizeof(ring_counters_mem_t) * (num+respringcount));
+	stack_ptr -= sizeof(ring_counters_mem_t) * total_rings;
 	mem->rsrc_mem->r_cntrs_mem = (ring_counters_mem_t *) stack_ptr;
 	Memset((u8 *)mem->rsrc_mem->r_cntrs_mem, 0,
-	       (sizeof(ring_counters_mem_t) * (num + respringcount)));
+			sizeof(ring_counters_mem_t) * total_rings);
 	print_debug("R counters mem: %0x\n", mem->rsrc_mem->r_cntrs_mem);
 
-	stack_ptr -= (sizeof(ring_counters_mem_t) * (num+respringcount));
+	stack_ptr -= sizeof(ring_counters_mem_t) * total_rings;
 	mem->rsrc_mem->r_s_c_cntrs_mem = (ring_counters_mem_t *) stack_ptr;
 	Memset((u8 *)mem->rsrc_mem->r_s_c_cntrs_mem, 0,
-	       (sizeof(ring_counters_mem_t) * (num + respringcount)));
+	       sizeof(ring_counters_mem_t) * total_rings);
 	print_debug("R S C counters mem: %0x\n", mem->rsrc_mem->r_s_c_cntrs_mem);
 
 	for (i = 0; i < num; i++) {
