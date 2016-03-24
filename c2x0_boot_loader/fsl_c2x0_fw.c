@@ -191,6 +191,8 @@ static inline void init_order_mem(struct c_mem_layout *mem)
 
 	print_debug("init_order_mem \n");
 	print_debug("rp_head : %x, rp: %x\n", rp_head, rp);
+
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	while(NULL != rp)
 	{
 		print_debug("First rp: %d\n", rp->id);
@@ -430,7 +432,6 @@ int hs_complete(struct c_mem_layout *mem)
 	make_rp_prio_links(mem);
 	make_rp_circ_list(mem);
 
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	init_order_mem(mem);
 
 	print_debug("\nHS_COMPLETE:\n");
@@ -529,7 +530,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	respr_count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
 	init_rps(mem, max_rps, respr_count);
 
-
 	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
 	print_debug("Req mem size: %d\n", req_mem_size);
 
@@ -543,12 +543,12 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	resp_ring_off = mem->c_hs_mem->data.config.fw_resp_ring;
 	depth = mem->c_hs_mem->data.config.fw_resp_ring_depth;
 	count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
+	mem->rsrc_mem->drv_resp_ring_count = count;
+
 	print_debug("Resp ring off: %0x\n", resp_ring_off);
 
 	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	stack_ptr -= count * sizeof(drv_resp_ring_t);
-
-	mem->rsrc_mem->drv_resp_ring_count = count;
 	mem->rsrc_mem->drv_resp_ring = (drv_resp_ring_t *) stack_ptr;
 
 	init_drv_resp_ring(mem, resp_ring_off, depth, count);
