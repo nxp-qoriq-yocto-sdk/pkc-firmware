@@ -226,34 +226,32 @@ static void init_rps(struct c_mem_layout *mem, u8 num, u8 respringcount)
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
 	u32 total_rings = num + respringcount;
 
-	print_debug("Init Ring Pairs:\n");
 	stack_ptr -= sizeof(indexes_mem_t) * total_rings;
 	mem->rsrc_mem->idxs_mem = (indexes_mem_t *) stack_ptr;
-	Memset((u8 *)mem->rsrc_mem->idxs_mem, 0,
-			sizeof(indexes_mem_t) * total_rings);
-	print_debug("Indexes mem: %0x\n", mem->rsrc_mem->idxs_mem);
-
 	stack_ptr -= sizeof(counters_mem_t);
 	mem->rsrc_mem->cntrs_mem = (counters_mem_t *) stack_ptr;
-	Memset((u8 *)mem->rsrc_mem->cntrs_mem, 0, sizeof(counters_mem_t));
-	print_debug("Counters mem: %0x\n", mem->rsrc_mem->cntrs_mem);
-
 	stack_ptr -= sizeof(counters_mem_t);
 	mem->rsrc_mem->s_c_cntrs_mem = (counters_mem_t *) stack_ptr;
-	Memset((u8 *)mem->rsrc_mem->s_c_cntrs_mem, 0, sizeof(counters_mem_t));
-	print_debug("S C Counters mem: %0x\n", mem->rsrc_mem->s_c_cntrs_mem);
-
 	stack_ptr -= sizeof(ring_counters_mem_t) * total_rings;
 	mem->rsrc_mem->r_cntrs_mem = (ring_counters_mem_t *) stack_ptr;
-	Memset((u8 *)mem->rsrc_mem->r_cntrs_mem, 0,
-			sizeof(ring_counters_mem_t) * total_rings);
-	print_debug("R counters mem: %0x\n", mem->rsrc_mem->r_cntrs_mem);
-
 	stack_ptr -= sizeof(ring_counters_mem_t) * total_rings;
 	mem->rsrc_mem->r_s_c_cntrs_mem = (ring_counters_mem_t *) stack_ptr;
+
+	Memset((u8 *)mem->rsrc_mem->idxs_mem, 0,
+			sizeof(indexes_mem_t) * total_rings);
+	Memset((u8 *)mem->rsrc_mem->cntrs_mem, 0, sizeof(counters_mem_t));
+	Memset((u8 *)mem->rsrc_mem->s_c_cntrs_mem, 0, sizeof(counters_mem_t));
+	Memset((u8 *)mem->rsrc_mem->r_cntrs_mem, 0,
+			sizeof(ring_counters_mem_t) * total_rings);
 	Memset((u8 *)mem->rsrc_mem->r_s_c_cntrs_mem, 0,
-	       sizeof(ring_counters_mem_t) * total_rings);
-	print_debug("R S C counters mem: %0x\n", mem->rsrc_mem->r_s_c_cntrs_mem);
+			sizeof(ring_counters_mem_t) * total_rings);
+
+	print_debug("Init Ring Pairs:\n");
+	print_debug("Indexes mem       :%10p\n", mem->rsrc_mem->idxs_mem);
+	print_debug("Counters mem      :%10p\n", mem->rsrc_mem->cntrs_mem);
+	print_debug("S C Counters mem  :%10p\n", mem->rsrc_mem->s_c_cntrs_mem);
+	print_debug("R counters mem    :%10p\n", mem->rsrc_mem->r_cntrs_mem);
+	print_debug("R S C counters mem:%10p\n", mem->rsrc_mem->r_s_c_cntrs_mem);
 
 	for (i = 0; i < num; i++) {
 		rps[i].req_r = NULL;
@@ -269,14 +267,15 @@ static void init_rps(struct c_mem_layout *mem, u8 num, u8 respringcount)
 
 		rps[i].next = NULL;
 
-		for(j=0; j<FSL_CRYPTO_MAX_RING_PAIRS; j++)
+		for(j=0; j<FSL_CRYPTO_MAX_RING_PAIRS; j++) {
 			rps[i].rp_links[j] = NULL;
+		}
 
-		print_debug("Ring: %d details\n", i);
-		print_debug("\tIdxs addr: %0x\n", rps[i].idxs);
-		print_debug("\tCntrs: %0x\n", rps[i].cntrs);
-		print_debug("\tR S C cntrs: %0x\n", rps[i].r_s_c_cntrs);
-		print_debug("\tIp pool: %0x\n", rps[i].ip_pool);
+		print_debug("\nRing %d details\n", i);
+		print_debug("\tIdxs addr  : %10p\n", rps[i].idxs);
+		print_debug("\tCntrs      : %10p\n", rps[i].cntrs);
+		print_debug("\tR S C cntrs: %10p\n", rps[i].r_s_c_cntrs);
+		print_debug("\tIp pool    : %10p\n", rps[i].ip_pool);
 	}
 }
 
