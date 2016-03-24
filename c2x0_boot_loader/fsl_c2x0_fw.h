@@ -125,6 +125,8 @@
 #define MCFGR_SWRST       ((u32)(1)<<31)	/* Software Reset */
 #define MCFGR_DMA_RST     ((u32)(1)<<28)	/* DMA Reset */
 
+#define FSL_CRYPTO_MAX_RING_PAIRS   6
+
 /* Local typedef's */
 typedef int i32;
 typedef short i16;
@@ -362,7 +364,6 @@ typedef struct app_ring_pair {
 
 	struct app_ring_pair *next;
 
-#define FSL_CRYPTO_MAX_RING_PAIRS   6
     struct app_ring_pair *rp_links[FSL_CRYPTO_MAX_RING_PAIRS];
 } app_ring_pair_t;
 
