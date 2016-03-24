@@ -221,7 +221,7 @@ NEXT_RP:
 	return;
 }
 
-static void init_rps(struct c_mem_layout *mem, u8 num, u8 respringcount)
+static void init_ring_pairs(struct c_mem_layout *mem, u8 num, u8 respringcount)
 {
 	u8 i;
 	u8 j;
@@ -321,7 +321,7 @@ static void make_drv_resp_ring_circ_list(struct c_mem_layout *mem, u32 count)
     mem->rsrc_mem->drv_resp_ring[i-1].next = &mem->rsrc_mem->drv_resp_ring[0];
 }
 
-static void init_scs(struct c_mem_layout *mem)
+static void init_shadow_counters(struct c_mem_layout *mem)
 {
 	u32 i = 0;
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
@@ -528,7 +528,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	mem->rsrc_mem->rps = (app_ring_pair_t *) stack_ptr;
 	mem->rsrc_mem->orig_rps = mem->rsrc_mem->rps;
 	respr_count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
-	init_rps(mem, max_rps, respr_count);
+	init_ring_pairs(mem, max_rps, respr_count);
 
 	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
 	print_debug("Req mem size: %d\n", req_mem_size);
@@ -538,7 +538,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 
 	mem->rsrc_mem->req_mem = (void *) stack_ptr;
 	print_debug("Req mem addr: %0x\n", mem->rsrc_mem->req_mem);
-
 
 	resp_ring_off = mem->c_hs_mem->data.config.fw_resp_ring;
 	depth = mem->c_hs_mem->data.config.fw_resp_ring_depth;
@@ -564,7 +563,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	print_debug("Shadow counters details from Host.\n");
 	print_debug("S CNTRS OFFSET: %0x\n", s_cntrs);
 	print_debug("R S CNTRS OFFSET: %0x\n", r_s_cntrs);
-	init_scs(mem);
+	init_shadow_counters(mem);
 
 	print_debug("\nSENDING FW_INIT_CONFIG_COMPLETE\n");
 	offset = (u8 *)mem->rsrc_mem->r_s_c_cntrs_mem - (u8 *)mem->v_ib_mem;
