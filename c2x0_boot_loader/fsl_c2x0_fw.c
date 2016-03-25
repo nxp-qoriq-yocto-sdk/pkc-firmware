@@ -293,7 +293,8 @@ static void init_drv_resp_ring(struct c_mem_layout *mem, u32 offset, u32 depth, 
         ring->id            =   i;
         ring->msi_data      =   0;
         ring->intr_ctrl_flag=   0;
-        ring->msi_addr      =   ring->r_s_cntrs     =   NULL;
+        ring->msi_addr      =   NULL;
+        ring->r_s_cntrs     =   NULL;
         ring->depth         =   depth;
         ring->resp_r        =   (resp_ring_t *)((u8 *)mem->h_hs_mem + offset);
         ring->idxs          =   &(mem->rsrc_mem->idxs_mem[loc + i]);
