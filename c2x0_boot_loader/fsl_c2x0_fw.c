@@ -574,11 +574,11 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	/* communicate to the host the offsets of the counters allocated earlier */
 	print_debug("\nSENDING FW_INIT_CONFIG_COMPLETE\n");
 	offset = (u8 *)mem->rsrc_mem->r_s_c_cntrs_mem - (u8 *)mem->v_ib_mem;
-	mem->h_hs_mem->data.config.s_r_cntrs = offset;
+	mem->h_hs_mem->data.config.r_s_c_cntrs = offset;
 	print_debug("S R CNTRS OFFSET: %10x\n", offset);
 
 	offset = (u8 *) mem->rsrc_mem->s_c_cntrs_mem - (u8 *) mem->v_ib_mem;
-	mem->h_hs_mem->data.config.s_cntrs = offset;
+	mem->h_hs_mem->data.config.s_c_cntrs = offset;
 	print_debug("S_CNTRS OFFSET  : %10x\n", offset);
 
 	offset = (u8 *) mem->rsrc_mem->ip_pool - (u8 *) mem->v_ib_mem;

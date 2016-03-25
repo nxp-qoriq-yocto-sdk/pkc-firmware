@@ -483,8 +483,8 @@ struct host_handshake_mem {
 			u32 no_secs;
 		} device;
 		struct config_data {
-			u32 s_r_cntrs;
-			u32 s_cntrs;
+			u32 r_s_c_cntrs;
+			u32 s_c_cntrs;
 			u32 ip_pool;
 			u32 resp_intr_ctrl_flag;
 		} config;
