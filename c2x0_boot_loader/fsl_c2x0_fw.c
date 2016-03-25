@@ -1994,11 +1994,11 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 
 DEQ:
 	ring_jobs   =  sec_dequeue(c_mem, &sec, &deq);
-	if (!ring_jobs)
-		goto DEQ;
-
-	if (ring_jobs)
+	if (ring_jobs) {
 		raise_intr(c_mem->rsrc_mem->drv_resp_ring);
+	} else {
+		goto DEQ;
+	}
 }
 
 i32 fsl_c2x0_fw(void)
