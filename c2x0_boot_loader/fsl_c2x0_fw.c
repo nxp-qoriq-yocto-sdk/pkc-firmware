@@ -279,7 +279,7 @@ static void init_drv_resp_ring(struct c_mem_layout *mem, u32 offset, u32 depth, 
         ring->intr_ctrl_flag=   0;
         ring->msi_addr      =   ring->r_s_cntrs     =   NULL;
         ring->depth         =   depth;
-        ring->resp_r        =   (resp_ring_t *)((u8 *)mem->v_ob_mem + ((mem->p_pci_mem + offset) - mem->p_ob_mem));
+        ring->resp_r        =   (resp_ring_t *)((u8 *)mem->h_hs_mem + offset);
         ring->idxs          =   &(mem->rsrc_mem->idxs_mem[loc + i]);
         ring->r_cntrs       =   &(mem->rsrc_mem->r_cntrs_mem[loc + i]);
         ring->r_s_c_cntrs   =   &(mem->rsrc_mem->r_s_c_cntrs_mem[loc + i]);
@@ -548,9 +548,9 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	s_cntrs = mem->c_hs_mem->data.config.s_cntrs;
 	r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
 	mem->rsrc_mem->s_cntrs_mem = (shadow_counters_mem_t *)
-		((u8 *)mem->v_ob_mem + ((mem->p_pci_mem + s_cntrs) - mem->p_ob_mem));
+		((u8 *)mem->h_hs_mem + s_cntrs);
 	mem->rsrc_mem->r_s_cntrs_mem = (ring_shadow_counters_mem_t *)
-		((u8 *)mem->v_ob_mem + ((mem->p_pci_mem + r_s_cntrs) - mem->p_ob_mem));
+		((u8 *)mem->h_hs_mem + r_s_cntrs);
 
 	print_debug("Shadow counters details from Host.\n");
 	print_debug("S CNTRS OFFSET: %0x\n", s_cntrs);
