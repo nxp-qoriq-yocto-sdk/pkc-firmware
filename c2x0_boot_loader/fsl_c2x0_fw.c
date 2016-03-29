@@ -503,7 +503,7 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 void hs_fw_init_config(struct c_mem_layout *mem)
 {
 	u8 max_pri, max_rps, respr_count, count;
-	u32 req_mem_size, resp_ring_off, depth, s_cntrs, r_s_cntrs, offset;
+	u32 req_mem_size, resp_ring_off, depth, r_s_cntrs, offset;
 
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nFW_INIT_CONFIG\n");
@@ -555,18 +555,13 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	init_drv_resp_ring(mem, resp_ring_off, depth, count);
 	make_drv_resp_ring_circ_list(mem, count);
 
-	s_cntrs = mem->c_hs_mem->data.config.s_cntrs;
 	r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
-	mem->rsrc_mem->s_cntrs_mem = (shadow_counters_mem_t *)
-		((u8 *)mem->h_hs_mem + s_cntrs);
 	mem->rsrc_mem->r_s_cntrs_mem = (ring_shadow_counters_mem_t *)
 		((u8 *)mem->h_hs_mem + r_s_cntrs);
 
 	print_debug("Shadow counters details from Host.\n");
-	print_debug("S CNTRS OFFSET  : %10x\n", s_cntrs);
 	print_debug("R S CNTRS OFFSET: %10x\n", r_s_cntrs);
 	print_debug("The same counters mapped in local addresses:\n");
-	print_debug("S CNTRS         : %10p\n", mem->rsrc_mem->s_cntrs_mem);
 	print_debug("R S CNTRS       : %10p\n\n", mem->rsrc_mem->r_s_cntrs_mem);
 
 	init_shadow_counters(mem);

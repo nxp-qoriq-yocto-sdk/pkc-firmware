@@ -422,8 +422,6 @@ struct resource {
 	counters_mem_t *cntrs_mem;
 	counters_mem_t *s_c_cntrs_mem;
 	ring_shadow_counters_mem_t *r_s_cntrs_mem;
-	shadow_counters_mem_t *s_cntrs_mem;
-
 };
 
 /* Handshake related data structures */
@@ -447,7 +445,7 @@ struct dev_handshake_mem {
 			u32 req_mem_size;
 			u32 drv_resp_ring;
 			u32 fw_resp_ring;
-			u32 s_cntrs;
+			u32 padding1; /* not used inside firmware */
 			u32 r_s_cntrs;
 			u32 fw_resp_ring_depth;
 		} config;
