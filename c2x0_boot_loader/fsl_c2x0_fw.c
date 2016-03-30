@@ -452,14 +452,16 @@ int hs_complete(struct c_mem_layout *mem)
 
 uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 {
-	mem->c_hs_mem->state = DEFAULT;
-	print_debug("\nFW_INIT_RING_PAIR\n");
-	{
+
+	u32 offset;
 	u32 rid = mem->c_hs_mem->data.ring.rid;
 	u32 prio = (mem->c_hs_mem->data.ring.props & APP_RING_PROP_PRIO_MASK)
 			>> APP_RING_PROP_PRIO_SHIFT;
 	u32 msi_addr_l = mem->c_hs_mem->data.ring.msi_addr_l;
 	app_ring_pair_t *rp = &(mem->rsrc_mem->rps[rid]);
+
+	mem->c_hs_mem->state = DEFAULT;
+	print_debug("\nFW_INIT_RING_PAIR\n");
 
 	rp->id = rid;
 	rp->props = mem->c_hs_mem->data.ring.props;
@@ -484,18 +486,14 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 
 	add_ring_to_pq(mem->rsrc_mem->p_q, rp, (prio - 1));
 
-	{
-	u32 offset = 0;
-
 	offset = (u8 *) rp->req_r - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.ring.req_r = offset;
+
 	offset = (u8 *) &(rp->intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.ring.intr_ctrl_flag = offset;
-	}
-	}
+
 	mem->h_hs_mem->result = RESULT_OK;
 	mem->h_hs_mem->state = FW_INIT_RING_PAIR_COMPLETE;
-	/*c2x0_getc();*/
 
 	return r_offset;
 }
