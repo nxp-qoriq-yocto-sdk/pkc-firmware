@@ -433,7 +433,7 @@ struct dev_handshake_mem {
 	u32 h_msi_mem_h;
 
 	u8 state;
-	u8 command;
+	u8 padding1; /* this field is not used inside firmware */
 	u8 data_len;
 	u8 pad;
 
