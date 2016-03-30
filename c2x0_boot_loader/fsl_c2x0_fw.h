@@ -483,7 +483,7 @@ struct host_handshake_mem {
 		struct config_data {
 			u32 r_s_c_cntrs;
 			u32 s_c_cntrs;
-			u32 ip_pool;
+			u32 ip_pool;    /* ip_pool allocated in firmware SRAM */
 			u32 resp_intr_ctrl_flag;
 		} config;
 		struct ring_data {
