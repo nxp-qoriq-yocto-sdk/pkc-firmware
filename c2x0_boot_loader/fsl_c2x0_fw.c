@@ -452,7 +452,7 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 			mem->p_msi_mem)));
 	rp->req_r = mem->rsrc_mem->req_mem + r_offset;
 	r_offset += (rp->depth * sizeof(req_ring_t));
-	rp->resp_r = (resp_ring_t *) ((u8 *) mem->v_ob_mem + ((mem->p_pci_mem + mem->c_hs_mem->data.ring.resp_ring) - mem->p_ob_mem));
+	rp->resp_r = (resp_ring_t *)((u8 *)mem->h_hs_mem + mem->c_hs_mem->data.ring.resp_ring_offset);
 
 	print_debug("Rid:	%d\n", rid);
 	print_debug("Order:	%d\n",

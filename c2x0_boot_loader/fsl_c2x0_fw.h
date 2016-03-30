@@ -459,7 +459,7 @@ struct crypto_c_hs_mem {
 			u8 props;
 			u16 msi_data;
 			u32 depth;
-			u32 resp_ring;
+			u32 resp_ring_offset;
 			u32 msi_addr_l;
 			u32 msi_addr_h;
 			u32 s_r_cntrs;
