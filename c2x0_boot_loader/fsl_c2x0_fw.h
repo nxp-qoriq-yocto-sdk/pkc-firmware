@@ -227,17 +227,6 @@ struct kek_regs {
 	uint32_t tdsk;
 };
 
-#define MULTIPLE_RESP_RINGS
-
-#ifdef MULTIPLE_RESP_RINGS
-struct dev_ctx {
-	volatile u8 r_id;
-	volatile u32 wi;
-} __packed;
-
-typedef struct dev_ctx dev_ctx_t;
-#endif
-
 /* The container data structure be in platform SRAM */
 struct sec_engine {
 	u8 id;

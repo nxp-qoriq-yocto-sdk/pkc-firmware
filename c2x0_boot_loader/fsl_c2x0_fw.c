@@ -1105,66 +1105,14 @@ RET:
 	return 1;
 }
 
-static inline void loop_inorder(app_ring_pair_t *resp_ring)
-{
-	u32 flag = 0;
-	u32 byte_pos = 0;
-	u8  *pos_ptr = NULL;
-	u32 bit_pos = 0;
-
-	do {
-		print_debug("Ordered job done idx: %d\n", resp_ring->order_j_d_index);
-		/* Checking whether next ordered response bit is set  */
-		byte_pos = resp_ring->order_j_d_index / BITS_PER_BYTE;
-		bit_pos = resp_ring->order_j_d_index % BITS_PER_BYTE;				
-		pos_ptr = resp_ring->resp_j_done_flag + byte_pos;
-		print_debug("Ordered byte pos: %d, bit pos: %d, addr: %x, value: %x\n",
-				byte_pos, bit_pos, pos_ptr, *pos_ptr);
-		flag = 0x1 & ( *pos_ptr >> (bit_pos));
-		print_debug("Flag value: %x\n", flag);
-		if (0x1 == flag) {
-			*pos_ptr &= ~(1 << bit_pos);
-			resp_ring->r_cntrs->jobs_added += 1;
-			resp_ring->order_j_d_index = 
-				(resp_ring->order_j_d_index + 1) % resp_ring->depth;
-		}
-	} while(flag);
-}
-
-static inline void inorder_dequeue(app_ring_pair_t *resp_ring,
-		struct sec_jr *jr, u32 ri, u32 wi)
-{
-	u8  *pos_ptr = NULL;
-	u32 byte_pos = 0;
-	u32 bit_pos = 0;
-
-	/* Setting the proper bit position for this response */
-	byte_pos = (wi - 1) / BITS_PER_BYTE;
-	pos_ptr = resp_ring->resp_j_done_flag + byte_pos;
-	bit_pos = (wi - 1) % (BITS_PER_BYTE);
-
-	print_debug("Job byte pos: %d, bit pos: %d, addr: %x, value: %x\n",
-				byte_pos, bit_pos, pos_ptr, *pos_ptr);
-	*pos_ptr |= ( 1 << bit_pos);
-	print_debug("Addr value after set bit: %x\n", *pos_ptr);
-
-	memcpy(&(resp_ring->resp_r[wi - 1]), &jr->o_ring[ri], sizeof(resp_ring_t));
-	print_debug("Index: %d, Desc: %0llx\n", wi - 1, resp_ring->resp_r[wi - 1].desc);
-
-	loop_inorder(resp_ring);
-}
-
 static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
-		struct sec_engine **deq_sec, u32 *todeq)
+		struct sec_engine **deq_sec, app_ring_pair_t *rp, u32 *todeq)
 {
 	struct sec_jr *jr = &(*deq_sec)->jr;
 	u32 cnt = in_be32(&jr->regs->orsf);
 	u32 room = 0;
 	u32 wi = 0;
-	u32 ri = jr->head;
-	app_ring_pair_t *resp_ring = NULL;
-	dev_ctx_t *ctx = NULL;
-	u32 rid = 0;
+	u32 ri;
 	u32 ret_cnt = 0;
 
 	if (!cnt) {
@@ -1172,37 +1120,24 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 		return 0;
 	}
 
+	ri = jr->head;
+
 	while (cnt) {
-		ctx = (dev_ctx_t *) ((u32)jr->o_ring[ri].desc - 32);
-		rid = ctx->r_id;
-
-		resp_ring = &(c_mem->rsrc_mem->orig_rps[rid]);
-
-		room =
-		    resp_ring->depth - (resp_ring->r_cntrs->jobs_added -
-					resp_ring->r_s_c_cntrs->jobs_processed);
+		room = rp->depth -
+			(rp->r_cntrs->jobs_added - rp->r_s_c_cntrs->jobs_processed);
 		if (!room)
 			return ret_cnt;
 
-		if (ctx->wi) {
-			/* For order response driver will request with a write index id. 
-			 * If an unorder response comes from sec we need to wait till 
-			 * next order response is comming
-			 */
-			inorder_dequeue(resp_ring, jr, ri, ctx->wi);	
-		} else {
-			wi = resp_ring->idxs->w_index;
-			Deq_Cpy(&(resp_ring->resp_r[wi]), &jr->o_ring[ri], 1);
-			resp_ring->idxs->w_index = MOD_ADD(wi, 1, resp_ring->depth);
-			resp_ring->r_cntrs->jobs_added += 1;
-		}
+		wi = rp->idxs->w_index;
+		Deq_Cpy(&(rp->resp_r[wi]), &jr->o_ring[ri], 1);
+		rp->idxs->w_index = MOD_ADD(wi, 1, rp->depth);
+		rp->r_cntrs->jobs_added += 1;
 
 		ri = MOD_ADD(ri, 1, jr->size);
 		jr->head = ri;
 		jr->deq_cnt += 1;
 
-		resp_ring->r_s_cntrs->resp_jobs_added =
-		    resp_ring->r_cntrs->jobs_added;
+		rp->r_s_cntrs->resp_jobs_added = rp->r_cntrs->jobs_added;
 
 		out_be32(&jr->regs->orjr, 1);
 		*todeq -= 1;
@@ -1997,7 +1932,7 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 	ring_jobs    =  sel_sec_enqueue(c_mem, &sec, rp, &deq);
 
 DEQ:
-	ring_jobs   =  sec_dequeue(c_mem, &sec, &deq);
+	ring_jobs   =  sec_dequeue(c_mem, &sec, rp, &deq);
 	if (ring_jobs) {
 		raise_intr(c_mem->rsrc_mem->drv_resp_ring);
 	} else {
