@@ -44,6 +44,7 @@
 #define KEK_OFFSET		0x400	/* Key Encryption Key */
 #define SCFG_OFFSET		0xC	/* Security Configuration */
 #define RDSTA_OFFSET		0x6c0	/* RNG DRNG Status Register */
+#define FAULTS_OFFSET		0xfc0	/* fault registers */
 
 /*
  * To access a register in a specific SEC engine, use the following SEC
@@ -60,6 +61,7 @@
 #define SEC0_KEK_ADDR		(SEC0_BASE_ADDR + KEK_OFFSET)
 #define SEC0_SCFG_ADDR		(SEC0_BASE_ADDR + SCFG_OFFSET)
 #define SEC0_RDSTA_ADDR		(SEC0_BASE_ADDR + RDSTA_OFFSET)
+#define SEC0_FAULTS_ADDR	(SEC0_BASE_ADDR + FAULTS_OFFSET)
 
 #define SEC1_OFFSET			0xa0000
 #define SEC1_BASE_ADDR		(CCSR_VIRT_ADDR + SEC1_OFFSET)
@@ -68,6 +70,7 @@
 #define SEC1_KEK_ADDR		(SEC1_BASE_ADDR + KEK_OFFSET)
 #define SEC1_SCFG_ADDR		(SEC1_BASE_ADDR + SCFG_OFFSET)
 #define SEC1_RDSTA_ADDR		(SEC1_BASE_ADDR + RDSTA_OFFSET)
+#define SEC1_FAULTS_ADDR	(SEC1_BASE_ADDR + FAULTS_OFFSET)
 
 #define SEC2_OFFSET			0xc0000
 #define SEC2_BASE_ADDR		(CCSR_VIRT_ADDR + SEC2_OFFSET)
@@ -76,6 +79,7 @@
 #define SEC2_KEK_ADDR		(SEC2_BASE_ADDR + KEK_OFFSET)
 #define SEC2_SCFG_ADDR		(SEC2_BASE_ADDR + SCFG_OFFSET)
 #define SEC2_RDSTA_ADDR		(SEC2_BASE_ADDR + RDSTA_OFFSET)
+#define SEC2_FAULTS_ADDR	(SEC2_BASE_ADDR + FAULTS_OFFSET)
 
 #define GUTS_SVR		(CCSR_VIRT_ADDR + 0xe0000 + 0xa4)
 
@@ -805,6 +809,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->kek = (struct kek_regs *) SEC0_KEK_ADDR;
 		sec->scfg = (u32 *) SEC0_SCFG_ADDR;
 		sec->rdsta = (u32 *) SEC0_RDSTA_ADDR;
+		sec->faults = (struct fault_regs *) SEC0_FAULTS_ADDR;
 		break;
 
 	case SEC_ENG_2:
@@ -814,6 +819,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->kek = (struct kek_regs *) SEC1_KEK_ADDR;
 		sec->scfg = (u32 *) SEC1_SCFG_ADDR;
 		sec->rdsta = (u32 *) SEC1_RDSTA_ADDR;
+		sec->faults = (struct fault_regs *) SEC1_FAULTS_ADDR;
 		break;
 
 	case SEC_ENG_3:
@@ -823,6 +829,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->kek = (struct kek_regs *) SEC2_KEK_ADDR;
 		sec->scfg = (u32 *) SEC2_SCFG_ADDR;
 		sec->rdsta = (u32 *) SEC2_RDSTA_ADDR;
+		sec->faults = (struct fault_regs *) SEC2_FAULTS_ADDR;
 		break;
 
 	default:

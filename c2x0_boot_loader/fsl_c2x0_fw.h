@@ -167,6 +167,15 @@ struct sec_jr_regs {
 	u32 jrcr;
 };
 
+struct fault_regs {
+	u32 far_h;	/* Fault Address high  */
+	u32 far_l;	/* Fault Address low */
+	u32 famr;	/* Fault Address MID */
+	u32 fadr;	/* Fault Address Detail */
+	u32 reserved1;
+	u32 ssta;	/* SEC Status */
+};
+
 struct sec_ip_ring {
 	dma_addr_t desc;
 };
@@ -238,6 +247,7 @@ struct sec_engine {
 	ccsr_sec_t *info;
 	struct rng_regs *rng;
 	struct kek_regs *kek;
+	struct fault_regs *faults;
 	u32 *scfg;
 	u32 *rdsta;
 	struct sec_jr jr;
