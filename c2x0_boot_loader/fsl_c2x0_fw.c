@@ -337,6 +337,10 @@ static void init_shadow_counters(struct c_mem_layout *mem)
 		print_debug("Ring %d        R S Cntrs: %0x\n", i, rps[i].r_s_cntrs);
 	}
 
+	/* FIXME: The assumption here is that there is only one response ring
+	 * In make_drv_resp_ring_circ_list and other places there are "count"
+	 * number of them!!!
+	 */
 	mem->rsrc_mem->drv_resp_ring->r_s_cntrs = &(mem->rsrc_mem->r_s_cntrs_mem[i]);
 	print_debug("Response ring R S Cntrs: %0x\n", mem->rsrc_mem->drv_resp_ring->r_s_cntrs);
 }
