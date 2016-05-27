@@ -1142,7 +1142,6 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 		out_be32(&jr->regs->orjr, 1);
 		*todeq -= 1;
 
-		//out_le16(resp_ring->msi_addr, resp_ring->msi_data);
 		--cnt;
 		++ret_cnt;
 	}
@@ -1154,9 +1153,7 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 static inline void raise_intr(drv_resp_ring_t *r)
 {
 	r->intr_ctrl_flag = 1;
-	out_le16(r->msi_addr, r->msi_data);
-/*	print_debug("MSI Addr :%0x   MSI Data :%d\n",
- *	r->msi_addr, r->msi_data); */
+	out_le32(r->msi_addr, r->msi_data);
 }
 
 #ifndef HIGH_PERF
@@ -1229,7 +1226,7 @@ void invalidate_pending_app_reqs(struct c_mem_layout *c_mem)
 			print1_debug(c_mem,
 				     "Giving interrupt for ring :%d\n",
 				     ring_cursor->id);
-			out_le16(ring_cursor->msi_addr, ring_cursor->msi_data);
+			out_le32(ring_cursor->msi_addr, ring_cursor->msi_data);
 			ring_cursor = ring_cursor->next;
 			print1_debug(c_mem,
 				     "ring_cursor : %0x, ring_cursor_head : %0x\n",
@@ -1669,7 +1666,7 @@ static i32 cmd_ring_processing(struct c_mem_layout *mem)
 	/* Shadow counter */
 	cmdrp->r_s_cntrs->resp_jobs_added = cmdrp->cntrs->jobs_added;
 
-	out_le16(cmdrp->msi_addr, cmdrp->msi_data);
+	out_le32(cmdrp->msi_addr, cmdrp->msi_data);
 	print1_debug(mem, "INTERRUPTED DRIVER\n");
 out:
 	return res;
@@ -1754,7 +1751,7 @@ static inline void raise_intr_app_ring(app_ring_pair_t *rp)
 	print_debug("%s: MSI addr: %0x, MSI data:%0x \n",
 			__func__, rp->msi_addr, rp->msi_data);
 	rp->intr_ctrl_flag = 1;
-	out_le16(rp->msi_addr, rp->msi_data);
+	out_le32(rp->msi_addr, rp->msi_data);
 }
 
 static inline uint32_t irq_is_due(uint32_t deq_cnt, app_ring_pair_t *rp,
