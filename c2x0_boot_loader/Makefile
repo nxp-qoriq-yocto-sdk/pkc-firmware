@@ -35,10 +35,6 @@ COBJS   += uboot_print.o
 COBJS   += vsprintf.o
 COBJS   += fsl_c2x0_fw.o
 
-ifeq ($(HIGH_PERF_MODE),y)
-CFLAGS += -DHIGH_PERF
-endif
-
 ifeq ($(EP_TYPE),C293)
 CFLAGS += -DC293_EP_TYPE
 endif

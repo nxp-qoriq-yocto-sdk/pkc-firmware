@@ -7,6 +7,3 @@ PRINT_ERROR=n
 
 #Specifies type of EP
 C293_EP=y
-
-#Specifies whether firmware is running high performance mode
-HIGH_PERF_MODE=y
