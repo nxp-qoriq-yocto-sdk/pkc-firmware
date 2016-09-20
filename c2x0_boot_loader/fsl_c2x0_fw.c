@@ -99,17 +99,10 @@
 
 #define BITS_PER_BYTE 8
 
-#ifdef P4080_EP_TYPE
-#define RESET_REG_ADDR      0xfe0e00b0
-#define RESET_REG_VALUE     0x2
-#define RESET_PIC_PIR_ADDR  0xfe041090
-#define RESET_PIC_PIR_VALUE 0x1
-#elif C293_EP_TYPE
 #define RESET_REG_ADDR      (CCSR_VIRT_ADDR + 0Xe0000 + 0xb0)
 #define RESET_REG_VALUE     0x2
 #define RESET_PIC_PIR_ADDR  (CCSR_VIRT_ADDR + 0x40000 + 0x1090)
 #define RESET_PIC_PIR_VALUE 0x1
-#endif
 
 /*
  * Note: all global variables must be initialized; any uninitialized variable
@@ -916,52 +909,6 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 #endif
 }
 
-#ifdef P4080_EP_TYPE
-static void fix_p4080_reg_settings(void)
-{
-	volatile u32 *ccsr = (u32 *)0xfe000000;
-
-	/* It is observed that P4080 device u-boot is over-riding the
-	 * following settings :-
-	 * Modifies the size of LAW for PCIe controller 1 to be 512MB
-	 * - This should be 1G
-	 * Creates a new LAW for PCIe controller 2 - This should be disabled
-	 *  Disables inbound address translation address registers.
-	 *  Disables outbound address translation address registers.
-	 */
-	/* Hence to make our driver and firmware work properly -
-	 * Setting back those registers to proper value. */
-	/* 1) Disabling PCIe controller 2 LAW */
-	ccsr = (u32 *) (0xfe000c88);
-	*ccsr = 0;
-	SYNC_MEM;
-	/* 2) Modifying the PCIe controller 1 LAW to be of 16G size
-	 * PCIe controller 1 LAW will start from 0XA00000000
-	 * instead of known 0XC00000000 */
-	ccsr = (u32 *) (0xfe000c60);
-	*ccsr = 0X0000000c;
-	ccsr = (u32 *) (0xfe000c68);
-	*ccsr = 0x80000021;
-	SYNC_MEM;
-	/* Enabling the inbound address translation register */
-	ccsr = (u32 *) (0xfe200de0);
-	*ccsr = 0x000fff00;
-	SYNC_MEM;
-	ccsr = (u32 *) (0xfe200df0);
-	*ccsr = 0xa0f55013;
-	SYNC_MEM;
-	/* Enabling the outbound translation address register */
-	ccsr = (u32 *) (0xfe200c20);
-	*ccsr = 0x00;
-	SYNC_MEM;
-	ccsr = (u32 *) (0xfe200c28);
-	*ccsr = 0X00c00000;
-	SYNC_MEM;
-	ccsr = (u32 *) (0xfe200c30);
-	*ccsr = 0x80044021;
-	SYNC_MEM;
-}
-#endif
 
 /* Switch controls */
 #define TIMED_WAIT_FOR_JOBS
@@ -1331,10 +1278,6 @@ i32 fsl_c2x0_fw(void)
 	struct c_mem_layout *c_mem = NULL;
 	u32 c_hs_mem;
 
-#ifdef P4080_EP_TYPE
-	/* Not required for C2X0 */
-	fix_p4080_reg_settings();
-#endif
 	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	print_debug("Allocation starts 28K below top: %x\n", stack_ptr);
 

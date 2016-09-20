@@ -35,14 +35,6 @@ COBJS   += uboot_print.o
 COBJS   += vsprintf.o
 COBJS   += fsl_c2x0_fw.o
 
-ifeq ($(EP_TYPE),C293)
-CFLAGS += -DC293_EP_TYPE
-endif
-
-ifeq ($(EP_TYPE), P4080)
-CFLAGS += -DP4080_EP_TYPE
-endif
-
 ifeq ($(PRINT_ERROR), y)
 CFLAGS += -DPRINT_ERROR
 endif

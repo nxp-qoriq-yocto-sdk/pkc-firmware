@@ -4,6 +4,3 @@
 # must be disabled
 PRINT_DEBUG=n
 PRINT_ERROR=n
-
-#Specifies type of EP
-C293_EP=y

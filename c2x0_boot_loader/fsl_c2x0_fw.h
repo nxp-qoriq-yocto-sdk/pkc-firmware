@@ -36,13 +36,6 @@
 #ifndef __FW_H_
 #define __FW_H_
 
-#ifdef P4080_EP_TYPE
-/* Defining the device type */
-#define         P4080
-#else
-#define			C293
-#endif
-
 /*      FIRMWARE VERSION FORMAT
  *--------------------------------------
  *  31  27  23  19  15  11  7   3   0
@@ -54,11 +47,6 @@
 #define TOTAL_CARD_MEMORY   (1024*1024)	/* 1 MB */
 #define FIRMWARE_SIZE		(28*1024)
 
-/* In P4080 there is only one L3cache configured as 1MB  SRAM.
- * But since final c2x0 EP is going to have two different SRAMs.
- * For code to remain unchanged. Dividing the L3 cache in P4080
- * also in the same way logically.
- */
 #define L2_SRAM_SIZE            (512*1024)
 #define PLATFORM_SRAM_SIZE      (512*1024)
 
