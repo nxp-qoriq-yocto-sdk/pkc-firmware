@@ -91,8 +91,6 @@
 #define OB_TLB_SIZE_MASK    ((~(0)) << 30)
 #define MSI_TLB_SIZE_MASK    ((~((u32)0)) << 20)
 
-
-#define WAIT_FOR_STATE_CHANGE(x)	{ while (DEFAULT == x) SYNC_MEM; }
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define LINEAR_ROOM(wi, depth, room)     MIN((depth-wi), room)
 #define MOD_INC(x, size)                 ((++x) & (size-1))
@@ -576,7 +574,10 @@ static void handshake(struct c_mem_layout *mem)
 	firmware_up(mem);
 
 	while (true) {
-		WAIT_FOR_STATE_CHANGE(mem->c_hs_mem->state);
+		/* wait for a notification from the host driver */
+		while (mem->c_hs_mem->state == DEFAULT) {
+			SYNC_MEM;
+		}
 		print_debug("State updated by driver: %d\n", mem->c_hs_mem->state);
 
 		switch (mem->c_hs_mem->state) {
