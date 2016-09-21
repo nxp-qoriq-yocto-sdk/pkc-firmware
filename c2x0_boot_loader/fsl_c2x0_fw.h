@@ -410,7 +410,6 @@ struct resource {
 	struct sec_engine *sec;
 	priority_q_t *p_q;
 	app_ring_pair_t *rps;
-	app_ring_pair_t *orig_rps;/* STORES ORIG RP PTR BEFORE ORGNIZING RPs */
 	app_ring_pair_t *cmdrp;
 	drv_resp_ring_t *drv_resp_ring;
 

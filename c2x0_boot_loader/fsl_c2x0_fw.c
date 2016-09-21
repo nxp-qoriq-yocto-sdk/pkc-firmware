@@ -535,7 +535,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	stack_ptr -= num_of_rps * sizeof(app_ring_pair_t);
 
 	mem->rsrc_mem->rps = (app_ring_pair_t *) stack_ptr;
-	mem->rsrc_mem->orig_rps = mem->rsrc_mem->rps;
 	respr_count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
 	init_ring_pairs(mem, num_of_rps, respr_count);
 
