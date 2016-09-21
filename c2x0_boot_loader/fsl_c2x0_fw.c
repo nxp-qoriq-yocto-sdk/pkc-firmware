@@ -225,12 +225,12 @@ NEXT_RP:
 	return;
 }
 
-static void init_ring_pairs(struct c_mem_layout *mem, u8 num, u8 respringcount)
+static void init_ring_pairs(struct c_mem_layout *mem, u8 num_of_rps, u8 respringcount)
 {
 	u8 i;
 	u8 j;
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
-	u32 total_rings = num + respringcount;
+	u32 total_rings = num_of_rps + respringcount;
 
 	stack_ptr -= sizeof(indexes_mem_t) * total_rings;
 	mem->rsrc_mem->idxs_mem = (indexes_mem_t *) stack_ptr;
@@ -259,7 +259,7 @@ static void init_ring_pairs(struct c_mem_layout *mem, u8 num, u8 respringcount)
 	print_debug("R counters mem    :%10p\n", mem->rsrc_mem->r_cntrs_mem);
 	print_debug("R S C counters mem:%10p\n", mem->rsrc_mem->r_s_c_cntrs_mem);
 
-	for (i = 0; i < num; i++) {
+	for (i = 0; i < num_of_rps; i++) {
 		rps[i].req_r = NULL;
 		rps[i].msi_addr = NULL;
 		rps[i].sec = NULL;
@@ -287,7 +287,7 @@ static void init_ring_pairs(struct c_mem_layout *mem, u8 num, u8 respringcount)
 
 static void init_drv_resp_ring(struct c_mem_layout *mem, u32 offset, u32 depth, u8 count)
 {
-    u8 loc = mem->rsrc_mem->ring_count;
+    u8 loc = mem->rsrc_mem->num_of_rps;
     drv_resp_ring_t *ring   =   NULL;
     uint8_t i;
 
@@ -332,7 +332,7 @@ static void init_shadow_counters(struct c_mem_layout *mem)
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
 
 	print_debug("Init R S mem....\n");
-	for (i = 0; i < mem->rsrc_mem->ring_count; i++) {
+	for (i = 0; i < mem->rsrc_mem->num_of_rps; i++) {
 		rps[i].r_s_cntrs = &(mem->rsrc_mem->r_s_cntrs_mem[i]);
 		print_debug("Ring %d        R S Cntrs: %0x\n", i, rps[i].r_s_cntrs);
 	}
@@ -508,7 +508,10 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 
 void hs_fw_init_config(struct c_mem_layout *mem)
 {
-	u8 max_pri, max_rps, respr_count, count;
+	u8 max_pri;
+	u8 num_of_rps;
+	u8 respr_count;
+	u8 count;
 	u32 req_mem_size, resp_ring_off, depth, r_s_cntrs, offset;
 
 	mem->c_hs_mem->state = DEFAULT;
@@ -524,18 +527,17 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	mem->rsrc_mem->p_q = (priority_q_t *) stack_ptr;
 	init_p_q(mem->rsrc_mem->p_q, max_pri);
 
-
-	max_rps = mem->c_hs_mem->data.config.num_of_rps;
-	mem->rsrc_mem->ring_count = max_rps;
-	print_debug("Max rps: %d\n", max_rps);
+	num_of_rps = mem->c_hs_mem->data.config.num_of_rps;
+	mem->rsrc_mem->num_of_rps = num_of_rps;
+	print_debug("Number of ring pairs: %d\n", num_of_rps);
 
 	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
-	stack_ptr -= (max_rps * sizeof(app_ring_pair_t));
+	stack_ptr -= num_of_rps * sizeof(app_ring_pair_t);
 
 	mem->rsrc_mem->rps = (app_ring_pair_t *) stack_ptr;
 	mem->rsrc_mem->orig_rps = mem->rsrc_mem->rps;
 	respr_count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
-	init_ring_pairs(mem, max_rps, respr_count);
+	init_ring_pairs(mem, num_of_rps, respr_count);
 
 	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
 	print_debug("Req mem size: %d\n", req_mem_size);
