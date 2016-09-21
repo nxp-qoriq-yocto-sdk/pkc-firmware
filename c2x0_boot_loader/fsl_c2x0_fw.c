@@ -514,7 +514,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nFW_INIT_CONFIG\n");
 
-	mem->rsrc_mem->ring_count = mem->c_hs_mem->data.config.num_of_rps;
 	max_pri = mem->c_hs_mem->data.config.max_pri;
 	print_debug("Max pri: %d\n", max_pri);
 
