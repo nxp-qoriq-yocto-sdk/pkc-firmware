@@ -122,26 +122,6 @@ static u32 stack_ptr = PLATFORM_SRAM_VIRT_ADDR + PLATFORM_SRAM_SIZE
 static inline void rng_processing(struct c_mem_layout *c_mem);
 static inline void copy_kek_and_set_scr(struct c_mem_layout *c_mem);
 
-#if 0
-/* Helper function which can be used to measure cpu ticks.
- * Not used now but may be in future for firmware
- * profiling.
- */
-static u64 readtb(void)
-{
-	u32 tbl = 0, tbh = 0;
-	u64 tb = 0;
-
-	asm volatile ("mfspr %0, 526" : "=r" (tbl));
-	asm volatile ("mfspr %0, 527" : "=r" (tbh));
-
-	SYNC_MEM;
-	tb = ((u64) tbh << 32) | tbl;
-
-	return tb;
-}
-#endif
-
 static void Memset(u8 *ptr, u8 val, u32 size)
 {
 	u32 i = 0;
@@ -1379,12 +1359,6 @@ i32 fsl_c2x0_fw(void)
 		return -1;
 	}
 
-	/* Separate the command ring */
-	/*
-	c_mem->rsrc_mem->cmdrp = c_mem->rsrc_mem->rps;
-	c_mem->rsrc_mem->rps = c_mem->rsrc_mem->rps->next;
-	make_rp_circ_list(c_mem);
-	*/
 	print_debug("\n\n\nFirmware up\n");
 	ring_processing_perf(c_mem);
 	return 0;
