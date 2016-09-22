@@ -363,23 +363,6 @@ typedef struct priority_q {
 	struct priority_q *next;
 } priority_q_t;
 
-typedef struct driver_resp_ring {
-	u8  id;
-	u16 msi_data;
-	u16 depth;
-	u32 intr_ctrl_flag;
-
-	resp_ring_t *resp_r;
-	void *msi_addr;
-	indexes_mem_t *idxs;
-	ring_counters_mem_t *r_cntrs;
-	ring_counters_mem_t *r_s_c_cntrs;
-	ring_shadow_counters_mem_t *r_s_cntrs;
-
-    /* Used to make circ list */
-    void    *next;
-} drv_resp_ring_t;
-
 /*******************************************************************************
 Description :	Defines the container structure for resources in the device
 Fields      :	sec_eng_cnt	: Number of sec engines
@@ -397,7 +380,6 @@ struct resource {
 	struct sec_engine *sec;
 	priority_q_t *p_q;
 	app_ring_pair_t *rps;
-	drv_resp_ring_t *drv_resp_ring;
 
 	indexes_mem_t *idxs_mem;
 	ring_counters_mem_t *r_cntrs_mem;

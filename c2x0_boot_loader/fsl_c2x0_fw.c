@@ -256,47 +256,6 @@ static void init_ring_pairs(struct c_mem_layout *mem)
 	}
 }
 
-static void init_drv_resp_ring(struct c_mem_layout *mem, u32 offset, u32 depth, u8 count)
-{
-    u8 loc = mem->rsrc_mem->num_of_rps;
-    drv_resp_ring_t *ring   =   NULL;
-    uint8_t i;
-
-    for(i=0; i<count; i++) {
-        ring    =   &(mem->rsrc_mem->drv_resp_ring[i]);
-
-        ring->id            =   i;
-        ring->msi_data      =   0;
-        ring->intr_ctrl_flag=   0;
-        ring->msi_addr      =   NULL;
-        ring->r_s_cntrs     =   NULL;
-        ring->depth         =   depth;
-        ring->resp_r        =   (resp_ring_t *)((u8 *)mem->h_hs_mem + offset);
-        ring->idxs          =   &(mem->rsrc_mem->idxs_mem[loc + i]);
-        ring->r_cntrs       =   &(mem->rsrc_mem->r_cntrs_mem[loc + i]);
-        ring->r_s_c_cntrs   =   &(mem->rsrc_mem->r_s_c_cntrs_mem[loc + i]);
-
-        print_debug("Init Drv Resp Ring:\n");
-        print_debug("\tResp ring addr:	%0x\n", ring->resp_r);
-        print_debug("\tIndexes addr:	%0x\n", ring->idxs);
-        print_debug("\tR Cntrs addr:	%0x\n", ring->r_cntrs);
-        print_debug("\tR S C cntrs addr:%0x\n", ring->r_s_c_cntrs);
-        print_debug("\tDepth:		%d\n", ring->depth);
-
-        offset += (depth * sizeof(resp_ring_t));
-    }
-}
-
-static void make_drv_resp_ring_circ_list(struct c_mem_layout *mem, u32 count)
-{
-    i32 i = 0;
-
-    for(i=1; i<count; i++) {
-        mem->rsrc_mem->drv_resp_ring[i-1].next = &mem->rsrc_mem->drv_resp_ring[i];
-    }
-    mem->rsrc_mem->drv_resp_ring[i-1].next = &mem->rsrc_mem->drv_resp_ring[0];
-}
-
 static void init_shadow_counters(struct c_mem_layout *mem)
 {
 	u32 i;
@@ -307,13 +266,6 @@ static void init_shadow_counters(struct c_mem_layout *mem)
 		rps[i].r_s_cntrs = &(mem->rsrc_mem->r_s_cntrs_mem[i]);
 		print_debug("Ring %d        R S Cntrs: %0x\n", i, rps[i].r_s_cntrs);
 	}
-
-	/* FIXME: The assumption here is that there is only one response ring
-	 * In make_drv_resp_ring_circ_list and other places there are "count"
-	 * number of them!!!
-	 */
-	mem->rsrc_mem->drv_resp_ring->r_s_cntrs = &(mem->rsrc_mem->r_s_cntrs_mem[i]);
-	print_debug("Response ring R S Cntrs: %0x\n", mem->rsrc_mem->drv_resp_ring->r_s_cntrs);
 }
 
 static void add_ring_to_pq(priority_q_t *p_q, app_ring_pair_t *rp, u8 pri)
@@ -405,9 +357,6 @@ int hs_complete(struct c_mem_layout *mem)
 	int hs_comp;
 
 	mem->c_hs_mem->state = DEFAULT;
-	mem->rsrc_mem->drv_resp_ring->msi_addr = mem->rsrc_mem->rps[0].msi_addr;
-	mem->rsrc_mem->drv_resp_ring->msi_data = mem->rsrc_mem->rps[0].msi_data;
-
 	mem->rsrc_mem->rps = mem->rsrc_mem->rps->next;
 	make_rp_prio_links(mem);
 	make_rp_circ_list(mem);
@@ -480,8 +429,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 {
 	u8 max_pri;
 	u8 num_of_rps;
-	u8 count;
-	u32 req_mem_size, resp_ring_off, depth, r_s_cntrs, offset;
+	u32 req_mem_size, r_s_cntrs, offset;
 
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nFW_INIT_CONFIG\n");
@@ -515,18 +463,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	mem->rsrc_mem->req_mem = (void *) stack_ptr;
 	print_debug("Req mem addr: %0x\n", mem->rsrc_mem->req_mem);
 
-	resp_ring_off = mem->c_hs_mem->data.config.fw_resp_ring;
-	depth = mem->c_hs_mem->data.config.fw_resp_ring_depth;
-	count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
-
-	print_debug("Resp ring off: %0x\n", resp_ring_off);
-
 	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
-	stack_ptr -= count * sizeof(drv_resp_ring_t);
-	mem->rsrc_mem->drv_resp_ring = (drv_resp_ring_t *) stack_ptr;
-
-	init_drv_resp_ring(mem, resp_ring_off, depth, count);
-	make_drv_resp_ring_circ_list(mem, count);
 
 	r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
 	mem->rsrc_mem->r_s_cntrs_mem = (ring_shadow_counters_mem_t *)
@@ -553,7 +490,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	mem->h_hs_mem->data.config.ip_pool = offset;
 	print_debug("ip_pool         : %10x\n", offset);
 
-	offset = (u8 *) &(mem->rsrc_mem->drv_resp_ring->intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
+	offset = (u8 *) &(mem->rsrc_mem->rps[0].intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.resp_intr_ctrl_flag = offset;
 	print_debug("intr_ctrl_flag  : %10x\n", offset);
 
@@ -1074,7 +1011,7 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 	return ret_cnt;
 }
 
-static inline void raise_intr(drv_resp_ring_t *r)
+static inline void raise_intr(app_ring_pair_t *r)
 {
 	r->intr_ctrl_flag = 1;
 	out_le32(r->msi_addr, r->msi_data);
@@ -1242,7 +1179,7 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 DEQ:
 	ring_jobs   =  sec_dequeue(c_mem, &sec, rp, &deq);
 	if (ring_jobs) {
-		raise_intr(c_mem->rsrc_mem->drv_resp_ring);
+		raise_intr(&(c_mem->rsrc_mem->rps[0]));
 	} else {
 		goto DEQ;
 	}
