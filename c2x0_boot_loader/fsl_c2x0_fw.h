@@ -398,7 +398,6 @@ struct resource {
 	struct sec_engine *sec;
 	priority_q_t *p_q;
 	app_ring_pair_t *rps;
-	app_ring_pair_t *cmdrp;
 	drv_resp_ring_t *drv_resp_ring;
 
 	indexes_mem_t *idxs_mem;

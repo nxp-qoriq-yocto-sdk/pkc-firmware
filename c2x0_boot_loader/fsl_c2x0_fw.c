@@ -408,7 +408,6 @@ int hs_complete(struct c_mem_layout *mem)
 	mem->rsrc_mem->drv_resp_ring->msi_addr = mem->rsrc_mem->rps[0].msi_addr;
 	mem->rsrc_mem->drv_resp_ring->msi_data = mem->rsrc_mem->rps[0].msi_data;
 
-	mem->rsrc_mem->cmdrp = mem->rsrc_mem->rps;
 	mem->rsrc_mem->rps = mem->rsrc_mem->rps->next;
 	make_rp_prio_links(mem);
 	make_rp_circ_list(mem);
