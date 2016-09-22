@@ -368,7 +368,6 @@ typedef struct driver_resp_ring {
 	u16 msi_data;
 	u16 depth;
 	u32 intr_ctrl_flag;
-	u32 enqcount;
 
 	resp_ring_t *resp_r;
 	void *msi_addr;
