@@ -196,32 +196,32 @@ NEXT_RP:
 	return;
 }
 
-static void init_ring_pairs(struct c_mem_layout *mem, u8 num_of_rps, u8 respringcount)
+static void init_ring_pairs(struct c_mem_layout *mem)
 {
 	u8 i;
 	u8 j;
+	u8 num_of_rps = mem->rsrc_mem->num_of_rps;
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
-	u32 total_rings = num_of_rps + respringcount;
 
-	stack_ptr -= sizeof(indexes_mem_t) * total_rings;
+	stack_ptr -= sizeof(indexes_mem_t) * num_of_rps;
 	mem->rsrc_mem->idxs_mem = (indexes_mem_t *) stack_ptr;
 	stack_ptr -= sizeof(counters_mem_t);
 	mem->rsrc_mem->cntrs_mem = (counters_mem_t *) stack_ptr;
 	stack_ptr -= sizeof(counters_mem_t);
 	mem->rsrc_mem->s_c_cntrs_mem = (counters_mem_t *) stack_ptr;
-	stack_ptr -= sizeof(ring_counters_mem_t) * total_rings;
+	stack_ptr -= sizeof(ring_counters_mem_t) * num_of_rps;
 	mem->rsrc_mem->r_cntrs_mem = (ring_counters_mem_t *) stack_ptr;
-	stack_ptr -= sizeof(ring_counters_mem_t) * total_rings;
+	stack_ptr -= sizeof(ring_counters_mem_t) * num_of_rps;
 	mem->rsrc_mem->r_s_c_cntrs_mem = (ring_counters_mem_t *) stack_ptr;
 
 	Memset((u8 *)mem->rsrc_mem->idxs_mem, 0,
-			sizeof(indexes_mem_t) * total_rings);
+			sizeof(indexes_mem_t) * num_of_rps);
 	Memset((u8 *)mem->rsrc_mem->cntrs_mem, 0, sizeof(counters_mem_t));
 	Memset((u8 *)mem->rsrc_mem->s_c_cntrs_mem, 0, sizeof(counters_mem_t));
 	Memset((u8 *)mem->rsrc_mem->r_cntrs_mem, 0,
-			sizeof(ring_counters_mem_t) * total_rings);
+			sizeof(ring_counters_mem_t) * num_of_rps);
 	Memset((u8 *)mem->rsrc_mem->r_s_c_cntrs_mem, 0,
-			sizeof(ring_counters_mem_t) * total_rings);
+			sizeof(ring_counters_mem_t) * num_of_rps);
 
 	print_debug("Init Ring Pairs:\n");
 	print_debug("Indexes mem       :%10p\n", mem->rsrc_mem->idxs_mem);
@@ -481,7 +481,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 {
 	u8 max_pri;
 	u8 num_of_rps;
-	u8 respr_count;
 	u8 count;
 	u32 req_mem_size, resp_ring_off, depth, r_s_cntrs, offset;
 
@@ -506,8 +505,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	stack_ptr -= num_of_rps * sizeof(app_ring_pair_t);
 
 	mem->rsrc_mem->rps = (app_ring_pair_t *) stack_ptr;
-	respr_count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
-	init_ring_pairs(mem, num_of_rps, respr_count);
+	init_ring_pairs(mem);
 
 	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
 	print_debug("Req mem size: %d\n", req_mem_size);
