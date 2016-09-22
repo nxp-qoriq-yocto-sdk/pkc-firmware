@@ -404,7 +404,6 @@ Fields      :	sec_eng_cnt	: Number of sec engines
 struct resource {
 	u8 sec_eng_cnt;
 	u8 num_of_rps;  /* number of ring pairs communicated by the host */
-	u8 drv_resp_ring_count;
 
 	void *req_mem;
 	void *ip_pool;

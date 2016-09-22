@@ -551,7 +551,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	resp_ring_off = mem->c_hs_mem->data.config.fw_resp_ring;
 	depth = mem->c_hs_mem->data.config.fw_resp_ring_depth;
 	count = mem->c_hs_mem->data.config.num_of_fwresp_rings;
-	mem->rsrc_mem->drv_resp_ring_count = count;
 
 	print_debug("Resp ring off: %0x\n", resp_ring_off);
 
