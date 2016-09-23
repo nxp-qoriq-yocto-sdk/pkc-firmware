@@ -43,7 +43,7 @@ ifeq ($(PRINT_DEBUG), y)
 CFLAGS += -DPRINT_DEBUG
 endif
 
-CFLAGS += -mno-strict-align -Wall -Werror
+CFLAGS += -mno-strict-align -Wall -Werror -std=gnu90
 
 SRCS	:= $(START:.o=.S) $(SOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(SOBJS) $(COBJS))
