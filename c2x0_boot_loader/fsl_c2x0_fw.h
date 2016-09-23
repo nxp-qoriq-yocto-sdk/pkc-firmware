@@ -398,7 +398,6 @@ struct dev_handshake_mem {
 	u32 h_msi_mem_h;
 
 	u8 state;
-	u8 padding1; /* this field is not used inside firmware */
 	u8 data_len;
 	u8 pad;
 
@@ -406,13 +405,8 @@ struct dev_handshake_mem {
 		struct c_config_data {
 			u8 num_of_rps;
 			u8 max_pri;
-			u8 padding2;
 			u32 req_mem_size;
-			u32 padding3;
-			u32 padding4;
-			u32 padding1; /* not used inside firmware */
 			u32 r_s_cntrs;
-			u32 padding5;
 		} config;
 		struct c_ring_data {
 			u8 rid;
@@ -422,7 +416,6 @@ struct dev_handshake_mem {
 			u32 resp_ring_offset;
 			u32 msi_addr_l;
 			u32 msi_addr_h;
-			u32 padding1; /* not used inside firmware */
 		} ring;
 	} data;
 };
