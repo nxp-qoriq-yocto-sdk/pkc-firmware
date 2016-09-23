@@ -406,13 +406,13 @@ struct dev_handshake_mem {
 		struct c_config_data {
 			u8 num_of_rps;
 			u8 max_pri;
-			u8 num_of_fwresp_rings;
+			u8 padding2;
 			u32 req_mem_size;
-			u32 drv_resp_ring;
-			u32 fw_resp_ring;
+			u32 padding3;
+			u32 padding4;
 			u32 padding1; /* not used inside firmware */
 			u32 r_s_cntrs;
-			u32 fw_resp_ring_depth;
+			u32 padding5;
 		} config;
 		struct c_ring_data {
 			u8 rid;
