@@ -274,9 +274,6 @@ static void add_ring_to_pq(priority_q_t *p_q, app_ring_pair_t *rp, u8 pri)
 	print_debug("Pri:%d\tp_q: %0x\trp: %0x\tcursor: %0x\n",
 			pri, p_q, rp, cursor);
 
-	if (!rp->id)
-		return;
-
 	if (!cursor) {
 		p_q[pri].ring = rp;
 	} else {
@@ -1159,15 +1156,6 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 	u32                 *r_deq_cnt  =   NULL;
 	u32                 deq         =   0;
 
-	/*	We need to check the jobs only in ring pair 1 because
-	 *	for RNG Instantiation the driver is using only the
-	 *	ring pair 1 to send the job.
-	 */
-
-	do {
-		rp = rp->next;
-	} while (1 != rp->id);
-	
 	r_deq_cnt   =   &(rp->r_cntrs->jobs_processed);
 	cnt = WAIT_FOR_DRIVER_JOBS(&(rp->r_s_c_cntrs->jobs_added), r_deq_cnt);
 	if (cnt == 0) {
