@@ -667,8 +667,6 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 	conditional_timed_wait_for_driver_jobs
 #endif
 
-#define MOD_ADD(x, value, size)		((x+value) & (size-1))
-
 #ifdef TIMED_WAIT_FOR_JOBS
 static inline u32 conditional_timed_wait_for_driver_jobs(u32 *x, u32 *y)
 {

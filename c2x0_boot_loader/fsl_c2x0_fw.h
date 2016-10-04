@@ -99,6 +99,7 @@
 #define SEC_ENG_3 3
 
 #define SYNC_MEM        asm volatile("sync" : : : "memory")
+#define MOD_ADD(x, value, size)	((x+value) & (size-1))
 
 #define MCFGR_SWRST       ((u32)(1)<<31)	/* Software Reset */
 #define MCFGR_DMA_RST     ((u32)(1)<<28)	/* DMA Reset */
