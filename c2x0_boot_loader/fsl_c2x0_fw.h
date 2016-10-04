@@ -230,7 +230,7 @@ Fields      :	sec_desc  : DMA address of the sec desc
 /* typedef struct resp_ring { */
 struct resp_ring {
 	dma_addr_t desc;
-	volatile i32 result;
+	volatile uint32_t result;
 } __packed;
 
 typedef struct resp_ring resp_ring_t;
