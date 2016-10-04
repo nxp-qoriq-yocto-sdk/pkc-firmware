@@ -179,8 +179,6 @@ static inline void init_order_mem(struct c_mem_layout *mem)
 			goto NEXT_RP;
 		}
 
-		print_debug("Order bit is set for ring: %d\n", rp->id);
-		rp->order_j_d_index = 0;
 NEXT_RP:
 		print_debug("rp_head: %x, rp: %x\n", rp_head, rp);
 		rp = next_ring(rp);

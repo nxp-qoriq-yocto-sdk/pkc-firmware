@@ -346,7 +346,6 @@ typedef struct app_ring_pair {
 	u16 msi_data;
 	u32 depth;
 	u32 intr_ctrl_flag;
-	u32 order_j_d_index;
 
 	struct app_ring_pair *next;
 	struct app_ring_pair *rp_links[FSL_CRYPTO_MAX_RING_PAIRS];
