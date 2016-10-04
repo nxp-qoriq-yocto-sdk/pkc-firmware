@@ -369,7 +369,7 @@ static void handshake(struct c_mem_layout *mem)
 	}
 }
 
-i32 sec_reset(ccsr_sec_t *sec)
+int32_t sec_reset(ccsr_sec_t *sec)
 {
 	/*ccsr_sec_t *sec = (void *)CONFIG_SYS_FSL_SEC_ADDR;*/
 	u32 mcfgr = in_be32(&sec->mcfgr);
@@ -538,7 +538,7 @@ static void init_rng(struct sec_engine *sec)
 
 static void init_sec_regs_offset(struct sec_engine *sec)
 {
-	i32 id = sec->id;
+	int32_t id = sec->id;
 
 	switch (id) {
 	case SEC_ENG_1:
@@ -605,7 +605,7 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 {
 	struct resource *rsrc  = c_mem->rsrc_mem;
 	struct sec_engine *sec = NULL;
-	i32 i            = 0;
+	int32_t i;
 	u32 sec_nums     = 0;
 
 	Memset((u8 *)rsrc, 0, sizeof(struct resource));
@@ -985,7 +985,7 @@ DEQ:
 	}
 }
 
-i32 fsl_c2x0_fw(void)
+int32_t fsl_c2x0_fw(void)
 {
 	phys_addr_t p_addr;
 	phys_addr_t p_aligned_addr;

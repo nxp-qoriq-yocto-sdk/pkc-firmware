@@ -105,12 +105,6 @@
 
 #define FSL_CRYPTO_MAX_RING_PAIRS   6
 
-/* Local typedef's */
-typedef int i32;
-typedef short i16;
-typedef char i8;
-typedef unsigned long i64;
-
 /* 32 bit virtual address */
 typedef u32 va_addr_t;
 
