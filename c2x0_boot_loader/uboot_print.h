@@ -141,11 +141,6 @@ unsigned long simple_strtoul(const char *,char **,unsigned int );
 
 #ifdef PRINT_ERROR
 #define print_error c2x0_printf
-#define print1_error(c_mem, msg, ...)   { \
-                if (c_mem->err_print) \
-                    c2x0_printf(msg, ##__VA_ARGS__); \
-                }
 #else
 #define print_error(fmt, ...) do {} while (0)
-#define print1_error(c_mem, msg, ...) do {} while (0)
 #endif

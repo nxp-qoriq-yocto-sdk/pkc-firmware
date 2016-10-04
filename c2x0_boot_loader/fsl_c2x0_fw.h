@@ -491,13 +491,9 @@ struct c_mem_layout {
 
 	struct host_handshake_mem __iomem *h_hs_mem;
 	struct dev_handshake_mem *c_hs_mem;
-
 	struct resource *rsrc_mem;
 
 	u32 free_mem;
-
-	int dgb_print;
-	int err_print;
 };
 
 /*                  COMMAND RING STRUCTURE                  */
