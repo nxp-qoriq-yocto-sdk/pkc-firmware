@@ -141,59 +141,9 @@ static void firmware_up(struct c_mem_layout *mem)
 	SYNC_MEM;
 }
 
-static void init_p_q(priority_q_t *p_q, u8 num)
-{
-	u8 i = 0;
-	for (i = 0; i < (num - 1); i++) {
-		p_q[i].ring = NULL;
-		p_q[i].next = &(p_q[i + 1]);
-	}
-	p_q[i].ring = NULL;
-	p_q[i].next = NULL;
-}
-
-static app_ring_pair_t *next_ring(app_ring_pair_t *rp)
-{
-    rp->c_link = ((rp->c_link + 1) % rp->max_next_link);
-    return rp->rp_links[rp->c_link];
-}
-
-static inline void init_order_mem(struct c_mem_layout *mem)
-{
-	app_ring_pair_t *rp = mem->rsrc_mem->rps;
-	app_ring_pair_t *rp_head = mem->rsrc_mem->rps;
-/*	u32 total_rps = mem->rsrc_mem->ring_count; */
-
-	print_debug("init_order_mem \n");
-	print_debug("rp_head : %x, rp: %x\n", rp_head, rp);
-
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
-	while(NULL != rp)
-	{
-		print_debug("First rp: %d\n", rp->id);
-		/* Check if the rp is ordered */
-		if(!((rp->props & APP_RING_PROP_ORDER_MASK)
-                            >> APP_RING_PROP_ORDER_SHIFT))
-		{
-			print_debug("Order bit is not set for ring: %d\n", rp->id);
-			goto NEXT_RP;
-		}
-
-NEXT_RP:
-		print_debug("rp_head: %x, rp: %x\n", rp_head, rp);
-		rp = next_ring(rp);
-		if( rp_head == rp )
-			rp = NULL;
-		print_debug("rp_head: %x, next rp: %x\n", rp_head, rp);
-	} 
-
-	return;
-}
-
 static void init_ring_pairs(struct c_mem_layout *mem)
 {
 	u8 i;
-	u8 j;
 	u8 num_of_rps = mem->rsrc_mem->num_of_rps;
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
 
@@ -229,18 +179,12 @@ static void init_ring_pairs(struct c_mem_layout *mem)
 		rps[i].msi_addr = NULL;
 		rps[i].sec = NULL;
 		rps[i].r_s_cntrs = NULL;
-
 		rps[i].idxs = &(mem->rsrc_mem->idxs_mem[i]);
 		rps[i].r_cntrs = &(mem->rsrc_mem->r_cntrs_mem[i]);
 		rps[i].r_s_c_cntrs = &(mem->rsrc_mem->r_s_c_cntrs_mem[i]);
 		rps[i].ip_pool = mem->rsrc_mem->ip_pool;
 		rps[i].intr_ctrl_flag = 0;
-
-		rps[i].next = NULL;
-
-		for(j=0; j<FSL_CRYPTO_MAX_RING_PAIRS; j++) {
-			rps[i].rp_links[j] = NULL;
-		}
+		rps[i].next = &rps[(i+1) % num_of_rps];
 
 		print_debug("\nRing %d details\n", i);
 		print_debug("\tIdxs addr  : %10p\n", rps[i].idxs);
@@ -262,97 +206,12 @@ static void init_shadow_counters(struct c_mem_layout *mem)
 	}
 }
 
-static void add_ring_to_pq(priority_q_t *p_q, app_ring_pair_t *rp, u8 pri)
-{
-	app_ring_pair_t *cursor = p_q[pri].ring;
-	print_debug("Pri:%d\tp_q: %0x\trp: %0x\tcursor: %0x\n",
-			pri, p_q, rp, cursor);
-
-	if (!cursor) {
-		p_q[pri].ring = rp;
-	} else {
-		while (cursor->next)
-			cursor = cursor->next;
-		cursor->next = rp;
-		while (cursor->rp_links[0])
-			cursor = cursor->rp_links[0];
-		cursor->rp_links[0] = rp;
-	}
-	rp->prio = pri;
-}
-
-static void make_rp_circ_list(struct c_mem_layout *mem)
-{
-	priority_q_t *p_q = mem->rsrc_mem->p_q;
-	app_ring_pair_t *r = NULL;
-
-	while (p_q) {
-		r = p_q->ring;
-		while (r->next)
-			r = r->next;
-		p_q = p_q->next;
-		if (p_q)
-			r->next = p_q->ring;
-	}
-	r->next = mem->rsrc_mem->p_q->ring;
-	mem->rsrc_mem->rps = r;
-}
-
-static void make_rp_prio_links(struct c_mem_layout *mem)
-{
-	u8 i = 0;
-	u8 max_pri = 0;
-	priority_q_t *p_q = mem->rsrc_mem->p_q;
-	priority_q_t *p_q_n = mem->rsrc_mem->p_q;
-	app_ring_pair_t *r = NULL;
-	app_ring_pair_t *r_next = NULL;
-	app_ring_pair_t *r_head = mem->rsrc_mem->p_q->ring;
-
-	while( NULL != p_q_n ) {
-		max_pri++;
-		p_q_n = p_q_n->next;
-	}
-
-	while (p_q) {
-		r = p_q->ring;
-		p_q_n = p_q->next;
-		while(r) {
-			r_next = r->rp_links[0];
-			if( NULL != r_next ) {
-				for(i=0; i<max_pri; i++)
-					r->rp_links[i] = r_next;
-				r->max_next_link = max_pri;
-			} else {
-				for(i=0; i<max_pri; i++) {
-					if( 0 == i ) {
-						r->rp_links[i] = r_head;
-					} else {
-						if(p_q_n)
-							r->rp_links[i] = p_q_n->ring;
-						else
-							r->rp_links[i] = r_head;
-					}
-				}
-				r->max_next_link = max_pri;
-				max_pri--;
-			}
-			r = r_next;
-		}
-		p_q = p_q->next;
-	}
-	mem->rsrc_mem->rps = r_head;
-}
-
 int hs_complete(struct c_mem_layout *mem)
 {
 	int hs_comp;
 
 	mem->c_hs_mem->state = DEFAULT;
 	mem->rsrc_mem->rps = mem->rsrc_mem->rps->next;
-	make_rp_prio_links(mem);
-	make_rp_circ_list(mem);
-
-	init_order_mem(mem);
 
 	print_debug("\nHS_COMPLETE:\n");
 
@@ -373,8 +232,6 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 
 	u32 offset;
 	u32 rid = mem->c_hs_mem->data.ring.rid;
-	u32 prio = (mem->c_hs_mem->data.ring.props & APP_RING_PROP_PRIO_MASK)
-			>> APP_RING_PROP_PRIO_SHIFT;
 	u32 msi_addr_l = mem->c_hs_mem->data.ring.msi_addr_l;
 	app_ring_pair_t *rp = &(mem->rsrc_mem->rps[rid]);
 
@@ -382,7 +239,6 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 	print_debug("\nFW_INIT_RING_PAIR\n");
 
 	rp->id = rid;
-	rp->props = mem->c_hs_mem->data.ring.props;
 	rp->depth = mem->c_hs_mem->data.ring.depth;
 	rp->msi_data = mem->c_hs_mem->data.ring.msi_data;
 	rp->msi_addr = (void*)(((u8 *)mem->v_msi_mem + ((mem->p_pci_mem + msi_addr_l) -
@@ -392,17 +248,11 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 	rp->resp_r = (resp_ring_t *)((u8 *)mem->h_hs_mem + mem->c_hs_mem->data.ring.resp_ring_offset);
 
 	print_debug("Rid:	%d\n", rid);
-	print_debug("Order:	%d\n",
-		(mem->c_hs_mem->data.ring.props & APP_RING_PROP_ORDER_MASK) >>
-		APP_RING_PROP_ORDER_SHIFT);
-	print_debug("Prio:	%d\n", prio);
 	print_debug("Depth:	%d\n", rp->depth);
 	print_debug("MSI Data:	%0x\n",rp->msi_data);
 	print_debug("MSI addr:	%0x\n", rp->msi_addr);
 	print_debug("Req r addr: %0x\n", rp->req_r);
 	print_debug("Resp r addr:%0x\n", rp->resp_r);
-
-	add_ring_to_pq(mem->rsrc_mem->p_q, rp, (prio - 1));
 
 	offset = (u8 *) rp->req_r - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.ring.req_r = offset;
@@ -418,22 +268,11 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 
 void hs_fw_init_config(struct c_mem_layout *mem)
 {
-	u8 max_pri;
 	u8 num_of_rps;
 	u32 req_mem_size, r_s_cntrs, offset;
 
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nFW_INIT_CONFIG\n");
-
-	max_pri = mem->c_hs_mem->data.config.max_pri;
-	print_debug("Max pri: %d\n", max_pri);
-
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
-	stack_ptr -= max_pri * sizeof(priority_q_t);
-
-	/* Alloc memory for prio q first */
-	mem->rsrc_mem->p_q = (priority_q_t *) stack_ptr;
-	init_p_q(mem->rsrc_mem->p_q, max_pri);
 
 	num_of_rps = mem->c_hs_mem->data.config.num_of_rps;
 	mem->rsrc_mem->num_of_rps = num_of_rps;
@@ -1269,12 +1108,6 @@ i32 fsl_c2x0_fw(void)
 
 	/* Start the handshake */
 	handshake(c_mem);
-
-	if ((NULL == c_mem->rsrc_mem->p_q) ||
-	    (NULL == c_mem->rsrc_mem->p_q->ring)) {
-		print_error("Nothing to process.....\n");
-		return -1;
-	}
 
 	print_debug("\n\n\nFirmware up\n");
 	ring_processing_perf(c_mem);

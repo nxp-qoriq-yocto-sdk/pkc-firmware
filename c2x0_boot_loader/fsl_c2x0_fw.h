@@ -87,16 +87,6 @@
 
 #define ALIGN_TO_L1_CACHE_LINE(x)   (x & ~(L1_CACHE_LINE_SIZE-1))
 
-/* Application ring properties */
-#define APP_RING_PROP_ORDER_MASK    0x01
-#define APP_RING_PROP_ORDER_SHIFT   0
-
-#define APP_RING_PROP_AFFINE_MASK   0X0E
-#define APP_RING_PROP_AFFINE_SHIFT  1
-
-#define APP_RING_PROP_PRIO_MASK     0XF0
-#define APP_RING_PROP_PRIO_SHIFT    4
-
 /* Watchdog counter to signal the host with an interrupt if it looks stuck */
 #define IRQ_TIMEOUT 10000
 
@@ -339,27 +329,12 @@ typedef struct app_ring_pair {
 	ring_shadow_counters_mem_t *r_s_cntrs;
 
 	u8 id;
-	u8 prio;
-	u8 c_link;
-	u8 max_next_link;
-	u8 props;
 	u16 msi_data;
 	u32 depth;
 	u32 intr_ctrl_flag;
 
 	struct app_ring_pair *next;
-	struct app_ring_pair *rp_links[FSL_CRYPTO_MAX_RING_PAIRS];
 } app_ring_pair_t;
-
-/*******************************************************************************
-Description :	Defines the priority queue of a particular prio level
-Fields      :	ring	: Pointer to the list of rings in this prio level
-		next	: Pointer to the next prio queue
-*******************************************************************************/
-typedef struct priority_q {
-	app_ring_pair_t *ring;
-	struct priority_q *next;
-} priority_q_t;
 
 /*******************************************************************************
 Description :	Defines the container structure for resources in the device
@@ -376,7 +351,6 @@ struct resource {
 	void *req_mem;
 	void *ip_pool;
 	struct sec_engine *sec;
-	priority_q_t *p_q;
 	app_ring_pair_t *rps;
 
 	indexes_mem_t *idxs_mem;
@@ -402,13 +376,13 @@ struct dev_handshake_mem {
 	union cmd_data {
 		struct c_config_data {
 			u8 num_of_rps;
-			u8 max_pri;
+			u8 padding;
 			u32 req_mem_size;
 			u32 r_s_cntrs;
 		} config;
 		struct c_ring_data {
 			u8 rid;
-			u8 props;
+			u8 padding;
 			u16 msi_data;
 			u32 depth;
 			u32 resp_ring_offset;
