@@ -716,16 +716,6 @@ static inline void Deq_Cpy(resp_ring_t *resp_r, struct sec_op_ring *sec_o,
 	memcpy(resp_r, sec_o, (sizeof(resp_ring_t) * count));
 }
 
-
-static inline void irja_signal_caam(struct sec_jr *jr, u32 cnt)
-{
-#define IRJA_CAAM_SIGNAL_THRESHOLD  10
-	if (jr->enq_cnt >= IRJA_CAAM_SIGNAL_THRESHOLD) {
-		out_be32(&(jr->regs->irja), cnt);
-		jr->enq_cnt = 0;
-	}
-}
-
 static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem,
 		struct sec_engine **psec, app_ring_pair_t *rp,  u32 *todeq)
 {
