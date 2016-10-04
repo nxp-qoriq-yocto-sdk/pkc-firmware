@@ -782,7 +782,6 @@ static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem,
 	jr->i_ring[wi].desc = rp->req_r[ri].desc;
 
 	jr->enq_cnt += 1;
-	sec->tot_req_cnt += 1;
 
 	jr->tail = MOD_ADD(wi, 1, jr->size);
 	rp->idxs->r_index = MOD_ADD(ri, 1, rp->depth);
@@ -837,7 +836,6 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 		++ret_cnt;
 	}
 
-	(*deq_sec)->tot_resp_cnt += ret_cnt;
 	return ret_cnt;
 }
 

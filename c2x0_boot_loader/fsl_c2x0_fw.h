@@ -168,17 +168,11 @@ struct sec_jr {
 	u32 size;
 	u32 head;
 	u32 tail;
-	/* u32 pad1; */
-	/* u32 pad2; */
 	u32 enq_cnt;
 	u32 deq_cnt;
 	u32 id;
 	struct sec_ip_ring *i_ring;
 	struct sec_op_ring *o_ring;
-#if 0
-	struct sec_ip_ring i_ring[SEC_JR_DEPTH];
-	struct sec_op_ring o_ring[SEC_JR_DEPTH];
-#endif
 };
 
 #define DEFAULT_CLOCK 400
@@ -208,9 +202,6 @@ struct kek_regs {
 /* The container data structure be in platform SRAM */
 struct sec_engine {
 	u8 id;
-	u8 dequeue_resp;
-	u32 tot_req_cnt;	/* TOTAL JOBS ENQUEUED IN SEC */
-	u32 tot_resp_cnt;	/* TOTAL JOBS DEQUEUED IN SEC */
 	ccsr_sec_t *info;
 	struct rng_regs *rng;
 	struct kek_regs *kek;
