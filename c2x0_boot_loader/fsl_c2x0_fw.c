@@ -181,10 +181,6 @@ static inline void init_order_mem(struct c_mem_layout *mem)
 
 		print_debug("Order bit is set for ring: %d\n", rp->id);
 		rp->order_j_d_index = 0;
-		stack_ptr -= (rp->depth / BITS_PER_BYTE);
-		rp->resp_j_done_flag = (u8 *) stack_ptr;
-		print_debug("Resp job done flag: %x\n", rp->resp_j_done_flag);
-		Memset(rp->resp_j_done_flag, 0, (rp->depth/BITS_PER_BYTE));
 NEXT_RP:
 		print_debug("rp_head: %x, rp: %x\n", rp_head, rp);
 		rp = next_ring(rp);

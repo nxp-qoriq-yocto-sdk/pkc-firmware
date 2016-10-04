@@ -330,7 +330,6 @@ Fields      :	req_r	: Request ring
 typedef struct app_ring_pair {
 	req_ring_t *req_r;
 	resp_ring_t *resp_r;
-	u8 *resp_j_done_flag;
 	void *ip_pool;
 	void *msi_addr;
 	struct sec_engine *sec;
