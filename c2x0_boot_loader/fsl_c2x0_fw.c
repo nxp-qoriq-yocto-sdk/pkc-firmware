@@ -670,20 +670,6 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 #define MOD_ADD(x, value, size)		((x+value) & (size-1))
 
 #ifdef TIMED_WAIT_FOR_JOBS
-static inline u32 wait_for_timeout(u64 usecs)
-{
-	u64 start_ticks = 0;
-	u64 timeout_ticks = 0;
-
-	start_ticks = getticks();
-	timeout_ticks = usec2ticks(usecs);
-
-	while (getticks() - start_ticks < timeout_ticks)
-		;
-
-	return 0;
-}
-
 static inline u32 conditional_timed_wait_for_driver_jobs(u32 *x, u32 *y)
 {
 	u64 start_ticks = 0;
@@ -700,7 +686,6 @@ static inline u32 conditional_timed_wait_for_driver_jobs(u32 *x, u32 *y)
 
 	return *x - *y;
 }
-
 #endif
 
 static inline void Enq_Cpy(struct sec_ip_ring *sec_i, req_ring_t *req_r,
