@@ -239,8 +239,6 @@ typedef struct indexes_mem {
 	va_addr_t r_index;
 } indexes_mem_t;
 
-typedef indexes_mem_t shadow_indexes_mem_t;
-
 /*******************************************************************************
 Description : Contains the counters per job ring. There will two copies one for
 		local usage and one shadowed for firmware
