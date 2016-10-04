@@ -495,8 +495,6 @@ struct c_mem_layout {
 	struct resource *rsrc_mem;
 
 	u32 free_mem;
-	u64 intr_ticks;
-	u64 intr_timeout_ticks;
 
 	int dgb_print;
 	int err_print;

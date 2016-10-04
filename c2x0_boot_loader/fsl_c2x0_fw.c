@@ -1051,10 +1051,6 @@ int32_t fsl_c2x0_fw(void)
 	/* Default the state */
 	c_mem->c_hs_mem->state = DEFAULT;
 
-	/* Init the intr time counters */
-	c_mem->intr_ticks = 0;
-	c_mem->intr_timeout_ticks = usec2ticks(10);
-
 	print_debug("\nTOTAL memory:\t%8d bytes\n", TOTAL_CARD_MEMORY);
 	print_debug("FREE memory:\t%8d bytes\n", c_mem->free_mem);
 
