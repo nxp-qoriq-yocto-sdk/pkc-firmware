@@ -92,8 +92,6 @@
 #define MSI_TLB_SIZE_MASK    ((~((u32)0)) << 20)
 
 #define MIN(a,b) ((a)<(b) ? (a):(b))
-#define LINEAR_ROOM(wi, depth, room)     MIN((depth-wi), room)
-#define MOD_INC(x, size)                 ((++x) & (size-1))
 
 #define BITS_PER_BYTE 8
 
@@ -718,13 +716,6 @@ static inline void Deq_Cpy(resp_ring_t *resp_r, struct sec_op_ring *sec_o,
 	memcpy(resp_r, sec_o, (sizeof(resp_ring_t) * count));
 }
 
-inline i32 circ_room(u32 wi, u32 ri, u32 w_depth, u32 r_depth, u32 count)
-{
-	i32 val1 = LINEAR_ROOM(wi, w_depth, count);
-	i32 val2 = LINEAR_ROOM(ri, r_depth, count);
-
-	return MIN(val1, val2);
-}
 
 static inline void irja_signal_caam(struct sec_jr *jr, u32 cnt)
 {
