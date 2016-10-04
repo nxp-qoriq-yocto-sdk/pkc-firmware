@@ -652,29 +652,14 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 #endif
 }
 
-
-/* Switch controls */
-#define TIMED_WAIT_FOR_JOBS
-
-#define BUDGET_NO_OF_TOT_JOBS                   50
-
-#ifndef TIMED_WAIT_FOR_JOBS
-#define WAIT_FOR_DRIVER_JOBS(x, y)	\
-	while (BUDGET_NO_OF_TOT_JOBS > (x-y))	\
-		 SYNC_MEM;
-#else
-#define WAIT_FOR_DRIVER_JOBS		\
-	conditional_timed_wait_for_driver_jobs
-#endif
-
 #ifdef TIMED_WAIT_FOR_JOBS
+#define WAIT_FOR_DRIVER_JOBS conditional_timed_wait_for_driver_jobs
 static inline u32 conditional_timed_wait_for_driver_jobs(u32 *x, u32 *y)
 {
-	u64 start_ticks = 0;
-	u64 timeout_ticks = 0;
+	u64 start_ticks;
+	u64 timeout_ticks;
 
 	start_ticks = getticks();
-#define HOST_JOB_WAIT_TIME_OUT  100000ull
 	timeout_ticks = usec2ticks(HOST_JOB_WAIT_TIME_OUT);
 
 	while ((getticks() - start_ticks < timeout_ticks)
@@ -684,6 +669,11 @@ static inline u32 conditional_timed_wait_for_driver_jobs(u32 *x, u32 *y)
 
 	return *x - *y;
 }
+#else
+#define WAIT_FOR_DRIVER_JOBS(x, y)	\
+	while (BUDGET_NO_OF_TOT_JOBS > (x-y))	\
+		 SYNC_MEM;
+
 #endif
 
 static inline void Enq_Cpy(struct sec_ip_ring *sec_i, req_ring_t *req_r,

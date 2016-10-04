@@ -105,6 +105,11 @@
 #define MCFGR_DMA_RST     ((u32)(1)<<28)	/* DMA Reset */
 
 #define FSL_CRYPTO_MAX_RING_PAIRS   6
+#define BUDGET_NO_OF_TOT_JOBS                   50
+#define HOST_JOB_WAIT_TIME_OUT  100000ull
+
+/* Switch controls */
+#define TIMED_WAIT_FOR_JOBS
 
 /* 32 bit virtual address */
 typedef u32 va_addr_t;
