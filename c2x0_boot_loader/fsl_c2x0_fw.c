@@ -447,10 +447,10 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 
 static void make_sec_circ_list(struct sec_engine *sec, u8 count)
 {
-	i32 i = 0;
-	for (i = 0; i < (count - 1); i++)
-		sec[i].next = &(sec[i + 1]);
-	sec[i].next = &sec[0];
+	u8 i;
+	for (i = 0; i < count; i++) {
+		sec[i].next = &(sec[(i + 1) % count]);
+	}
 }
 
 static inline void copy_kek_and_set_scr(struct c_mem_layout *c_mem)
