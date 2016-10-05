@@ -125,6 +125,25 @@ static void Memset(u8 *ptr, u8 val, u32 size)
 		*ptr++ = val;
 }
 
+void *c2alloc(size_t size)
+{
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
+	stack_ptr -= size;
+	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
+
+	return (void *)stack_ptr;
+}
+
+void *c2zalloc(size_t size)
+{
+	void *addr;
+
+	addr = c2alloc(size);
+	Memset(addr, 0, size);
+
+	return addr;
+}
+
 static void firmware_up(struct c_mem_layout *mem)
 {
 	mem->h_hs_mem->data.device.p_ib_mem_base_l = (u32) mem->p_ib_mem;
@@ -145,24 +164,12 @@ static void init_ring_pairs(struct c_mem_layout *mem)
 	u8 num_of_rps = mem->rsrc_mem->num_of_rps;
 	app_ring_pair_t *rps = mem->rsrc_mem->rps;
 
-	stack_ptr -= sizeof(indexes_mem_t) * num_of_rps;
-	mem->rsrc_mem->idxs_mem = (indexes_mem_t *) stack_ptr;
-	stack_ptr -= sizeof(counters_mem_t);
-	mem->rsrc_mem->cntrs_mem = (counters_mem_t *) stack_ptr;
-	stack_ptr -= sizeof(counters_mem_t);
-	mem->rsrc_mem->s_c_cntrs_mem = (counters_mem_t *) stack_ptr;
-	stack_ptr -= sizeof(ring_counters_mem_t) * num_of_rps;
-	mem->rsrc_mem->r_cntrs_mem = (ring_counters_mem_t *) stack_ptr;
-	stack_ptr -= sizeof(ring_counters_mem_t) * num_of_rps;
-	mem->rsrc_mem->r_s_c_cntrs_mem = (ring_counters_mem_t *) stack_ptr;
-
-	Memset((u8 *)mem->rsrc_mem->idxs_mem, 0,
-			sizeof(indexes_mem_t) * num_of_rps);
-	Memset((u8 *)mem->rsrc_mem->cntrs_mem, 0, sizeof(counters_mem_t));
-	Memset((u8 *)mem->rsrc_mem->s_c_cntrs_mem, 0, sizeof(counters_mem_t));
-	Memset((u8 *)mem->rsrc_mem->r_cntrs_mem, 0,
+	mem->rsrc_mem->idxs_mem = c2zalloc(sizeof(indexes_mem_t) * num_of_rps);
+	mem->rsrc_mem->cntrs_mem = c2zalloc(sizeof(counters_mem_t));
+	mem->rsrc_mem->s_c_cntrs_mem = c2zalloc(sizeof(counters_mem_t));
+	mem->rsrc_mem->r_cntrs_mem = c2zalloc(
 			sizeof(ring_counters_mem_t) * num_of_rps);
-	Memset((u8 *)mem->rsrc_mem->r_s_c_cntrs_mem, 0,
+	mem->rsrc_mem->r_s_c_cntrs_mem = c2zalloc(
 			sizeof(ring_counters_mem_t) * num_of_rps);
 
 	print_debug("Init Ring Pairs:\n");
@@ -276,22 +283,14 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	mem->rsrc_mem->num_of_rps = num_of_rps;
 	print_debug("Number of ring pairs: %d\n", num_of_rps);
 
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
-	stack_ptr -= num_of_rps * sizeof(app_ring_pair_t);
-
-	mem->rsrc_mem->rps = (app_ring_pair_t *) stack_ptr;
+	mem->rsrc_mem->rps = c2alloc(num_of_rps * sizeof(app_ring_pair_t));
 	init_ring_pairs(mem);
 
 	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
 	print_debug("Req mem size: %d\n", req_mem_size);
 
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
-	stack_ptr -=  req_mem_size;
-
-	mem->rsrc_mem->req_mem = (void *) stack_ptr;
-	print_debug("Req mem addr: %0x\n", mem->rsrc_mem->req_mem);
-
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
+	mem->rsrc_mem->req_mem = c2alloc(req_mem_size);
+	print_debug("Req mem addr: %0p\n", mem->rsrc_mem->req_mem);
 
 	r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
 	mem->rsrc_mem->r_s_cntrs_mem = (ring_shadow_counters_mem_t *)
@@ -581,17 +580,8 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 static void init_rsrc_sec(struct sec_engine *sec)
 {
 	sec->jr.id = sec->id;
-
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
-	stack_ptr -=  SEC_JR_DEPTH * sizeof(struct sec_ip_ring);
-	sec->jr.i_ring = (struct sec_ip_ring *) stack_ptr;
-
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
-	stack_ptr -=  SEC_JR_DEPTH * sizeof(struct sec_op_ring);
-	sec->jr.o_ring = (struct sec_op_ring *)stack_ptr;
-
-	Memset((u8 *)sec->jr.i_ring, 0, SEC_JR_DEPTH * sizeof(struct sec_ip_ring));
-	Memset((u8 *)sec->jr.o_ring, 0, SEC_JR_DEPTH * sizeof(struct sec_op_ring));
+	sec->jr.i_ring = c2zalloc(SEC_JR_DEPTH * sizeof(struct sec_ip_ring));
+	sec->jr.o_ring = c2zalloc(SEC_JR_DEPTH * sizeof(struct sec_op_ring));
 
 	print_debug("sec ip ring: %10x\n", sec->jr.i_ring);
 	print_debug("sec op ring: %10x\n", sec->jr.o_ring);
@@ -603,39 +593,28 @@ static void init_rsrc_sec(struct sec_engine *sec)
 
 static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 {
-	struct resource *rsrc  = c_mem->rsrc_mem;
-	struct sec_engine *sec = NULL;
+	struct sec_engine *sec;
 	int32_t i;
-	u32 sec_nums     = 0;
-
-	Memset((u8 *)rsrc, 0, sizeof(struct resource));
+	u32 sec_nums;
 
 	sec_nums = in_be32((u32 *)GUTS_SVR);
 	sec_nums = (sec_nums & 0xF000) >> 12;
-	if (!sec_nums)
+	if (sec_nums == 0) {
 		sec_nums = 1;
+	}
 
-	rsrc->sec_eng_cnt = sec_nums;
-
-	/* Initialize the SEC engine
-	 * All the required memory for SEC engine will be allocated in L2 SRAM
-	 * Max we may need = 3sec engines * (sizeof(struct sec_engine)) --
-	 * Given 128 as depth of rings the max size required is
-	 * approx 2624 bytes.
-	 */
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
-	stack_ptr -= sec_nums * sizeof(struct sec_engine);
-	rsrc->sec = (struct sec_engine *) (stack_ptr);
-	Memset((u8 *)rsrc->sec, 0, sizeof(struct sec_engine) * sec_nums);
+	c_mem->rsrc_mem = c2zalloc(sizeof(struct resource));
+	c_mem->rsrc_mem->sec_eng_cnt = sec_nums;
+	c_mem->rsrc_mem->sec = c2zalloc(sec_nums * sizeof(struct sec_engine));
 
 	print_debug("\nalloc_rsrc_mem\n");
-	print_debug("rsrc addr: %10x\n", rsrc);
-	print_debug("sec addr : %10x\n\n", rsrc->sec);
+	print_debug("rsrc addr: %10p\n", c_mem->rsrc_mem);
+	print_debug("sec addr : %10p\n\n", c_mem->rsrc_mem->sec);
 
-	make_sec_circ_list(rsrc->sec, sec_nums);
+	make_sec_circ_list(c_mem->rsrc_mem->sec, sec_nums);
 
 	/* Call for hardware init of sec engine */
-	sec = rsrc->sec;
+	sec = c_mem->rsrc_mem->sec;
 	for (i = 0; i < sec_nums; i++) {
 		sec->id = (i + 1);
 		init_rsrc_sec(sec);
@@ -645,10 +624,10 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 	c_mem->free_mem = TOTAL_CARD_MEMORY - (0x100000000ull - stack_ptr);
 
 #ifdef COMMON_IP_BUFFER_POOL
-	rsrc->ip_pool = (void *)L2_SRAM_VIRT_ADDR;
-	Memset(rsrc->ip_pool, 0, DEFAULT_POOL_SIZE);
+	c_mem->rsrc_mem->ip_pool = (void *)L2_SRAM_VIRT_ADDR;
+	Memset(c_mem->rsrc_mem->ip_pool, 0, DEFAULT_POOL_SIZE);
 	c_mem->free_mem -= DEFAULT_POOL_SIZE;
-	print_debug("ip pool addr: %0x\n", rsrc->ip_pool);
+	print_debug("ip pool addr: %0x\n", c_mem->rsrc_mem->ip_pool);
 #endif
 }
 
@@ -963,28 +942,25 @@ int32_t fsl_c2x0_fw(void)
 	phys_addr_t p_addr;
 	phys_addr_t p_aligned_addr;
 
-	struct c_mem_layout *c_mem = NULL;
-	u32 c_hs_mem;
+	struct c_mem_layout *c_mem;
+	struct dev_handshake_mem *c_hs_mem;
 
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
 	print_debug("Allocation starts 28K below top: %x\n", stack_ptr);
 
 	/* One cache line for handshake (HS) memory */
-	stack_ptr -= L1_CACHE_LINE_SIZE;
-	c_hs_mem = stack_ptr;
-	print_debug("\nDevice handshake memory: %x\n", stack_ptr);
+	c_hs_mem = c2alloc(L1_CACHE_LINE_SIZE);
+	print_debug("\nDevice handshake memory: %p\n", c_hs_mem);
 
-	stack_ptr -= sizeof(struct c_mem_layout);
-	c_mem = (struct c_mem_layout *)stack_ptr;
-	c_mem->c_hs_mem = (struct dev_handshake_mem *)c_hs_mem;
+	c_mem = c2alloc(sizeof(struct c_mem_layout));
+	c_mem->c_hs_mem = c_hs_mem;
 	c_mem->v_ib_mem = L2_SRAM_VIRT_ADDR;
 	c_mem->p_ib_mem = L2_SRAM_VIRT_ADDR;	/* Phy addr is same as v addr */
 	/*PCIE1 controller physical address-outbound window will be set to 16G*/
 	c_mem->p_pci_mem = CONFIG_SYS_PCIE1_MEM_PHYS;
 
 	print_debug("\nc_mem_layout\n", c_mem);
-	print_debug("c_mem    : %10x\n", c_mem);
-	print_debug("c_hs_mem : %10x\n", c_mem->c_hs_mem);
+	print_debug("c_mem    : %10p\n", c_mem);
+	print_debug("c_hs_mem : %10p\n", c_mem->c_hs_mem);
 	print_debug("v_ib_mem : %10x\n", c_mem->v_ib_mem);
 	print_debug("p_ib_mem : %10llx\n", c_mem->p_ib_mem);
 	print_debug("p_pci_mem: %10llx\n", c_mem->p_pci_mem);
@@ -1040,10 +1016,6 @@ int32_t fsl_c2x0_fw(void)
 	c2x0_set_tlb(1, c_mem->v_msi_mem, c_mem->p_msi_mem,
 			MAS3_SX | MAS3_SW | MAS3_SR, MAS2_I | MAS2_G, 0, 2,
 			BOOKE_PAGESZ_1M, 1);
-
-	stack_ptr = ALIGN_TO_L1_CACHE_LINE(stack_ptr);
-	stack_ptr -= sizeof(struct resource);
-	c_mem->rsrc_mem = (struct resource *) stack_ptr;
 
 	alloc_rsrc_mem(c_mem);
 
