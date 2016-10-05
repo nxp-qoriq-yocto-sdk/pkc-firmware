@@ -311,7 +311,6 @@ typedef struct app_ring_pair {
 	resp_ring_t *resp_r;
 	void *ip_pool;
 	void *msi_addr;
-	struct sec_engine *sec;
 	indexes_mem_t *idxs;
 	ring_counters_mem_t *r_cntrs;
 	ring_counters_mem_t *r_s_c_cntrs;

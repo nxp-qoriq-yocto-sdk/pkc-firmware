@@ -182,7 +182,6 @@ static void init_ring_pairs(struct c_mem_layout *mem)
 	for (i = 0; i < num_of_rps; i++) {
 		rps[i].req_r = NULL;
 		rps[i].msi_addr = NULL;
-		rps[i].sec = NULL;
 		rps[i].r_s_cntrs = NULL;
 		rps[i].idxs = &(mem->rsrc_mem->idxs_mem[i]);
 		rps[i].r_cntrs = &(mem->rsrc_mem->r_cntrs_mem[i]);
