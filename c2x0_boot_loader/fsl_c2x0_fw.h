@@ -365,13 +365,11 @@ struct dev_handshake_mem {
 	union cmd_data {
 		struct c_config_data {
 			u8 num_of_rps;
-			u8 padding;
 			u32 req_mem_size;
 			u32 r_s_cntrs;
 		} config;
 		struct c_ring_data {
 			u8 rid;
-			u8 padding;
 			u16 msi_data;
 			u32 depth;
 			u32 resp_ring_offset;
