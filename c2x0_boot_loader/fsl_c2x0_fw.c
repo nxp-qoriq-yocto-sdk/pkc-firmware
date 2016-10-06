@@ -215,8 +215,6 @@ int hs_complete(struct c_mem_layout *mem)
 	int hs_comp;
 
 	mem->c_hs_mem->state = DEFAULT;
-	mem->rsrc_mem->rps = mem->rsrc_mem->rps->next;
-
 	print_debug("\nHS_COMPLETE:\n");
 
 	if (in_be32(mem->rsrc_mem->sec->rdsta) & 0x1) {
@@ -355,12 +353,10 @@ static void handshake(struct c_mem_layout *mem)
 			break;
 
 		case FW_WAIT_FOR_RNG:
-			/* print_debug("\n FW_WAIT_FOR_RNG\n"); */
 			rng_processing(mem);
 			break;
 
 		case FW_RNG_DONE:
-/*			print_debug("\n FW_RNG_DONE\n"); */
 			copy_kek_and_set_scr(mem);
 			return; 
 		}
@@ -627,29 +623,20 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 #endif
 }
 
-#ifdef TIMED_WAIT_FOR_JOBS
-#define WAIT_FOR_DRIVER_JOBS conditional_timed_wait_for_driver_jobs
-static inline u32 conditional_timed_wait_for_driver_jobs(u32 *x, u32 *y)
+app_ring_pair_t *find_rp_with_jobs(app_ring_pair_t *rp)
 {
-	u64 start_ticks;
-	u64 timeout_ticks;
+	uint32_t jobs;
 
-	start_ticks = getticks();
-	timeout_ticks = usec2ticks(HOST_JOB_WAIT_TIME_OUT);
-
-	while ((getticks() - start_ticks < timeout_ticks)
-	       && ((*x - *y) < BUDGET_NO_OF_TOT_JOBS)) {
+	do {
+		jobs = rp->r_s_c_cntrs->jobs_added - rp->r_cntrs->jobs_processed;
+		if (jobs == 0) {
+			rp = rp->next;
+		}
 		SYNC_MEM;
-	}
+	} while (jobs == 0);
 
-	return *x - *y;
+	return rp;
 }
-#else
-#define WAIT_FOR_DRIVER_JOBS(x, y)	\
-	while (BUDGET_NO_OF_TOT_JOBS > (x-y))	\
-		 SYNC_MEM;
-
-#endif
 
 static inline void Enq_Cpy(struct sec_ip_ring *sec_i, req_ring_t *req_r,
 		u32 count)
@@ -907,17 +894,13 @@ static void ring_processing_perf(struct c_mem_layout *c_mem)
 
 static inline void rng_processing(struct c_mem_layout *c_mem)
 {
-	u32     cnt =   0,  ring_jobs   =   0;
+	u32 ring_jobs;
+	app_ring_pair_t *rp;
+	struct sec_engine *sec;
 
-	app_ring_pair_t     *rp         =   c_mem->rsrc_mem->rps;
-	struct sec_engine   *sec        =   c_mem->rsrc_mem->sec;
+	rp = find_rp_with_jobs(c_mem->rsrc_mem->rps);
 
-	cnt = WAIT_FOR_DRIVER_JOBS(&(rp->r_s_c_cntrs->jobs_added),
-			&(rp->r_cntrs->jobs_processed));
-	if (cnt == 0) {
-		return;
-	}
-
+	sec = c_mem->rsrc_mem->sec;
 	ring_jobs    =  sel_sec_enqueue(c_mem, &sec, rp);
 
 DEQ:
