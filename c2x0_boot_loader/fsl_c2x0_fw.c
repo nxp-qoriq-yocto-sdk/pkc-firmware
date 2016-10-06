@@ -665,7 +665,7 @@ static inline void Deq_Cpy(resp_ring_t *resp_r, struct sec_op_ring *sec_o,
 }
 
 static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem,
-		struct sec_engine **psec, app_ring_pair_t *rp,  u32 *todeq)
+		struct sec_engine **psec, app_ring_pair_t *rp)
 {
 	struct sec_engine *sec	= NULL;
 	struct sec_jr *jr		= NULL;
@@ -720,12 +720,11 @@ static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem,
 	out_be32(&(jr->regs->irja), 1);
 
 RET:
-	*todeq += 1;
 	return 1;
 }
 
 static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
-		struct sec_engine **deq_sec, app_ring_pair_t *rp, u32 *todeq)
+		struct sec_engine **deq_sec, app_ring_pair_t *rp)
 {
 	struct sec_jr *jr = &(*deq_sec)->jr;
 	u32 cnt = in_be32(&jr->regs->orsf);
@@ -759,7 +758,6 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 		rp->r_s_cntrs->resp_jobs_added = rp->r_cntrs->jobs_added;
 
 		out_be32(&jr->regs->orjr, 1);
-		*todeq -= 1;
 
 		--cnt;
 		++ret_cnt;
@@ -914,7 +912,6 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 	app_ring_pair_t     *rp         =   c_mem->rsrc_mem->rps;
 	struct sec_engine   *sec        =   c_mem->rsrc_mem->sec;
 	u32                 *r_deq_cnt  =   NULL;
-	u32                 deq         =   0;
 
 	r_deq_cnt   =   &(rp->r_cntrs->jobs_processed);
 	cnt = WAIT_FOR_DRIVER_JOBS(&(rp->r_s_c_cntrs->jobs_added), r_deq_cnt);
@@ -922,10 +919,10 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 		return;
 	}
 
-	ring_jobs    =  sel_sec_enqueue(c_mem, &sec, rp, &deq);
+	ring_jobs    =  sel_sec_enqueue(c_mem, &sec, rp);
 
 DEQ:
-	ring_jobs   =  sec_dequeue(c_mem, &sec, rp, &deq);
+	ring_jobs   =  sec_dequeue(c_mem, &sec, rp);
 	if (ring_jobs) {
 		raise_intr(&(c_mem->rsrc_mem->rps[0]));
 	} else {
