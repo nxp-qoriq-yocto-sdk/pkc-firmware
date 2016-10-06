@@ -578,7 +578,6 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 
 static void init_rsrc_sec(struct sec_engine *sec)
 {
-	sec->jr.id = sec->id;
 	sec->jr.i_ring = c2zalloc(SEC_JR_DEPTH * sizeof(struct sec_ip_ring));
 	sec->jr.o_ring = c2zalloc(SEC_JR_DEPTH * sizeof(struct sec_op_ring));
 

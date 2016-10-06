@@ -170,7 +170,6 @@ struct sec_jr {
 	u32 tail;
 	u32 enq_cnt;
 	u32 deq_cnt;
-	u32 id;
 	struct sec_ip_ring *i_ring;
 	struct sec_op_ring *o_ring;
 };
