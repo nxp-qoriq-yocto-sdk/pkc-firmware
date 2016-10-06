@@ -911,10 +911,9 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 
 	app_ring_pair_t     *rp         =   c_mem->rsrc_mem->rps;
 	struct sec_engine   *sec        =   c_mem->rsrc_mem->sec;
-	u32                 *r_deq_cnt  =   NULL;
 
-	r_deq_cnt   =   &(rp->r_cntrs->jobs_processed);
-	cnt = WAIT_FOR_DRIVER_JOBS(&(rp->r_s_c_cntrs->jobs_added), r_deq_cnt);
+	cnt = WAIT_FOR_DRIVER_JOBS(&(rp->r_s_c_cntrs->jobs_added),
+			&(rp->r_cntrs->jobs_processed));
 	if (cnt == 0) {
 		return;
 	}
