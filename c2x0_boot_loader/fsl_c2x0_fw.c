@@ -493,13 +493,13 @@ static void init_rng(struct sec_engine *sec)
 	 *  (Leave the SAMP_SIZE field set to 2500)
 	 */
 	switch (sec->id) {
-	case SEC_ENG_1:
+	case SEC_ENG_0:
 		delay = RNG4_ENT_DLY0;
 		break;
-	case SEC_ENG_2:
+	case SEC_ENG_1:
 		delay = RNG4_ENT_DLY1;
 		break;
-	case SEC_ENG_3:
+	case SEC_ENG_2:
 		delay = RNG4_ENT_DLY2;
 		break;
 	default:
@@ -536,10 +536,8 @@ static void init_rng(struct sec_engine *sec)
 
 static void init_sec_regs_offset(struct sec_engine *sec)
 {
-	int32_t id = sec->id;
-
-	switch (id) {
-	case SEC_ENG_1:
+	switch (sec->id) {
+	case SEC_ENG_0:
 		sec->jr.regs = (struct sec_jr_regs *) SEC0_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) SEC0_BASE_ADDR;
 		sec->rng = (struct rng_regs *) SEC0_RNG_ADDR;
@@ -549,7 +547,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->faults = (struct fault_regs *) SEC0_FAULTS_ADDR;
 		break;
 
-	case SEC_ENG_2:
+	case SEC_ENG_1:
 		sec->jr.regs = (struct sec_jr_regs *) SEC1_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) SEC1_BASE_ADDR;
 		sec->rng = (struct rng_regs *) SEC1_RNG_ADDR;
@@ -559,7 +557,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		sec->faults = (struct fault_regs *) SEC1_FAULTS_ADDR;
 		break;
 
-	case SEC_ENG_3:
+	case SEC_ENG_2:
 		sec->jr.regs = (struct sec_jr_regs *) SEC2_JR0_ADDR;
 		sec->info = (ccsr_sec_t *) SEC2_BASE_ADDR;
 		sec->rng = (struct rng_regs *) SEC2_RNG_ADDR;
@@ -570,7 +568,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		break;
 
 	default:
-		print_error("\n Invalid Sec Id... :%d\n", id);
+		print_error("\n Invalid Sec Id... :%d\n", sec->id);
 	}
 
 	init_rng(sec);
@@ -614,7 +612,7 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 	/* Call for hardware init of sec engine */
 	sec = c_mem->rsrc_mem->sec;
 	for (i = 0; i < sec_nums; i++) {
-		sec->id = (i + 1);
+		sec->id = i;
 		init_rsrc_sec(sec);
 		sec = sec->next;
 	}
@@ -688,13 +686,13 @@ static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem,
 		sec_sel = 0; 
 
 	switch (sec_sel) {
-	case SEC_ENG_1:
+	case SEC_ENG_0:
 		sec = c_mem->rsrc_mem->sec;
 		break;
-	case SEC_ENG_2:
+	case SEC_ENG_1:
 		sec = c_mem->rsrc_mem->sec + 1;
 		break;
-	case SEC_ENG_3:
+	case SEC_ENG_2:
 		sec = c_mem->rsrc_mem->sec + 2;
 		break;
 	default:

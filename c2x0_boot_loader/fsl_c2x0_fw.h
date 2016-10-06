@@ -94,9 +94,9 @@
 #define true            1
 #define RESULT_OK       1
 #define INTR_FLAG_SET   1
+#define SEC_ENG_0 0
 #define SEC_ENG_1 1
 #define SEC_ENG_2 2
-#define SEC_ENG_3 3
 
 #define SYNC_MEM        asm volatile("sync" : : : "memory")
 #define MOD_ADD(x, value, size)	((x+value) & (size-1))
