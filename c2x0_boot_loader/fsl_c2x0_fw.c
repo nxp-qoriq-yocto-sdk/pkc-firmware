@@ -753,12 +753,6 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 	return ret_cnt;
 }
 
-static inline void raise_intr(app_ring_pair_t *r)
-{
-	r->intr_ctrl_flag = 1;
-	out_le32(r->msi_addr, r->msi_data);
-}
-
 inline void Enq_Circ_Cpy(struct sec_jr *jr, app_ring_pair_t *rp, uint32_t count)
 {
 	uint32_t i;
@@ -832,7 +826,7 @@ static inline uint32_t dequeue_from_sec(struct sec_engine *sec,
 	return count;
 }
 
-static inline void raise_intr_app_ring(app_ring_pair_t *rp)
+static inline void raise_intr(app_ring_pair_t *rp)
 {
 	print_debug("%s: MSI addr: %0x, MSI data:%0x \n",
 			__func__, rp->msi_addr, rp->msi_data);
@@ -869,7 +863,7 @@ static void ring_processing_perf(struct c_mem_layout *c_mem)
 		in_flight -= deq_cnt;
 
 		if (irq_is_due(deq_cnt, resp_r, irq_timeout)) {
-			raise_intr_app_ring(resp_r);
+			raise_intr(resp_r);
 			resp_r->intr_ctrl_flag = 1;
 			irq_timeout = IRQ_TIMEOUT;
 		} else if (irq_timeout > 0) {
