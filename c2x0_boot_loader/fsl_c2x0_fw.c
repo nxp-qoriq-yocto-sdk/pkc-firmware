@@ -909,35 +909,10 @@ DEQ:
 	}
 }
 
-int32_t fsl_c2x0_fw(void)
+void set_ob_mem_tlb(struct c_mem_layout *c_mem)
 {
 	phys_addr_t p_addr;
 	phys_addr_t p_aligned_addr;
-
-	struct c_mem_layout *c_mem;
-	struct dev_handshake_mem *c_hs_mem;
-
-	print_debug("Allocation starts 28K below top: %x\n", stack_ptr);
-
-	/* One cache line for handshake (HS) memory */
-	c_hs_mem = c2alloc(L1_CACHE_LINE_SIZE);
-	print_debug("\nDevice handshake memory: %p\n", c_hs_mem);
-
-	c_mem = c2alloc(sizeof(struct c_mem_layout));
-	c_mem->c_hs_mem = c_hs_mem;
-	c_mem->v_ib_mem = L2_SRAM_VIRT_ADDR;
-	c_mem->p_ib_mem = L2_SRAM_VIRT_ADDR;	/* Phy addr is same as v addr */
-	/*PCIE1 controller physical address-outbound window will be set to 16G*/
-	c_mem->p_pci_mem = CONFIG_SYS_PCIE1_MEM_PHYS;
-	c_mem->v_ob_mem = CONFIG_SYS_PCIE1_MEM_VIRT; /* TLB exist only for 1G */
-	c_mem->v_msi_mem = CONFIG_SYS_PCIE1_MSI_MEM_VIRT;
-
-	print_debug("\nc_mem_layout\n", c_mem);
-	print_debug("c_mem    : %10p\n", c_mem);
-	print_debug("c_hs_mem : %10p\n", c_mem->c_hs_mem);
-	print_debug("v_ib_mem : %10x\n", c_mem->v_ib_mem);
-	print_debug("p_ib_mem : %10llx\n", c_mem->p_ib_mem);
-	print_debug("p_pci_mem: %10llx\n", c_mem->p_pci_mem);
 
 	/* OB MEM
 	 * Driver would have updated the offset of its created memory inside
@@ -963,6 +938,18 @@ int32_t fsl_c2x0_fw(void)
 	print_debug("v_ob_mem               : %10x\n", c_mem->v_ob_mem);
 	print_debug("h_hs_mem               : %10x\n", c_mem->h_hs_mem);
 
+	/* Set the TLB here for the OB mem 1G - Using TLB 3 */
+	c2x0_set_tlb(1, c_mem->v_ob_mem, c_mem->p_ob_mem,
+			MAS3_SW | MAS3_SR, MAS2_I | MAS2_G, 0, 3,
+			BOOKE_PAGESZ_1G, 1);
+
+}
+
+void set_msi_tlb(struct c_mem_layout *c_mem)
+{
+	phys_addr_t p_addr;
+	phys_addr_t p_aligned_addr;
+
 	/* MSI details */
 	p_addr = (phys_addr_t)c_mem->c_hs_mem->h_msi_mem_h << 32;
 	p_addr |= c_mem->c_hs_mem->h_msi_mem_l;
@@ -980,15 +967,38 @@ int32_t fsl_c2x0_fw(void)
 	print_debug("p_msi_mem          : %10llx\n", c_mem->p_msi_mem);
 	print_debug("v_msi_mem          : %10x\n", c_mem->v_msi_mem);
 
-	/* Set the TLB here for the OB mem 1G - Using TLB 3 */
-	c2x0_set_tlb(1, c_mem->v_ob_mem, c_mem->p_ob_mem,
-			MAS3_SW | MAS3_SR, MAS2_I | MAS2_G, 0, 3,
-			BOOKE_PAGESZ_1G, 1);
 	/* Set the TLB here for MSI 1M - Using TLB 2 */
 	c2x0_set_tlb(1, c_mem->v_msi_mem, c_mem->p_msi_mem,
 			MAS3_SX | MAS3_SW | MAS3_SR, MAS2_I | MAS2_G, 0, 2,
 			BOOKE_PAGESZ_1M, 1);
+}
 
+int32_t fsl_c2x0_fw(void)
+{
+	struct c_mem_layout *c_mem;
+	struct dev_handshake_mem *c_hs_mem;
+	/* One cache line for handshake (HS) memory */
+	c_hs_mem = c2alloc(L1_CACHE_LINE_SIZE);
+	print_debug("\nDevice handshake memory: %p\n", c_hs_mem);
+
+	c_mem = c2alloc(sizeof(struct c_mem_layout));
+	c_mem->c_hs_mem = c_hs_mem;
+	c_mem->v_ib_mem = L2_SRAM_VIRT_ADDR;
+	c_mem->p_ib_mem = L2_SRAM_VIRT_ADDR;	/* Phy addr is same as v addr */
+	/*PCIE1 controller physical address-outbound window will be set to 16G*/
+	c_mem->p_pci_mem = CONFIG_SYS_PCIE1_MEM_PHYS;
+	c_mem->v_ob_mem = CONFIG_SYS_PCIE1_MEM_VIRT; /* TLB exist only for 1G */
+	c_mem->v_msi_mem = CONFIG_SYS_PCIE1_MSI_MEM_VIRT;
+
+	print_debug("\nc_mem_layout\n", c_mem);
+	print_debug("c_mem    : %10p\n", c_mem);
+	print_debug("c_hs_mem : %10p\n", c_mem->c_hs_mem);
+	print_debug("v_ib_mem : %10x\n", c_mem->v_ib_mem);
+	print_debug("p_ib_mem : %10llx\n", c_mem->p_ib_mem);
+	print_debug("p_pci_mem: %10llx\n", c_mem->p_pci_mem);
+
+	set_ob_mem_tlb(c_mem);
+	set_msi_tlb(c_mem);
 	alloc_rsrc_mem(c_mem);
 
 	print_debug("\nTOTAL memory:\t%8d bytes\n", TOTAL_CARD_MEMORY);
