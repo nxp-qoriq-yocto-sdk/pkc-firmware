@@ -231,20 +231,36 @@ int hs_complete(struct c_mem_layout *mem)
 
 uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 {
-
 	u32 offset;
+	phys_addr_t h_msi_addr;
 	u32 rid = mem->c_hs_mem->data.ring.rid;
 	u32 msi_addr_l = mem->c_hs_mem->data.ring.msi_addr_l;
+	u32 msi_addr_h = mem->c_hs_mem->data.ring.msi_addr_h;
 	app_ring_pair_t *rp = &(mem->rsrc_mem->rps[rid]);
 
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nFW_INIT_RING_PAIR\n");
 
+	h_msi_addr = (phys_addr_t)msi_addr_h << 32;
+	h_msi_addr |= msi_addr_l;
+
+	/* It's the same address for all rings but why update it if not
+	 * necessary? Besides, if we were using MSIx we should have had to use
+	 * this approach anyway.
+	 * Since we execute several descriptors during handshake we have to
+	 * set tlb early, so interrupts will get to host */
+	if (rid == 0) {
+		mem->h_msi_addr = h_msi_addr;
+		set_msi_tlb(mem);
+	}
+
 	rp->id = rid;
 	rp->depth = mem->c_hs_mem->data.ring.depth;
+
+	offset = h_msi_addr & ~MSI_TLB_SIZE_MASK;
+	rp->msi_addr = (void*)mem->v_msi_mem + offset;
 	rp->msi_data = mem->c_hs_mem->data.ring.msi_data;
-	rp->msi_addr = (void*)(((u8 *)mem->v_msi_mem + ((mem->p_pci_mem + msi_addr_l) -
-			mem->p_msi_mem)));
+
 	rp->req_r = mem->rsrc_mem->req_mem + r_offset;
 	r_offset += (rp->depth * sizeof(req_ring_t));
 	rp->resp_r = (resp_ring_t *)((u8 *)mem->h_hs_mem + mem->c_hs_mem->data.ring.resp_ring_offset);
@@ -947,25 +963,19 @@ void set_ob_mem_tlb(struct c_mem_layout *c_mem)
 
 void set_msi_tlb(struct c_mem_layout *c_mem)
 {
-	phys_addr_t h_msi_mem;
 	phys_addr_t h_msi_aligned;
 
-	/* MSI details */
-	h_msi_mem = (phys_addr_t)c_mem->c_hs_mem->h_msi_mem_h << 32;
-	h_msi_mem |= c_mem->c_hs_mem->h_msi_mem_l;
 	/* Since we have 1M TLB open for MSI window -
-	 * get the 1M aligned address for this physical address */
-	h_msi_aligned = h_msi_mem & MSI_TLB_SIZE_MASK;
-	/* Physical address should be within 16G window */
+	 * get the 1M aligned address for this physical address
+	 * Physical address should be within 16G window */
+	h_msi_aligned = c_mem->h_msi_addr & MSI_TLB_SIZE_MASK;
 	c_mem->p_msi_mem = c_mem->p_pci_mem + h_msi_aligned;
 
 	print_debug("\nMSI DETAILS\n");
-	print_debug("MSI mem l          : %10x\n", c_mem->c_hs_mem->h_msi_mem_l);
-	print_debug("MSI mem h          : %10x\n", c_mem->c_hs_mem->h_msi_mem_h);
-	print_debug("MSI mem 64 bit addr: %10llx\n", h_msi_mem);
-	print_debug("MSI aligned 1M     : %10llx\n", h_msi_aligned);
-	print_debug("p_msi_mem          : %10llx\n", c_mem->p_msi_mem);
-	print_debug("v_msi_mem          : %10x\n", c_mem->v_msi_mem);
+	print_debug("MSI host 64 bit addr: %10llx\n", c_mem->h_msi_addr);
+	print_debug("MSI aligned 1M      : %10llx\n", h_msi_aligned);
+	print_debug("MSI p_msi_mem       : %10llx\n", c_mem->p_msi_mem);
+	print_debug("MSI v_msi_mem       : %10x\n\n", c_mem->v_msi_mem);
 
 	/* Set the TLB here for MSI 1M - Using TLB 2 */
 	c2x0_set_tlb(1, c_mem->v_msi_mem, c_mem->p_msi_mem,
@@ -998,7 +1008,6 @@ int32_t fsl_c2x0_fw(void)
 	print_debug("p_pci_mem: %10llx\n", c_mem->p_pci_mem);
 
 	set_ob_mem_tlb(c_mem);
-	set_msi_tlb(c_mem);
 	alloc_rsrc_mem(c_mem);
 
 	print_debug("\nTOTAL memory:\t%8d bytes\n", TOTAL_CARD_MEMORY);

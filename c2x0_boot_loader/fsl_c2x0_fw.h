@@ -341,8 +341,8 @@ struct dev_handshake_mem {
 	u32 h_ob_mem_l;
 	u32 h_ob_mem_h;
 
-	u32 h_msi_mem_l;
-	u32 h_msi_mem_h;
+	u32 padding1;
+	u32 padding2;
 
 	u8 state;
 	u8 data_len;
@@ -468,6 +468,8 @@ struct c_mem_layout {
 	phys_addr_t p_ob_mem;
 	phys_addr_t p_msi_mem;
 	phys_addr_t p_pci_mem;
+
+	phys_addr_t h_msi_addr;
 
 	/* Addresses of common pool for all the ring pairs */
 	phys_addr_t p_buf_pool_mem;
@@ -621,5 +623,6 @@ extern u64 getticks(void );
 extern u64 usec2ticks(u64 );
 extern void c2x0_set_tlb(u8 , u32 , u64 ,
             u8 , u8 , u8 , u8 , u8 , u8 );
+void set_msi_tlb(struct c_mem_layout *c_mem);
 
 #endif
