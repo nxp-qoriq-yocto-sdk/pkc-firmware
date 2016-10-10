@@ -926,6 +926,8 @@ int32_t fsl_c2x0_fw(void)
 	c_mem->p_ib_mem = L2_SRAM_VIRT_ADDR;	/* Phy addr is same as v addr */
 	/*PCIE1 controller physical address-outbound window will be set to 16G*/
 	c_mem->p_pci_mem = CONFIG_SYS_PCIE1_MEM_PHYS;
+	c_mem->v_ob_mem = CONFIG_SYS_PCIE1_MEM_VIRT; /* TLB exist only for 1G */
+	c_mem->v_msi_mem = CONFIG_SYS_PCIE1_MSI_MEM_VIRT;
 
 	print_debug("\nc_mem_layout\n", c_mem);
 	print_debug("c_mem    : %10p\n", c_mem);
@@ -946,7 +948,6 @@ int32_t fsl_c2x0_fw(void)
 	 * address for this physical address */
 	p_aligned_addr = p_addr & OB_TLB_SIZE_MASK;
 	c_mem->p_ob_mem = c_mem->p_pci_mem + p_aligned_addr;
-	c_mem->v_ob_mem = CONFIG_SYS_PCIE1_MEM_VIRT; /* TLB exist only for 1G */
 	c_mem->h_hs_mem = (struct host_handshake_mem *)
 			((u8 *)c_mem->v_ob_mem + (p_addr - p_aligned_addr));
 
@@ -967,7 +968,6 @@ int32_t fsl_c2x0_fw(void)
 	p_aligned_addr = p_addr & MSI_TLB_SIZE_MASK;
 	/* Physical address should be within 16G window */
 	c_mem->p_msi_mem = c_mem->p_pci_mem + p_aligned_addr;
-	c_mem->v_msi_mem = CONFIG_SYS_PCIE1_MSI_MEM_VIRT;
 
 	print_debug("\nMSI DETAILS\n");
 	print_debug("MSI mem l          : %10x\n", c_mem->c_hs_mem->h_msi_mem_l);
