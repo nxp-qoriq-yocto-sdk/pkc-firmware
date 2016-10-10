@@ -947,23 +947,23 @@ void set_ob_mem_tlb(struct c_mem_layout *c_mem)
 
 void set_msi_tlb(struct c_mem_layout *c_mem)
 {
-	phys_addr_t p_addr;
-	phys_addr_t p_aligned_addr;
+	phys_addr_t h_msi_mem;
+	phys_addr_t h_msi_aligned;
 
 	/* MSI details */
-	p_addr = (phys_addr_t)c_mem->c_hs_mem->h_msi_mem_h << 32;
-	p_addr |= c_mem->c_hs_mem->h_msi_mem_l;
+	h_msi_mem = (phys_addr_t)c_mem->c_hs_mem->h_msi_mem_h << 32;
+	h_msi_mem |= c_mem->c_hs_mem->h_msi_mem_l;
 	/* Since we have 1M TLB open for MSI window -
 	 * get the 1M aligned address for this physical address */
-	p_aligned_addr = p_addr & MSI_TLB_SIZE_MASK;
+	h_msi_aligned = h_msi_mem & MSI_TLB_SIZE_MASK;
 	/* Physical address should be within 16G window */
-	c_mem->p_msi_mem = c_mem->p_pci_mem + p_aligned_addr;
+	c_mem->p_msi_mem = c_mem->p_pci_mem + h_msi_aligned;
 
 	print_debug("\nMSI DETAILS\n");
 	print_debug("MSI mem l          : %10x\n", c_mem->c_hs_mem->h_msi_mem_l);
 	print_debug("MSI mem h          : %10x\n", c_mem->c_hs_mem->h_msi_mem_h);
-	print_debug("MSI mem 64 bit addr: %10llx\n", p_addr);
-	print_debug("MSI aligned 1M     : %10llx\n", p_aligned_addr);
+	print_debug("MSI mem 64 bit addr: %10llx\n", h_msi_mem);
+	print_debug("MSI aligned 1M     : %10llx\n", h_msi_aligned);
 	print_debug("p_msi_mem          : %10llx\n", c_mem->p_msi_mem);
 	print_debug("v_msi_mem          : %10x\n", c_mem->v_msi_mem);
 
