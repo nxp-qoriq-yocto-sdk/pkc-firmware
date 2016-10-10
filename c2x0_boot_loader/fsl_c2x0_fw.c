@@ -325,6 +325,9 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 static void handshake(struct c_mem_layout *mem)
 {
 	uint32_t r_offset = 0;
+
+	mem->c_hs_mem->state = DEFAULT;
+
 	print_debug("\nHANDSHAKE\n");
 	print_debug("State address: %0x\n", &(mem->c_hs_mem->state));
 
@@ -987,9 +990,6 @@ int32_t fsl_c2x0_fw(void)
 			BOOKE_PAGESZ_1M, 1);
 
 	alloc_rsrc_mem(c_mem);
-
-	/* Default the state */
-	c_mem->c_hs_mem->state = DEFAULT;
 
 	print_debug("\nTOTAL memory:\t%8d bytes\n", TOTAL_CARD_MEMORY);
 	print_debug("FREE memory:\t%8d bytes\n", c_mem->free_mem);
