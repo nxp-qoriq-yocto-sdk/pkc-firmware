@@ -57,20 +57,13 @@
 #define L2_SRAM_TLB_ADDR	CONFIG_SYS_INIT_L3_ADDR
 #define PLATFORM_SRAM_TLB_ADDR	(L2_SRAM_TLB_ADDR + L2_SRAM_SIZE)
 
-/* MSI TLB ADDR is CONFIG_SYS_PCIE1_MEM_VIRT + 1G */
-#define MSI_TLB_ADDR                        0xC0000000
-
 #define PLATFORM_SRAM_VIRT_ADDR             PLATFORM_SRAM_TLB_ADDR
 #define L2_SRAM_VIRT_ADDR                   L2_SRAM_TLB_ADDR
-#define CONFIG_SYS_PCIE1_MSI_MEM_VIRT       MSI_TLB_ADDR
 
 /* Physical address ranges used */
-#define CONFIG_SYS_PCIE1_MSI_MEM_PHYS       0X840000000ull
 #define CONFIG_SYS_PCIE1_MEM_PHYS           0X800000000ull
 #define CONFIG_SYS_PCIE1_MEM_VIRT           0X80000000
-
-#define OUTBOUND_WINDOW_TLB_SIZE            (1*1024*1024*1024ull)
-#define MSI_WINDOW_TLB_SIZE                 (1*1024*1024)
+#define CONFIG_SYS_PCIE1_MSI_MEM_VIRT       0xC0000000
 
 /* Sec engine related macros */
 #define SEC_JR_DEPTH                    (128)
