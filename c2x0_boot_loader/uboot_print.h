@@ -131,11 +131,11 @@ unsigned long simple_strtoul(const char *,char **,unsigned int );
 #ifdef PRINT_DEBUG
 #define print_debug c2x0_printf
 #else
-#define print_debug(fmt, ...) do {} while (0)
+#define print_debug(fmt, ...)
 #endif
 
 #ifdef PRINT_ERROR
 #define print_error c2x0_printf
 #else
-#define print_error(fmt, ...) do {} while (0)
+#define print_error(fmt, ...)
 #endif
