@@ -575,7 +575,7 @@ static void init_sec_regs_offset(struct sec_engine *sec)
 		break;
 
 	default:
-		print_error("\n Invalid Sec Id... :%d\n", sec->id);
+		print_debug("\n Invalid Sec Id... :%d\n", sec->id);
 	}
 
 	init_rng(sec);

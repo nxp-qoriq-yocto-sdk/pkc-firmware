@@ -131,9 +131,3 @@ unsigned long simple_strtoul(const char *,char **,unsigned int );
 #else
 #define print_debug(fmt, ...)
 #endif
-
-#ifdef PRINT_ERROR
-#define print_error c2x0_printf
-#else
-#define print_error(fmt, ...)
-#endif

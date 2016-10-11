@@ -43,7 +43,7 @@ static C2X0_NS16550_t serial_ports[1] = {
 	(C2X0_NS16550_t)CONFIG_SYS_NS16550_COM1
 };
 
-#if defined PRINT_DEBUG || defined PRINT_ERROR
+#if defined PRINT_DEBUG
 void c2x0_serial_init (void)
 {
 	int clock_divisor;

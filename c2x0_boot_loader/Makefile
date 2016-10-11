@@ -35,10 +35,6 @@ COBJS   += uboot_print.o
 COBJS   += vsprintf.o
 COBJS   += fsl_c2x0_fw.o
 
-ifeq ($(PRINT_ERROR), y)
-CFLAGS += -DPRINT_ERROR
-endif
-
 ifeq ($(PRINT_DEBUG), y)
 CFLAGS += -DPRINT_DEBUG
 endif

@@ -3,4 +3,3 @@
 # UART and other components. Normally, PKC runs with SW8[8]=ON and debug print
 # must be disabled
 PRINT_DEBUG=n
-PRINT_ERROR=n
