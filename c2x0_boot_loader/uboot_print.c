@@ -43,7 +43,6 @@ static C2X0_NS16550_t serial_ports[1] = {
 	(C2X0_NS16550_t)CONFIG_SYS_NS16550_COM1
 };
 
-#if defined PRINT_DEBUG
 void c2x0_serial_init (void)
 {
 	int clock_divisor;
@@ -59,10 +58,6 @@ void c2x0_serial_init (void)
 
 	gd->have_console = 1;
 }
-#else
-void c2x0_serial_init (void)
-{return;}
-#endif
 
 void c2x0_NS16550_putc(C2X0_NS16550_t com_port, char c)
 {   

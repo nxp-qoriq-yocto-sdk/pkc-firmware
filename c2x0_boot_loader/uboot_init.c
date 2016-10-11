@@ -177,7 +177,9 @@ void c2x0_board_init_f(int dumy)
 	c2x0_probecpu();
 	c2x0_get_clocks();
 
+#ifdef PRINT_DEBUG
 	c2x0_serial_init();
+#endif
 	print_debug("\t\t\t Uboot UP !!!!! Loading firmware.......\n");
 
 	fsl_c2x0_fw( );

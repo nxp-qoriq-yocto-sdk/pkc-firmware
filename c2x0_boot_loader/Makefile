@@ -31,12 +31,12 @@ LIB	= $(obj)lib$(CPU).o
 
 START	= start.o resetvec.o
 COBJS   += uboot_init.o
-COBJS   += uboot_print.o
-COBJS   += vsprintf.o
 COBJS   += fsl_c2x0_fw.o
 
 ifeq ($(PRINT_DEBUG), y)
 CFLAGS += -DPRINT_DEBUG
+COBJS   += uboot_print.o
+COBJS   += vsprintf.o
 endif
 
 CFLAGS += -mno-strict-align -Wall -Werror -std=gnu90
