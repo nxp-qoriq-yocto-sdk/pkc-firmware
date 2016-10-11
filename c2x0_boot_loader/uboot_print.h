@@ -120,9 +120,7 @@ struct cmd_tbl_s {
 };
     
 typedef struct cmd_tbl_s    cmd_tbl_t; 
-char c2x0_getc(void);
 void c2x0_puts(const char *s);
-void do_command( char *buf );
 void c2x0_putc(const char c);
 int c2x0_printf(const char *, ...);
 int vsprintf(char *, const char *, va_list );
