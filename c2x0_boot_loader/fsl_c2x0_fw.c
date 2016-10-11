@@ -912,7 +912,7 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 DEQ:
 	ring_jobs   =  sec_dequeue(c_mem, &sec, rp);
 	if (ring_jobs) {
-		raise_intr(&(c_mem->rsrc_mem->rps[0]));
+		raise_intr(rp);
 	} else {
 		goto DEQ;
 	}
