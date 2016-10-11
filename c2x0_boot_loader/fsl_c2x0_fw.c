@@ -456,14 +456,6 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 	return; 
 }
 
-static void make_sec_circ_list(struct sec_engine *sec, u8 count)
-{
-	u8 i;
-	for (i = 0; i < count; i++) {
-		sec[i].next = &(sec[(i + 1) % count]);
-	}
-}
-
 static inline void copy_kek_and_set_scr(struct c_mem_layout *c_mem)
 {
 	u32 k_value, i, j;
@@ -602,10 +594,19 @@ static void init_rsrc_sec(struct sec_engine *sec)
 	sec_eng_hw_init(sec);
 }
 
+static void make_sec_list(struct sec_engine *sec, u8 count)
+{
+	u8 i;
+
+	for (i = 0; i < count; i++) {
+		sec[i].id = i;
+		sec[i].next = &(sec[(i + 1) % count]);
+		init_rsrc_sec(&sec[i]);
+	}
+}
+
 static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 {
-	struct sec_engine *sec;
-	int32_t i;
 	u32 sec_nums;
 
 	sec_nums = in_be32((u32 *)GUTS_SVR);
@@ -622,15 +623,7 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 	print_debug("rsrc addr: %10p\n", c_mem->rsrc_mem);
 	print_debug("sec addr : %10p\n\n", c_mem->rsrc_mem->sec);
 
-	make_sec_circ_list(c_mem->rsrc_mem->sec, sec_nums);
-
-	/* Call for hardware init of sec engine */
-	sec = c_mem->rsrc_mem->sec;
-	for (i = 0; i < sec_nums; i++) {
-		sec->id = i;
-		init_rsrc_sec(sec);
-		sec = sec->next;
-	}
+	make_sec_list(c_mem->rsrc_mem->sec, sec_nums);
 
 	c_mem->free_mem = TOTAL_CARD_MEMORY - (0x100000000ull - stack_ptr);
 
