@@ -130,13 +130,8 @@ unsigned long simple_strtoul(const char *,char **,unsigned int );
 
 #ifdef PRINT_DEBUG
 #define print_debug c2x0_printf
-#define print1_debug(c_mem, msg, ...)   { \
-                if (c_mem->dgb_print)  \
-                    c2x0_printf(msg, ##__VA_ARGS__); \
-                }
 #else
 #define print_debug(fmt, ...) do {} while (0)
-#define print1_debug(c_mem, msg, ...) do {} while (0)
 #endif
 
 #ifdef PRINT_ERROR

@@ -393,13 +393,6 @@ struct host_handshake_mem {
 	} data;
 };
 
-#define JR_SIZE_SHIFT   0
-#define JR_SIZE_MASK    0xffff0000
-#define JR_NO_SHIFT     16
-#define JR_NO_MASK      0xff00ffff
-#define SEC_NO_SHIFT    24
-#define SEC_NO_MASK     0x00ffffff
-
 /* Identifies different states of the device */
 typedef enum handshake_state {
 	DEFAULT = 255,
@@ -413,19 +406,6 @@ typedef enum handshake_state {
 	FW_INIT_RNG,
 	FW_RNG_COMPLETE
 } handshake_state_t;
-
-/* Identifies different commands to be sent to the firmware */
-typedef enum h_handshake_commands {
-	HS_GET_SEC_INFO,
-	HS_INIT_CONFIG,
-	HS_INIT_RING_PAIR,
-	HS_INIT_MSI_INFO,
-	HS_INIT_IDX_MEM,
-	HS_INIT_COUNTERS_MEM,
-	HS_COMPLETE,
-	WAIT_FOR_RNG,
-	RNG_DONE
-} h_handshake_commands_t;
 
 /* Identifies different commands to be sent to the firmware */
 typedef enum fw_handshake_commands {
@@ -479,140 +459,7 @@ struct c_mem_layout {
 	u32 free_mem;
 };
 
-/*                  COMMAND RING STRUCTURE                  */
-
-typedef enum commands {
-	DEBUG,
-	DEVSTAT,
-	REHANDSHAKE,
-	PINGDEV,
-	RESETDEV,
-	RESETSEC,
-	RINGSTAT,
-	SECSTAT,
-	BLOCK_APP_JOBS,
-	UNBLOCK_APP_JOBS,
-	NON_ACCESS_MEM
-} commands_t;
-
-typedef enum debug_commands {
-	MD,
-	MW,
-	PRINT1_DEBUG,
-	PRINT1_ERROR,
-} dgb_cmd_type_t;
-
 #define MAX_SEC_NO 3
-/* SEC STAT */
-typedef struct fsl_sec_stat {
-	u32 sec_ver;
-	u32 cha_ver;
-	u32 no_of_sec_engines;
-	u32 no_of_sec_jr;
-	u32 jr_size;
-	struct sec_ctrs_t {
-		u32 sec_tot_req_jobs;
-		u32 sec_tot_resp_jobs;
-	} sec[MAX_SEC_NO];
-} fsl_sec_stat_t;
-
-/* DEVICES STAT */
-typedef struct fsl_dev_stat_op {
-	u32 fwversion;
-	u32 totalmem;
-	u32 codemem;
-	u32 heapmem;
-	u32 freemem;
-	u32 num_of_sec_engine;	/* ALREADY IN crypto_dev_config_t */
-	u32 no_of_app_rings;	/* ALREADY IN crypto_dev_config_t */
-	u32 total_jobs_rx;	/* ALREADY IN struct crypto_h_mem_layout */
-	u32 total_jobs_pending;	/* ALREADY IN struct crypto_h_mem_layout */
-} fsl_dev_stat_op_t;
-
-/* RESOURCE STAT */
-struct fsl_ring_stat_op {
-	u32 depth;		/* ALREADY IN struct ring_info  */
-	u32 tot_size;		/* REALLY NEED THIS ???         */
-	u32 priority;		/* PRIORITY OF RING  */
-	u32 affinity;		/* AFFINITY OF RING  */
-	u32 order;		/* ORDER OF RING    */
-	u32 free_count;		/* DEPTH - CURRENT JOBS */
-	u32 jobs_processed;	/* ALREADY IN struct  ring_counters_mem */
-	u32 jobs_pending;	/* ALREADY IN struct  ring_counters_mem */
-	u32 budget;
-} __packed;
-
-typedef struct fsl_ring_stat_op fsl_ring_stat_op_t;
-
-/* DEBUG */
-typedef struct debug_op {
-	u32 total_ticks;
-	u32 pcie_data_consume_ticks; /* WRITE HOST TO CARD + CARD TO HOST */
-	u32 job_wait_ticks;	/* WAIT TIME IN JOB QUEUE */
-	u32 job_process_ticks;	/* PROCESS TIME */
-	u32 sec_job_ticks;	/* TICKS FOR SEC TO COMPLETE JOB */
-} debug_op_t;
-
-/* PING */
-typedef struct ping_op {
-	u32 resp;
-} ping_op_t;
-
-typedef struct debug_ip {
-	dgb_cmd_type_t cmd_id;
-	unsigned int address;
-	unsigned int val;
-} debug_ip_t;
-
-/*******************************************************************************
-Description :	output from the device in repsonse
-Fields      :	ping_op   -
-		debug_op  -
-		ring_stat_op  -
-		dev_stat_op   -
-*******************************************************************************/
-union op_buffer {
-	ping_op_t ping_op;
-	/* debug_op_t          debug_op;    */
-	u32 debug_op[64];
-	fsl_ring_stat_op_t ring_stat_op;
-	fsl_dev_stat_op_t dev_stat_op;
-	fsl_sec_stat_t sec_op;
-} __packed;
-
-typedef union op_buffer op_buffer_t;
-
-/*******************************************************************************
-Description : output from the device in repsonse of command
-Fields      : buffer     : output buffer
-*******************************************************************************/
-struct cmd_op {
-	op_buffer_t buffer;
-} __packed;
-
-typedef struct cmd_op cmd_op_t;
-
-/*******************************************************************************
-Description :	prepares the command descriptor for command ring
-Fields      :	cmd_type      : type of command
-		ip_info       : input to the command
-		cmd_op        : output buffer
-*******************************************************************************/
-/* COMMAND RING DESC */
-struct cmd_ring_req_desc {
-	commands_t cmd_type;
-
-	union __ip_info {
-		u32 ring_id;	/* RING ID */
-		u32 sec_id;	/* SEC ENGINE ID */
-		u32 count;	/* COUNT VAR TO CKECK LIVELENESS */
-		debug_ip_t dgb;
-	} ip_info;
-
-	dma_addr_t cmd_op;
-} __packed;
-
-typedef struct cmd_ring_req_desc cmd_ring_req_desc_t;
 
 /* ASSEMBLY FUNCTIONS */
 extern u64 getticks(void );
