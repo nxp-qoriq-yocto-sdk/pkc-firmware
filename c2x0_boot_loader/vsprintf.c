@@ -862,31 +862,6 @@ int sprintf(char * buf, const char *fmt, ...)
 	return i;
 }
 
-void panic(const char *fmt, ...)
-{
-	va_list	args;
-	va_start(args, fmt);
-	vprintf(fmt, args);
-	putc('\n');
-	va_end(args);
-#if defined (CONFIG_PANIC_HANG)
-	hang();
-#else
-	udelay (100000);	/* allow messages to go out */
-	do_reset (NULL, 0, 0, NULL);
-#endif
-	while (1)
-		;
-}
-
-void __assert_fail(const char *assertion, const char *file, unsigned line,
-		   const char *function)
-{
-	/* This will not return */
-	panic("%s:%u: %s: Assertion `%s' failed.", file, line, function,
-	      assertion);
-}
-
 char *simple_itoa(ulong i)
 {
 	/* 21 digits plus null terminator, good for 64-bit or smaller ints */
