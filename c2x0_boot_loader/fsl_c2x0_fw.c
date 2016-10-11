@@ -233,7 +233,7 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 {
 	u32 offset;
 	phys_addr_t h_msi_addr;
-	u32 rid = mem->c_hs_mem->data.ring.rid;
+	u8 rid = mem->c_hs_mem->data.ring.rid;
 	u32 msi_addr_l = mem->c_hs_mem->data.ring.msi_addr_l;
 	u32 msi_addr_h = mem->c_hs_mem->data.ring.msi_addr_h;
 	app_ring_pair_t *rp = &(mem->rsrc_mem->rps[rid]);
@@ -428,9 +428,9 @@ static void sec_eng_hw_init(struct sec_engine *sec)
 	out_be32(&sec->info->mcfgr, mcr);
 
 	/* Initialising the jr regs */
-	out_be32(&sec->jr.regs->irba_h, ip_r_base >> 32);
+	out_be32(&sec->jr.regs->irba_h, (uint32_t)(ip_r_base >> 32));
 	out_be32(&sec->jr.regs->irba_l, (u32) ip_r_base);
-	out_be32(&sec->jr.regs->orba_h, op_r_base >> 32);
+	out_be32(&sec->jr.regs->orba_h, (uint32_t)(op_r_base >> 32));
 	out_be32(&sec->jr.regs->orba_l, (u32) op_r_base);
 	out_be32(&sec->jr.regs->ors, SEC_JR_DEPTH);
 	out_be32(&sec->jr.regs->irs, SEC_JR_DEPTH);
@@ -607,11 +607,14 @@ static void make_sec_list(struct sec_engine *sec, u8 count)
 
 static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 {
-	u32 sec_nums;
+	uint32_t sys_version;
+	uint8_t sec_nums;
 
-	sec_nums = in_be32((u32 *)GUTS_SVR);
-	sec_nums = (sec_nums & 0xF000) >> 12;
+	sys_version = in_be32((uint32_t *)GUTS_SVR);
+
+	sec_nums = (uint8_t)((sys_version & 0x3000) >> 12);
 	if (sec_nums == 0) {
+		/* valid values are 0, 2 and 3 */
 		sec_nums = 1;
 	}
 

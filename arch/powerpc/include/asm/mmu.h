@@ -455,8 +455,7 @@ extern void print_bats(void);
 		(((epn) & MAS3_RPN) | (wimge))
 #define FSL_BOOKE_MAS3(rpn, user, perms) \
 		(((rpn) & MAS3_RPN) | (user) | (perms))
-#define FSL_BOOKE_MAS7(rpn) \
-		(((u64)(rpn)) >> 32)
+#define FSL_BOOKE_MAS7(rpn) ((uint_32_t)(((u64)(rpn)) >> 32))
 
 #define BOOKE_PAGESZ_1K         0
 #define BOOKE_PAGESZ_4K         1

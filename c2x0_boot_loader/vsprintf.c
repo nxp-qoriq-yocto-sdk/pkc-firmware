@@ -247,9 +247,9 @@ static int skip_atoi(const char **s)
 /* Formats correctly any integer in [0,99999].
  * Outputs from one to five digits depending on input.
  * On i386 gcc 4.1.2 -O2: ~250 bytes of code. */
-static char* put_dec_trunc(char *buf, unsigned q)
+static char* put_dec_trunc(char *buf, unsigned NUM_TYPE q)
 {
-	unsigned d3, d2, d1, d0;
+	unsigned NUM_TYPE d3, d2, d1, d0;
 	d1 = (q>>4) & 0xf;
 	d2 = (q>>8) & 0xf;
 	d3 = (q>>12);
@@ -257,37 +257,37 @@ static char* put_dec_trunc(char *buf, unsigned q)
 	d0 = 6*(d3 + d2 + d1) + (q & 0xf);
 	q = (d0 * 0xcd) >> 11;
 	d0 = d0 - 10*q;
-	*buf++ = d0 + '0'; /* least significant digit */
+	*buf++ = (char)(d0 + '0'); /* least significant digit */
 	d1 = q + 9*d3 + 5*d2 + d1;
 	if (d1 != 0) {
 		q = (d1 * 0xcd) >> 11;
 		d1 = d1 - 10*q;
-		*buf++ = d1 + '0'; /* next digit */
+		*buf++ = (char)(d1 + '0'); /* next digit */
 
 		d2 = q + 2*d2;
 		if ((d2 != 0) || (d3 != 0)) {
 			q = (d2 * 0xd) >> 7;
 			d2 = d2 - 10*q;
-			*buf++ = d2 + '0'; /* next digit */
+			*buf++ = (char)(d2 + '0'); /* next digit */
 
 			d3 = q + 4*d3;
 			if (d3 != 0) {
 				q = (d3 * 0xcd) >> 11;
 				d3 = d3 - 10*q;
-				*buf++ = d3 + '0';  /* next digit */
+				*buf++ = (char)(d3 + '0');  /* next digit */
 				if (q != 0)
-					*buf++ = q + '0';  /* most sign. digit */
+					*buf++ = (char)(q + '0');  /* most sign. digit */
 			}
 		}
 	}
 	return buf;
 }
 /* Same with if's removed. Always emits five digits */
-static char* put_dec_full(char *buf, unsigned q)
+static char* put_dec_full(char *buf, unsigned NUM_TYPE q)
 {
 	/* BTW, if q is in [0,9999], 8-bit ints will be enough, */
 	/* but anyway, gcc produces better code with full-sized ints */
-	unsigned d3, d2, d1, d0;
+	unsigned NUM_TYPE d3, d2, d1, d0;
 	d1 = (q>>4) & 0xf;
 	d2 = (q>>8) & 0xf;
 	d3 = (q>>12);
@@ -305,23 +305,23 @@ static char* put_dec_full(char *buf, unsigned q)
 	d0 = 6*(d3 + d2 + d1) + (q & 0xf);
 	q = (d0 * 0xcd) >> 11;
 	d0 = d0 - 10*q;
-	*buf++ = d0 + '0';
+	*buf++ = (char)(d0 + '0');
 	d1 = q + 9*d3 + 5*d2 + d1;
-		q = (d1 * 0xcd) >> 11;
-		d1 = d1 - 10*q;
-		*buf++ = d1 + '0';
+	q = (d1 * 0xcd) >> 11;
+	d1 = d1 - 10*q;
+	*buf++ = (char)(d1 + '0');
 
-		d2 = q + 2*d2;
-			q = (d2 * 0xd) >> 7;
-			d2 = d2 - 10*q;
-			*buf++ = d2 + '0';
+	d2 = q + 2*d2;
+	q = (d2 * 0xd) >> 7;
+	d2 = d2 - 10*q;
+	*buf++ = (char)(d2 + '0');
 
-			d3 = q + 4*d3;
-				q = (d3 * 0xcd) >> 11; /* - shorter code */
-				/* q = (d3 * 0x67) >> 10; - would also work */
-				d3 = d3 - 10*q;
-				*buf++ = d3 + '0';
-					*buf++ = q + '0';
+	d3 = q + 4*d3;
+	q = (d3 * 0xcd) >> 11; /* - shorter code */
+	/* q = (d3 * 0x67) >> 10; - would also work */
+	d3 = d3 - 10*q;
+	*buf++ = (char)(d3 + '0');
+	*buf++ = (char)(q + '0');
 	return buf;
 }
 /* No inlining helps gcc to use registers better */
@@ -870,7 +870,7 @@ char *simple_itoa(ulong i)
 
 	*p-- = '\0';
 	do {
-		*p-- = '0' + i % 10;
+		*p-- = (char)('0' + i % 10);
 		i /= 10;
 	} while (i > 0);
 	return p + 1;

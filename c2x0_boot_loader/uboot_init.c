@@ -52,7 +52,7 @@ int c2x0_set_next_law(phys_addr_t addr, enum law_size sz, enum law_trgt_if id)
 	gd->used_laws++;
     out_be32(LAWAR_ADDR(idx), 0);
     out_be32(LAWBARL_ADDR(idx), addr & 0xffffffff);
-    out_be32(LAWBARH_ADDR(idx), (u64)addr >> 32);
+    out_be32(LAWBARH_ADDR(idx), (uint32_t)((u64)addr >> 32));
     out_be32(LAWAR_ADDR(idx), LAW_EN | ((u32)id << 20) | (u32)sz);
     in_be32(LAWAR_ADDR(idx));
 

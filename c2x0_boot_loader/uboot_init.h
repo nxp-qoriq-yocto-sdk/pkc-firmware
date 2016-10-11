@@ -139,8 +139,7 @@ enum law_trgt_if {
         (((epn) & MAS3_RPN) | (wimge))
 #define FSL_BOOKE_MAS3(rpn, user, perms) \
         (((rpn) & MAS3_RPN) | (user) | (perms))
-#define FSL_BOOKE_MAS7(rpn) \
-        (((u64)(rpn)) >> 32)
+#define FSL_BOOKE_MAS7(rpn) ((uint32_t)(((u64)(rpn)) >> 32))
 
 #define SET_TLB_ENTRY(_tlb, _epn, _rpn, _perms, _wimge, _ts, _esel, _sz, _iprot) \
     { .mas0 = FSL_BOOKE_MAS0(_tlb, _esel, 0), \
