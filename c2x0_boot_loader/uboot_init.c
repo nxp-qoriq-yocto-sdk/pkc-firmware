@@ -169,10 +169,10 @@ void c2x0_set_tlb(u8 tlb, u32 epn, u64 rpn,
 
 void c2x0_board_init_f(int dumy)
 {
-    /* Pointer is writable since we allocated a register for it */
-    gd = (c2x0_gd_t *) (CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_GBL_DATA_OFFSET);
-    /* compiler optimization barrier needed for GCC >= 3.4 */
-    __asm__ __volatile__("":::"memory");
+	/* Pointer is writable since we allocated a register for it */
+	gd = (c2x0_gd_t *) (CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_GBL_DATA_OFFSET);
+	/* compiler optimization barrier needed for GCC >= 3.4 */
+	mem_barrier();
    
 	c2x0_probecpu();
 	c2x0_get_clocks();

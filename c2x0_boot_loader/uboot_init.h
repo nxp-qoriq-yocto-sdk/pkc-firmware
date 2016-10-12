@@ -48,6 +48,7 @@ struct cpu_type {
 
 #define C293
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#define mem_barrier() asm volatile("": : : "memory")
 
 /*
  * LAW support
