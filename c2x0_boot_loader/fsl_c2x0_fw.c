@@ -33,6 +33,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdbool.h>
 #include <linux/compiler.h>
 #include "uboot_common.h"
 #include "uboot_print.h"
@@ -210,9 +211,9 @@ static void init_shadow_counters(struct c_mem_layout *mem)
 	}
 }
 
-int hs_complete(struct c_mem_layout *mem)
+bool hs_complete(struct c_mem_layout *mem)
 {
-	int hs_comp;
+	bool hs_comp;
 
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nHS_COMPLETE:\n");
@@ -220,11 +221,11 @@ int hs_complete(struct c_mem_layout *mem)
 	if (in_be32(mem->rsrc_mem->sec->rdsta) & 0x1) {
 		mem->h_hs_mem->result = RESULT_OK;
 		mem->h_hs_mem->state = FW_RNG_COMPLETE;
-		hs_comp = 1;
+		hs_comp = true;
 	} else {
 		mem->h_hs_mem->result = RESULT_OK;
 		mem->h_hs_mem->state = FW_INIT_RNG;
-		hs_comp = 0;
+		hs_comp = false;
 	}
 	return hs_comp;
 }
@@ -341,6 +342,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 static void handshake(struct c_mem_layout *mem)
 {
 	uint32_t r_offset = 0;
+	bool hs_finished = false;
 
 	mem->c_hs_mem->state = DEFAULT;
 
@@ -350,7 +352,7 @@ static void handshake(struct c_mem_layout *mem)
 	/* Mark the firmware up to the driver */
 	firmware_up(mem);
 
-	while (true) {
+	while (!hs_finished) {
 		/* wait for a notification from the host driver */
 		while (mem->c_hs_mem->state == DEFAULT) {
 			SYNC_MEM;
@@ -367,8 +369,7 @@ static void handshake(struct c_mem_layout *mem)
 			break;
 
 		case FW_HS_COMPLETE:
-			if (hs_complete(mem))
-				return;
+			hs_finished = hs_complete(mem);
 			break;
 
 		case FW_WAIT_FOR_RNG:
@@ -377,7 +378,8 @@ static void handshake(struct c_mem_layout *mem)
 
 		case FW_RNG_DONE:
 			copy_kek_and_set_scr(mem);
-			return; 
+			hs_finished = true;
+			break;
 		}
 	}
 }

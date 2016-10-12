@@ -84,7 +84,6 @@
 #define IRQ_TIMEOUT 10000
 
 /* General Macros */
-#define true            1
 #define RESULT_OK       1
 #define INTR_FLAG_SET   1
 #define SEC_ENG_0 0
