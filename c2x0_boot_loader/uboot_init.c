@@ -187,7 +187,6 @@ void c2x0_board_init_f(int dumy)
 
 u64 get_tbclk (void)
 {
-#define	CONFIG_SYS_FSL_TBCLK_DIV	16
 
     u64 tbclk_div = CONFIG_SYS_FSL_TBCLK_DIV;
 

@@ -104,6 +104,7 @@ enum law_trgt_if {
 
 #define FSL_HW_NUM_LAWS 32
 #define LAW_EN  0x80000000
+#define	CONFIG_SYS_FSL_TBCLK_DIV	16
 
 #define LAW_BASE (CONFIG_SYS_IMMR)
 #define LAWAR_ADDR(x) (&((ccsr_local_t *)LAW_BASE)->law[x].lawar)
