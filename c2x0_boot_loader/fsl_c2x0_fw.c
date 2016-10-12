@@ -669,23 +669,25 @@ static inline void Deq_Cpy(resp_ring_t *resp_r, struct sec_op_ring *sec_o,
 static inline void sel_sec_enqueue(struct c_mem_layout *c_mem,
 		struct sec_engine **psec, app_ring_pair_t *rp)
 {
-	struct sec_engine *sec	= NULL;
-	struct sec_jr *jr		= NULL;
-	dma_addr_t desc		= 0;
-	u64 sec_sel		= 0;
-	u32 secroom		= 0;
-	u32 wi			= 0;
+	struct sec_engine *sec;
+	struct sec_jr *jr;
+	dma_addr_t desc;
+	uint8_t sec_sel;
+	uint8_t sec_cnt;
+	uint32_t secroom;
+	uint32_t ri;
 
-	u32 ri			= rp->idxs->r_index;
-	u32 sec_cnt		= c_mem->rsrc_mem->sec_eng_cnt;
+	ri = rp->idxs->r_index;
+	desc = rp->req_r[ri].desc;
+	sec_sel = (uint8_t) (desc & 0x03);
+	sec_cnt = c_mem->rsrc_mem->sec_eng_cnt;
 
 	print_debug("%s( ): rp: %d ri: %d\n", __FUNCTION__, rp->id, rp->idxs->r_index);
-	desc = rp->req_r[ri].desc;
-	print_debug("%s( ): DESC: %0llx SEC number :%d\n", __FUNCTION__, desc, (desc & (u64) 0x03));
+	print_debug("%s( ): DESC: %0llx SEC number :%d\n", __FUNCTION__, desc, sec_sel);
 
-	sec_sel = (desc & (u64) 0x03);
-	if (sec_cnt < sec_sel)
-		sec_sel = 0; 
+	if (sec_sel > sec_cnt) {
+		sec_sel = 0;
+	}
 
 	switch (sec_sel) {
 	case SEC_ENG_0:
@@ -706,13 +708,12 @@ static inline void sel_sec_enqueue(struct c_mem_layout *c_mem,
 	jr = &(sec->jr);
 	secroom = in_be32(&(jr->regs->irsa));
 	if(secroom > 0) {
-		wi = jr->tail;
 		rp->req_r[ri].desc = desc & ~((u64) 0x03);
-		jr->i_ring[wi].desc = rp->req_r[ri].desc;
+		jr->i_ring[jr->tail].desc = rp->req_r[ri].desc;
 
 		jr->enq_cnt += 1;
 
-		jr->tail = MOD_ADD(wi, 1, jr->size);
+		jr->tail = MOD_ADD(jr->tail, 1, jr->size);
 		rp->idxs->r_index = MOD_ADD(ri, 1, rp->depth);
 
 		rp->r_cntrs->jobs_processed += 1;
