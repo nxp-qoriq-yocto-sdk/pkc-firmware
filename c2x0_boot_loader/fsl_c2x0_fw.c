@@ -666,7 +666,7 @@ static inline void Deq_Cpy(resp_ring_t *resp_r, struct sec_op_ring *sec_o,
 	memcpy(resp_r, sec_o, (sizeof(resp_ring_t) * count));
 }
 
-static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem,
+static inline void sel_sec_enqueue(struct c_mem_layout *c_mem,
 		struct sec_engine **psec, app_ring_pair_t *rp)
 {
 	struct sec_engine *sec	= NULL;
@@ -705,24 +705,20 @@ static inline u32 sel_sec_enqueue(struct c_mem_layout *c_mem,
 
 	jr = &(sec->jr);
 	secroom = in_be32(&(jr->regs->irsa));
-	if(!secroom)
-		goto RET;
+	if(secroom > 0) {
+		wi = jr->tail;
+		rp->req_r[ri].desc = desc & ~((u64) 0x03);
+		jr->i_ring[wi].desc = rp->req_r[ri].desc;
 
-	wi = jr->tail;
-	rp->req_r[ri].desc = desc & ~((u64) 0x03);
-	jr->i_ring[wi].desc = rp->req_r[ri].desc;
+		jr->enq_cnt += 1;
 
-	jr->enq_cnt += 1;
+		jr->tail = MOD_ADD(wi, 1, jr->size);
+		rp->idxs->r_index = MOD_ADD(ri, 1, rp->depth);
 
-	jr->tail = MOD_ADD(wi, 1, jr->size);
-	rp->idxs->r_index = MOD_ADD(ri, 1, rp->depth);
-
-	rp->r_cntrs->jobs_processed += 1;
-	rp->r_s_cntrs->req_jobs_processed = rp->r_cntrs->jobs_processed;
-	out_be32(&(jr->regs->irja), 1);
-
-RET:
-	return 1;
+		rp->r_cntrs->jobs_processed += 1;
+		rp->r_s_cntrs->req_jobs_processed = rp->r_cntrs->jobs_processed;
+		out_be32(&(jr->regs->irja), 1);
+	}
 }
 
 static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
@@ -908,9 +904,9 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 	struct sec_engine *sec;
 
 	rp = find_rp_with_jobs(c_mem->rsrc_mem->rps);
-
 	sec = c_mem->rsrc_mem->sec;
-	ring_jobs    =  sel_sec_enqueue(c_mem, &sec, rp);
+
+	sel_sec_enqueue(c_mem, &sec, rp);
 
 DEQ:
 	ring_jobs   =  sec_dequeue(c_mem, &sec, rp);
