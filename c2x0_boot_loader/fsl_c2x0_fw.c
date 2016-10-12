@@ -353,11 +353,7 @@ static void handshake(struct c_mem_layout *mem)
 	firmware_up(mem);
 
 	while (!hs_finished) {
-		/* wait for a notification from the host driver */
-		while (mem->c_hs_mem->state == DEFAULT) {
-			SYNC_MEM;
-		}
-		print_debug("State updated by driver: %d\n", mem->c_hs_mem->state);
+		SYNC_MEM;
 
 		switch (mem->c_hs_mem->state) {
 		case FW_INIT_CONFIG:
@@ -379,6 +375,9 @@ static void handshake(struct c_mem_layout *mem)
 		case FW_RNG_DONE:
 			copy_kek_and_set_scr(mem);
 			hs_finished = true;
+			break;
+
+		default:
 			break;
 		}
 	}
