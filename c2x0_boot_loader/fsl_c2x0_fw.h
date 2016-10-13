@@ -51,7 +51,7 @@
 #define PLATFORM_SRAM_SIZE      (512*1024)
 
 /* Address space specific macros */
-#define CONFIG_SYS_INIT_L3_ADDR             0XFFF00000
+#define CONFIG_SYS_INIT_L3_ADDR             0XFFF00000U
 
 /* The lower 512KB block in 1MB is L2 SRAM and higher block is platform SRAM */
 #define L2_SRAM_TLB_ADDR	CONFIG_SYS_INIT_L3_ADDR
@@ -61,9 +61,9 @@
 #define L2_SRAM_VIRT_ADDR                   L2_SRAM_TLB_ADDR
 
 /* Physical address ranges used */
-#define CONFIG_SYS_PCIE1_MEM_PHYS           0X800000000ull
-#define CONFIG_SYS_PCIE1_MEM_VIRT           0X80000000
-#define CONFIG_SYS_PCIE1_MSI_MEM_VIRT       0xC0000000
+#define CONFIG_SYS_PCIE1_MEM_PHYS           0X800000000U
+#define CONFIG_SYS_PCIE1_MEM_VIRT           0X80000000U
+#define CONFIG_SYS_PCIE1_MSI_MEM_VIRT       0xC0000000U
 
 /* Sec engine related macros */
 #define SEC_JR_DEPTH                    (128)

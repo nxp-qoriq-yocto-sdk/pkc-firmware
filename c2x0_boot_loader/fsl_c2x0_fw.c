@@ -39,7 +39,7 @@
 #include "uboot_print.h"
 #include "fsl_c2x0_fw.h"
 
-#define CCSR_VIRT_ADDR		0xffe00000
+#define CCSR_VIRT_ADDR		0xffe00000U
 #define JRREGS_OFFSET		0x1000	/* Input Ring Base Address for JR 0 */
 #define RNG_OFFSET		0x600	/* RNG TRNG Miscellaneous Control */
 #define KEK_OFFSET		0x400	/* Key Encryption Key */
@@ -55,7 +55,7 @@
  * A_0000h-B_FFFCh : SEC 2 (SEC 2 is not implemented in C291)
  * C_0000h-D_FFFCh : SEC 3 (SEC 3 is not implemented in C291 or C292)
  */
-#define SEC0_OFFSET			0x80000
+#define SEC0_OFFSET			0x80000U
 #define SEC0_BASE_ADDR		(CCSR_VIRT_ADDR + SEC0_OFFSET)
 #define SEC0_JR0_ADDR		(SEC0_BASE_ADDR + JRREGS_OFFSET)
 #define SEC0_RNG_ADDR		(SEC0_BASE_ADDR + RNG_OFFSET)
@@ -64,7 +64,7 @@
 #define SEC0_RDSTA_ADDR		(SEC0_BASE_ADDR + RDSTA_OFFSET)
 #define SEC0_FAULTS_ADDR	(SEC0_BASE_ADDR + FAULTS_OFFSET)
 
-#define SEC1_OFFSET			0xa0000
+#define SEC1_OFFSET			0xa0000U
 #define SEC1_BASE_ADDR		(CCSR_VIRT_ADDR + SEC1_OFFSET)
 #define SEC1_JR0_ADDR		(SEC1_BASE_ADDR + JRREGS_OFFSET)
 #define SEC1_RNG_ADDR		(SEC1_BASE_ADDR + RNG_OFFSET)
@@ -73,7 +73,7 @@
 #define SEC1_RDSTA_ADDR		(SEC1_BASE_ADDR + RDSTA_OFFSET)
 #define SEC1_FAULTS_ADDR	(SEC1_BASE_ADDR + FAULTS_OFFSET)
 
-#define SEC2_OFFSET			0xc0000
+#define SEC2_OFFSET			0xc0000U
 #define SEC2_BASE_ADDR		(CCSR_VIRT_ADDR + SEC2_OFFSET)
 #define SEC2_JR0_ADDR		(SEC2_BASE_ADDR + JRREGS_OFFSET)
 #define SEC2_RNG_ADDR		(SEC2_BASE_ADDR + RNG_OFFSET)
@@ -82,7 +82,7 @@
 #define SEC2_RDSTA_ADDR		(SEC2_BASE_ADDR + RDSTA_OFFSET)
 #define SEC2_FAULTS_ADDR	(SEC2_BASE_ADDR + FAULTS_OFFSET)
 
-#define GUTS_SVR		(CCSR_VIRT_ADDR + 0xe0000 + 0xa4)
+#define GUTS_SVR		(CCSR_VIRT_ADDR + 0xe0000U + 0xa4)
 
 #define MCFGR_PS_SHIFT		16
 #define MCFGR_PS_MASK		(1 << MCFGR_PS_SHIFT)
@@ -603,7 +603,7 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 
 	make_sec_list(c_mem->rsrc_mem->sec, sec_nums);
 
-	c_mem->free_mem = TOTAL_CARD_MEMORY - (0x100000000ull - stack_ptr);
+	c_mem->free_mem = TOTAL_CARD_MEMORY - (0xFFFFFFFFU - stack_ptr) + 1;
 
 #ifdef COMMON_IP_BUFFER_POOL
 	c_mem->rsrc_mem->ip_pool = (void *)L2_SRAM_VIRT_ADDR;
