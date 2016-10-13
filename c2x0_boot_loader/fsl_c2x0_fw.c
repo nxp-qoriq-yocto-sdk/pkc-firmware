@@ -628,13 +628,6 @@ app_ring_pair_t *find_rp_with_jobs(app_ring_pair_t *rp)
 	return rp;
 }
 
-static inline void Enq_Cpy(struct sec_ip_ring *sec_i, req_ring_t *req_r,
-		u32 count)
-{
-	while (count--)
-		*(u64 *) sec_i++ = *(u64 *) req_r++;
-}
-
 static inline void Deq_Cpy(resp_ring_t *resp_r, struct sec_op_ring *sec_o,
 			   u32 count)
 {
