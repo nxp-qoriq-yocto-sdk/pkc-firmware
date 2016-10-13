@@ -383,32 +383,6 @@ static void handshake(struct c_mem_layout *mem)
 	}
 }
 
-int32_t sec_reset(ccsr_sec_t *sec)
-{
-	/*ccsr_sec_t *sec = (void *)CONFIG_SYS_FSL_SEC_ADDR;*/
-	u32 mcfgr = in_be32(&sec->mcfgr);
-	u32 timeout = 100000;
-
-	mcfgr |= MCFGR_SWRST;
-	out_be32(&sec->mcfgr, mcfgr);
-
-	mcfgr |= MCFGR_DMA_RST;
-	out_be32(&sec->mcfgr, mcfgr);
-	do {
-		mcfgr = in_be32(&sec->mcfgr);
-	} while ((mcfgr & MCFGR_DMA_RST) == MCFGR_DMA_RST && --timeout);
-
-	if (timeout == 0)
-		return -1;
-
-	timeout = 100000;
-	do {
-		mcfgr = in_be32(&sec->mcfgr);
-	} while ((mcfgr & MCFGR_SWRST) == MCFGR_SWRST && --timeout);
-
-	return ( timeout ? 0 : -1 );
-}
-
 static void sec_eng_hw_init(struct sec_engine *sec)
 {
 	u32 jrcfg;
