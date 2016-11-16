@@ -67,10 +67,6 @@
 
 /* Sec engine related macros */
 #define SEC_JR_DEPTH                    (128)
-#define DEFAULT_POOL_SIZE               (512*1024)
-
-/* Setting the same input buffer pool for all the rings */
-#define COMMON_IP_BUFFER_POOL
 
 /* Device cache line related definitions */
 #define L1_CACHE_LINE_SIZE_SHIFT        6
@@ -295,7 +291,6 @@ Fields      :	req_r	: Request ring
 typedef struct app_ring_pair {
 	req_ring_t *req_r;
 	resp_ring_t *resp_r;
-	void *ip_pool;
 	void *msi_addr;
 	indexes_mem_t *idxs;
 	ring_counters_mem_t *r_cntrs;
@@ -357,7 +352,7 @@ struct host_handshake_mem {
 		struct config_data {
 			u32 r_s_c_cntrs;
 			u32 s_c_cntrs;
-			u32 ip_pool;    /* ip_pool allocated in firmware SRAM */
+			u32 padding;
 			u32 resp_intr_ctrl_flag;
 		} config;
 		struct ring_data {
@@ -433,7 +428,6 @@ struct c_mem_layout {
 	u8 num_of_rps;  /* number of ring pairs communicated by the host */
 
 	void *req_mem;
-	void *ip_pool;
 	struct sec_engine *sec;
 	app_ring_pair_t *rps;
 

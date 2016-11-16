@@ -187,7 +187,6 @@ static void init_ring_pairs(struct c_mem_layout *mem)
 		rps[i].idxs = &(mem->idxs_mem[i]);
 		rps[i].r_cntrs = &(mem->r_cntrs_mem[i]);
 		rps[i].r_s_c_cntrs = &(mem->r_s_c_cntrs_mem[i]);
-		rps[i].ip_pool = mem->ip_pool;
 		rps[i].intr_ctrl_flag = 0;
 		rps[i].next = &rps[(i+1) % num_of_rps];
 
@@ -195,7 +194,6 @@ static void init_ring_pairs(struct c_mem_layout *mem)
 		print_debug("\tIdxs addr  : %10p\n", rps[i].idxs);
 		print_debug("\tR cntrs    : %10p\n", rps[i].r_cntrs);
 		print_debug("\tR S C cntrs: %10p\n", rps[i].r_s_c_cntrs);
-		print_debug("\tIp pool    : %10p\n", rps[i].ip_pool);
 	}
 }
 
@@ -326,10 +324,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	offset = (u8 *) mem->s_c_cntrs_mem - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.s_c_cntrs = offset;
 	print_debug("S_CNTRS OFFSET  : %10x\n", offset);
-
-	offset = (u8 *) mem->ip_pool - (u8 *) mem->v_ib_mem;
-	mem->h_hs_mem->data.config.ip_pool = offset;
-	print_debug("ip_pool         : %10x\n", offset);
 
 	offset = (u8 *) &(mem->rps[0].intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.resp_intr_ctrl_flag = offset;
@@ -602,13 +596,6 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 	make_sec_list(c_mem->sec, sec_nums);
 
 	c_mem->free_mem = TOTAL_CARD_MEMORY - (0xFFFFFFFFU - stack_ptr) + 1;
-
-#ifdef COMMON_IP_BUFFER_POOL
-	c_mem->ip_pool = (void *)L2_SRAM_VIRT_ADDR;
-	Memset(c_mem->ip_pool, 0, DEFAULT_POOL_SIZE);
-	c_mem->free_mem -= DEFAULT_POOL_SIZE;
-	print_debug("ip pool addr: %0x\n", c_mem->ip_pool);
-#endif
 }
 
 app_ring_pair_t *find_rp_with_jobs(app_ring_pair_t *rp)
