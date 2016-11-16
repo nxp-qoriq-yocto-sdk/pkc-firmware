@@ -179,24 +179,14 @@ static void init_ring_pairs(struct c_mem_layout *mem, u8 num_of_rps)
 		rps[i].r_cntrs.jobs_added = 0;
 		rps[i].r_cntrs.jobs_processed = 0;
 		rps[i].r_s_c_cntrs = &(mem->r_s_c_cntrs_mem[i]);
+		rps[i].r_s_cntrs   = &(mem->r_s_cntrs_mem[i]);
 		rps[i].intr_ctrl_flag = 0;
 		rps[i].next = &rps[(i+1) % num_of_rps];
 
 		print_debug("\nRing %d details\n", i);
 		print_debug("\tR cntrs    : %10p\n", rps[i].r_cntrs);
 		print_debug("\tR S C cntrs: %10p\n", rps[i].r_s_c_cntrs);
-	}
-}
-
-static void init_shadow_counters(struct c_mem_layout *mem, u8 num_of_rps)
-{
-	u32 i;
-	app_ring_pair_t *rps = mem->rps;
-
-	print_debug("Init R S mem....\n");
-	for (i = 0; i < num_of_rps; i++) {
-		rps[i].r_s_cntrs = &(mem->r_s_cntrs_mem[i]);
-		print_debug("Ring %d        R S Cntrs: %0x\n", i, rps[i].r_s_cntrs);
+		print_debug("\tR S cntrs: %0x\n", i, rps[i].r_s_cntrs);
 	}
 }
 
@@ -283,9 +273,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	num_of_rps = mem->c_hs_mem->data.config.num_of_rps;
 	print_debug("Number of ring pairs: %d\n", num_of_rps);
 
-	mem->rps = c2alloc(num_of_rps * sizeof(app_ring_pair_t));
-	init_ring_pairs(mem, num_of_rps);
-
 	r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
 	mem->r_s_cntrs_mem = (ring_shadow_counters_mem_t *)
 		((u8 *)mem->h_hs_mem + r_s_cntrs);
@@ -295,7 +282,8 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	print_debug("The same counters mapped in local addresses:\n");
 	print_debug("R S CNTRS       : %10p\n\n", mem->r_s_cntrs_mem);
 
-	init_shadow_counters(mem, num_of_rps);
+	mem->rps = c2alloc(num_of_rps * sizeof(app_ring_pair_t));
+	init_ring_pairs(mem, num_of_rps);
 
 	/* communicate to the host the offsets of the counters allocated earlier */
 	print_debug("\nSENDING FW_INIT_CONFIG_COMPLETE\n");
