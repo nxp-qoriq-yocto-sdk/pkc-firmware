@@ -164,7 +164,6 @@ static void init_ring_pairs(struct c_mem_layout *mem, u8 num_of_rps)
 	u8 i;
 	app_ring_pair_t *rps = mem->rps;
 
-	mem->idxs_mem = c2zalloc(sizeof(indexes_mem_t) * num_of_rps);
 	mem->cntrs_mem = c2zalloc(sizeof(counters_mem_t));
 	mem->s_c_cntrs_mem = c2zalloc(sizeof(counters_mem_t));
 	mem->r_cntrs_mem = c2zalloc(
@@ -173,7 +172,6 @@ static void init_ring_pairs(struct c_mem_layout *mem, u8 num_of_rps)
 			sizeof(ring_counters_mem_t) * num_of_rps);
 
 	print_debug("Init Ring Pairs:\n");
-	print_debug("Indexes mem       :%10p\n", mem->idxs_mem);
 	print_debug("Counters mem      :%10p\n", mem->cntrs_mem);
 	print_debug("S C Counters mem  :%10p\n", mem->s_c_cntrs_mem);
 	print_debug("R counters mem    :%10p\n", mem->r_cntrs_mem);
@@ -183,14 +181,14 @@ static void init_ring_pairs(struct c_mem_layout *mem, u8 num_of_rps)
 		rps[i].req_r = NULL;
 		rps[i].msi_addr = NULL;
 		rps[i].r_s_cntrs = NULL;
-		rps[i].idxs = &(mem->idxs_mem[i]);
+		rps[i].idxs.r_index = 0;
+		rps[i].idxs.w_index = 0;
 		rps[i].r_cntrs = &(mem->r_cntrs_mem[i]);
 		rps[i].r_s_c_cntrs = &(mem->r_s_c_cntrs_mem[i]);
 		rps[i].intr_ctrl_flag = 0;
 		rps[i].next = &rps[(i+1) % num_of_rps];
 
 		print_debug("\nRing %d details\n", i);
-		print_debug("\tIdxs addr  : %10p\n", rps[i].idxs);
 		print_debug("\tR cntrs    : %10p\n", rps[i].r_cntrs);
 		print_debug("\tR S C cntrs: %10p\n", rps[i].r_s_c_cntrs);
 	}
@@ -595,12 +593,12 @@ static inline void sel_sec_enqueue(struct c_mem_layout *c_mem,
 	uint32_t secroom;
 	uint32_t ri;
 
-	ri = rp->idxs->r_index;
+	ri = rp->idxs.r_index;
 	desc = rp->req_r[ri].desc;
 	sec_sel = (uint8_t) (desc & 0x03);
 	sec_cnt = c_mem->sec_eng_cnt;
 
-	print_debug("%s( ): rp: %d ri: %d\n", __FUNCTION__, rp->id, rp->idxs->r_index);
+	print_debug("%s( ): rp: %d ri: %d\n", __FUNCTION__, rp->id, rp->idxs.r_index);
 	print_debug("%s( ): DESC: %0llx SEC number :%d\n", __FUNCTION__, desc, sec_sel);
 
 	if (sec_sel > sec_cnt) {
@@ -632,7 +630,7 @@ static inline void sel_sec_enqueue(struct c_mem_layout *c_mem,
 		jr->enq_cnt += 1;
 
 		jr->tail = MOD_ADD(jr->tail, 1, jr->size);
-		rp->idxs->r_index = MOD_ADD(ri, 1, rp->depth);
+		rp->idxs.r_index = MOD_ADD(ri, 1, rp->depth);
 
 		rp->r_cntrs->jobs_processed += 1;
 		rp->r_s_cntrs->req_jobs_processed = rp->r_cntrs->jobs_processed;
@@ -663,9 +661,9 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 		if (!room)
 			return ret_cnt;
 
-		wi = rp->idxs->w_index;
+		wi = rp->idxs.w_index;
 		Deq_Cpy(&(rp->resp_r[wi]), &jr->o_ring[ri], 1);
-		rp->idxs->w_index = MOD_ADD(wi, 1, rp->depth);
+		rp->idxs.w_index = MOD_ADD(wi, 1, rp->depth);
 		rp->r_cntrs->jobs_added += 1;
 
 		ri = MOD_ADD(ri, 1, jr->size);
@@ -686,7 +684,7 @@ static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
 inline void Enq_Circ_Cpy(struct sec_jr *jr, app_ring_pair_t *rp, uint32_t count)
 {
 	uint32_t i;
-	uint32_t ri = rp->idxs->r_index;
+	uint32_t ri = rp->idxs.r_index;
 	uint32_t wi = jr->tail;
 	uint32_t rpdepth = rp->depth;
 	uint32_t jrdepth = jr->size;
@@ -698,8 +696,8 @@ inline void Enq_Circ_Cpy(struct sec_jr *jr, app_ring_pair_t *rp, uint32_t count)
 		ri = (ri+1) &~ rpdepth;
 		wi = (wi+1) &~ jrdepth;
 	}
-	rp->idxs->r_index = ri;
-	jr->tail          = wi;
+	rp->idxs.r_index = ri;
+	jr->tail         = wi;
 }
 
 static inline uint32_t enqueue_to_sec(struct sec_engine *sec,
@@ -720,7 +718,7 @@ static inline uint32_t enqueue_to_sec(struct sec_engine *sec,
 inline void Deq_Circ_Cpy(struct sec_jr *jr, app_ring_pair_t *rp, uint32_t count)
 {
 	uint32_t i;
-	uint32_t wi = rp->idxs->w_index;
+	uint32_t wi = rp->idxs.w_index;
 	uint32_t ri = jr->head;
 	uint32_t rdepth = rp->depth;
 	uint32_t jrdepth = jr->size;
@@ -733,8 +731,8 @@ inline void Deq_Circ_Cpy(struct sec_jr *jr, app_ring_pair_t *rp, uint32_t count)
 		wi = (wi + 1) &~(rdepth);
 		ri = (ri + 1) &~(jrdepth);
 	}
-	rp->idxs->w_index = wi;
-	jr->head          = ri;
+	rp->idxs.w_index = wi;
+	jr->head         = ri;
 }
 
 static inline uint32_t dequeue_from_sec(struct sec_engine *sec,

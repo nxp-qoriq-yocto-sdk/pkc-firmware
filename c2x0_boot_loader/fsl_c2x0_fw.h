@@ -292,7 +292,7 @@ typedef struct app_ring_pair {
 	req_ring_t *req_r;
 	resp_ring_t *resp_r;
 	void *msi_addr;
-	indexes_mem_t *idxs;
+	indexes_mem_t idxs;
 	ring_counters_mem_t *r_cntrs;
 	ring_counters_mem_t *r_s_c_cntrs;
 	ring_shadow_counters_mem_t *r_s_cntrs;
@@ -430,7 +430,6 @@ struct c_mem_layout {
 	struct sec_engine *sec;
 	app_ring_pair_t *rps;
 
-	indexes_mem_t *idxs_mem;
 	ring_counters_mem_t *r_cntrs_mem;
 	ring_counters_mem_t *r_s_c_cntrs_mem;
 	counters_mem_t *cntrs_mem;
