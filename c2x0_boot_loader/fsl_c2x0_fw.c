@@ -151,7 +151,7 @@ static void firmware_up(struct c_mem_layout *mem)
 	mem->h_hs_mem->data.device.p_ib_mem_base_h = (u32) (mem->p_ib_mem >> 32);
 	mem->h_hs_mem->data.device.p_ob_mem_base_l = (u32) mem->p_pci_mem;
 	mem->h_hs_mem->data.device.p_ob_mem_base_h = (u32) (mem->p_pci_mem >> 32);
-	mem->h_hs_mem->data.device.no_secs = (u32) mem->rsrc_mem->sec_eng_cnt;
+	mem->h_hs_mem->data.device.no_secs = (u32) mem->sec_eng_cnt;
 
 	mem->h_hs_mem->state = FIRMWARE_UP;
 	print_debug("\n\n\nFIRMWARE UP\n");
@@ -162,32 +162,32 @@ static void firmware_up(struct c_mem_layout *mem)
 static void init_ring_pairs(struct c_mem_layout *mem)
 {
 	u8 i;
-	u8 num_of_rps = mem->rsrc_mem->num_of_rps;
-	app_ring_pair_t *rps = mem->rsrc_mem->rps;
+	u8 num_of_rps = mem->num_of_rps;
+	app_ring_pair_t *rps = mem->rps;
 
-	mem->rsrc_mem->idxs_mem = c2zalloc(sizeof(indexes_mem_t) * num_of_rps);
-	mem->rsrc_mem->cntrs_mem = c2zalloc(sizeof(counters_mem_t));
-	mem->rsrc_mem->s_c_cntrs_mem = c2zalloc(sizeof(counters_mem_t));
-	mem->rsrc_mem->r_cntrs_mem = c2zalloc(
+	mem->idxs_mem = c2zalloc(sizeof(indexes_mem_t) * num_of_rps);
+	mem->cntrs_mem = c2zalloc(sizeof(counters_mem_t));
+	mem->s_c_cntrs_mem = c2zalloc(sizeof(counters_mem_t));
+	mem->r_cntrs_mem = c2zalloc(
 			sizeof(ring_counters_mem_t) * num_of_rps);
-	mem->rsrc_mem->r_s_c_cntrs_mem = c2zalloc(
+	mem->r_s_c_cntrs_mem = c2zalloc(
 			sizeof(ring_counters_mem_t) * num_of_rps);
 
 	print_debug("Init Ring Pairs:\n");
-	print_debug("Indexes mem       :%10p\n", mem->rsrc_mem->idxs_mem);
-	print_debug("Counters mem      :%10p\n", mem->rsrc_mem->cntrs_mem);
-	print_debug("S C Counters mem  :%10p\n", mem->rsrc_mem->s_c_cntrs_mem);
-	print_debug("R counters mem    :%10p\n", mem->rsrc_mem->r_cntrs_mem);
-	print_debug("R S C counters mem:%10p\n", mem->rsrc_mem->r_s_c_cntrs_mem);
+	print_debug("Indexes mem       :%10p\n", mem->idxs_mem);
+	print_debug("Counters mem      :%10p\n", mem->cntrs_mem);
+	print_debug("S C Counters mem  :%10p\n", mem->s_c_cntrs_mem);
+	print_debug("R counters mem    :%10p\n", mem->r_cntrs_mem);
+	print_debug("R S C counters mem:%10p\n", mem->r_s_c_cntrs_mem);
 
 	for (i = 0; i < num_of_rps; i++) {
 		rps[i].req_r = NULL;
 		rps[i].msi_addr = NULL;
 		rps[i].r_s_cntrs = NULL;
-		rps[i].idxs = &(mem->rsrc_mem->idxs_mem[i]);
-		rps[i].r_cntrs = &(mem->rsrc_mem->r_cntrs_mem[i]);
-		rps[i].r_s_c_cntrs = &(mem->rsrc_mem->r_s_c_cntrs_mem[i]);
-		rps[i].ip_pool = mem->rsrc_mem->ip_pool;
+		rps[i].idxs = &(mem->idxs_mem[i]);
+		rps[i].r_cntrs = &(mem->r_cntrs_mem[i]);
+		rps[i].r_s_c_cntrs = &(mem->r_s_c_cntrs_mem[i]);
+		rps[i].ip_pool = mem->ip_pool;
 		rps[i].intr_ctrl_flag = 0;
 		rps[i].next = &rps[(i+1) % num_of_rps];
 
@@ -202,11 +202,11 @@ static void init_ring_pairs(struct c_mem_layout *mem)
 static void init_shadow_counters(struct c_mem_layout *mem)
 {
 	u32 i;
-	app_ring_pair_t *rps = mem->rsrc_mem->rps;
+	app_ring_pair_t *rps = mem->rps;
 
 	print_debug("Init R S mem....\n");
-	for (i = 0; i < mem->rsrc_mem->num_of_rps; i++) {
-		rps[i].r_s_cntrs = &(mem->rsrc_mem->r_s_cntrs_mem[i]);
+	for (i = 0; i < mem->num_of_rps; i++) {
+		rps[i].r_s_cntrs = &(mem->r_s_cntrs_mem[i]);
 		print_debug("Ring %d        R S Cntrs: %0x\n", i, rps[i].r_s_cntrs);
 	}
 }
@@ -218,7 +218,7 @@ bool hs_complete(struct c_mem_layout *mem)
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nHS_COMPLETE:\n");
 
-	if (in_be32(mem->rsrc_mem->sec->rdsta) & 0x1) {
+	if (in_be32(mem->sec->rdsta) & 0x1) {
 		mem->h_hs_mem->result = RESULT_OK;
 		mem->h_hs_mem->state = FW_RNG_COMPLETE;
 		hs_comp = true;
@@ -237,7 +237,7 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 	u8 rid = mem->c_hs_mem->data.ring.rid;
 	u32 msi_addr_l = mem->c_hs_mem->data.ring.msi_addr_l;
 	u32 msi_addr_h = mem->c_hs_mem->data.ring.msi_addr_h;
-	app_ring_pair_t *rp = &(mem->rsrc_mem->rps[rid]);
+	app_ring_pair_t *rp = &(mem->rps[rid]);
 
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nFW_INIT_RING_PAIR\n");
@@ -262,7 +262,7 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 	rp->msi_addr = (void*)mem->v_msi_mem + offset;
 	rp->msi_data = mem->c_hs_mem->data.ring.msi_data;
 
-	rp->req_r = mem->rsrc_mem->req_mem + r_offset;
+	rp->req_r = mem->req_mem + r_offset;
 	r_offset += (rp->depth * sizeof(req_ring_t));
 	rp->resp_r = (resp_ring_t *)((u8 *)mem->h_hs_mem + mem->c_hs_mem->data.ring.resp_ring_offset);
 
@@ -294,44 +294,44 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	print_debug("\nFW_INIT_CONFIG\n");
 
 	num_of_rps = mem->c_hs_mem->data.config.num_of_rps;
-	mem->rsrc_mem->num_of_rps = num_of_rps;
+	mem->num_of_rps = num_of_rps;
 	print_debug("Number of ring pairs: %d\n", num_of_rps);
 
-	mem->rsrc_mem->rps = c2alloc(num_of_rps * sizeof(app_ring_pair_t));
+	mem->rps = c2alloc(num_of_rps * sizeof(app_ring_pair_t));
 	init_ring_pairs(mem);
 
 	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
 	print_debug("Req mem size: %d\n", req_mem_size);
 
-	mem->rsrc_mem->req_mem = c2alloc(req_mem_size);
-	print_debug("Req mem addr: %0p\n", mem->rsrc_mem->req_mem);
+	mem->req_mem = c2alloc(req_mem_size);
+	print_debug("Req mem addr: %0p\n", mem->req_mem);
 
 	r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
-	mem->rsrc_mem->r_s_cntrs_mem = (ring_shadow_counters_mem_t *)
+	mem->r_s_cntrs_mem = (ring_shadow_counters_mem_t *)
 		((u8 *)mem->h_hs_mem + r_s_cntrs);
 
 	print_debug("Shadow counters details from Host.\n");
 	print_debug("R S CNTRS OFFSET: %10x\n", r_s_cntrs);
 	print_debug("The same counters mapped in local addresses:\n");
-	print_debug("R S CNTRS       : %10p\n\n", mem->rsrc_mem->r_s_cntrs_mem);
+	print_debug("R S CNTRS       : %10p\n\n", mem->r_s_cntrs_mem);
 
 	init_shadow_counters(mem);
 
 	/* communicate to the host the offsets of the counters allocated earlier */
 	print_debug("\nSENDING FW_INIT_CONFIG_COMPLETE\n");
-	offset = (u8 *)mem->rsrc_mem->r_s_c_cntrs_mem - (u8 *)mem->v_ib_mem;
+	offset = (u8 *)mem->r_s_c_cntrs_mem - (u8 *)mem->v_ib_mem;
 	mem->h_hs_mem->data.config.r_s_c_cntrs = offset;
 	print_debug("S R CNTRS OFFSET: %10x\n", offset);
 
-	offset = (u8 *) mem->rsrc_mem->s_c_cntrs_mem - (u8 *) mem->v_ib_mem;
+	offset = (u8 *) mem->s_c_cntrs_mem - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.s_c_cntrs = offset;
 	print_debug("S_CNTRS OFFSET  : %10x\n", offset);
 
-	offset = (u8 *) mem->rsrc_mem->ip_pool - (u8 *) mem->v_ib_mem;
+	offset = (u8 *) mem->ip_pool - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.ip_pool = offset;
 	print_debug("ip_pool         : %10x\n", offset);
 
-	offset = (u8 *) &(mem->rsrc_mem->rps[0].intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
+	offset = (u8 *) &(mem->rps[0].intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.resp_intr_ctrl_flag = offset;
 	print_debug("intr_ctrl_flag  : %10x\n", offset);
 
@@ -438,10 +438,10 @@ static inline void copy_kek_and_set_scr(struct c_mem_layout *c_mem)
 	struct sec_engine *sec[3];
 	struct kek_regs *kek[3];
 
-	sec_cnt = c_mem->rsrc_mem->sec_eng_cnt;
+	sec_cnt = c_mem->sec_eng_cnt;
 
 	for (i = 0; i < sec_cnt; i += 1) {
-		sec[i] = c_mem->rsrc_mem->sec + i;
+		sec[i] = c_mem->sec + i;
 		kek[i] = (struct kek_regs *)sec[i]->kek;
 	}
 
@@ -593,23 +593,21 @@ static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
 		sec_nums = 1;
 	}
 
-	c_mem->rsrc_mem = c2zalloc(sizeof(struct resource));
-	c_mem->rsrc_mem->sec_eng_cnt = sec_nums;
-	c_mem->rsrc_mem->sec = c2zalloc(sec_nums * sizeof(struct sec_engine));
+	c_mem->sec_eng_cnt = sec_nums;
+	c_mem->sec = c2zalloc(sec_nums * sizeof(struct sec_engine));
 
 	print_debug("\nalloc_rsrc_mem\n");
-	print_debug("rsrc addr: %10p\n", c_mem->rsrc_mem);
-	print_debug("sec addr : %10p\n\n", c_mem->rsrc_mem->sec);
+	print_debug("sec addr : %10p\n\n", c_mem->sec);
 
-	make_sec_list(c_mem->rsrc_mem->sec, sec_nums);
+	make_sec_list(c_mem->sec, sec_nums);
 
 	c_mem->free_mem = TOTAL_CARD_MEMORY - (0xFFFFFFFFU - stack_ptr) + 1;
 
 #ifdef COMMON_IP_BUFFER_POOL
-	c_mem->rsrc_mem->ip_pool = (void *)L2_SRAM_VIRT_ADDR;
-	Memset(c_mem->rsrc_mem->ip_pool, 0, DEFAULT_POOL_SIZE);
+	c_mem->ip_pool = (void *)L2_SRAM_VIRT_ADDR;
+	Memset(c_mem->ip_pool, 0, DEFAULT_POOL_SIZE);
 	c_mem->free_mem -= DEFAULT_POOL_SIZE;
-	print_debug("ip pool addr: %0x\n", c_mem->rsrc_mem->ip_pool);
+	print_debug("ip pool addr: %0x\n", c_mem->ip_pool);
 #endif
 }
 
@@ -648,7 +646,7 @@ static inline void sel_sec_enqueue(struct c_mem_layout *c_mem,
 	ri = rp->idxs->r_index;
 	desc = rp->req_r[ri].desc;
 	sec_sel = (uint8_t) (desc & 0x03);
-	sec_cnt = c_mem->rsrc_mem->sec_eng_cnt;
+	sec_cnt = c_mem->sec_eng_cnt;
 
 	print_debug("%s( ): rp: %d ri: %d\n", __FUNCTION__, rp->id, rp->idxs->r_index);
 	print_debug("%s( ): DESC: %0llx SEC number :%d\n", __FUNCTION__, desc, sec_sel);
@@ -659,13 +657,13 @@ static inline void sel_sec_enqueue(struct c_mem_layout *c_mem,
 
 	switch (sec_sel) {
 	case SEC_ENG_0:
-		sec = c_mem->rsrc_mem->sec;
+		sec = c_mem->sec;
 		break;
 	case SEC_ENG_1:
-		sec = c_mem->rsrc_mem->sec + 1;
+		sec = c_mem->sec + 1;
 		break;
 	case SEC_ENG_2:
-		sec = c_mem->rsrc_mem->sec + 2;
+		sec = c_mem->sec + 2;
 		break;
 	default:
 		sec = *psec;
@@ -828,10 +826,10 @@ static inline uint32_t irq_is_due(uint32_t deq_cnt, app_ring_pair_t *rp,
 
 static void ring_processing_perf(struct c_mem_layout *c_mem)
 {
-	app_ring_pair_t *recv_r = c_mem->rsrc_mem->rps;
-	app_ring_pair_t *resp_r = c_mem->rsrc_mem->rps;
-	struct sec_engine *enq_sec = c_mem->rsrc_mem->sec;
-	struct sec_engine *deq_sec = c_mem->rsrc_mem->sec;
+	app_ring_pair_t *recv_r = c_mem->rps;
+	app_ring_pair_t *resp_r = c_mem->rps;
+	struct sec_engine *enq_sec = c_mem->sec;
+	struct sec_engine *deq_sec = c_mem->sec;
 	uint32_t deq_cnt;
 	uint32_t enq_cnt;
 	uint32_t irq_timeout = IRQ_TIMEOUT;
@@ -872,8 +870,8 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 	app_ring_pair_t *rp;
 	struct sec_engine *sec;
 
-	rp = find_rp_with_jobs(c_mem->rsrc_mem->rps);
-	sec = c_mem->rsrc_mem->sec;
+	rp = find_rp_with_jobs(c_mem->rps);
+	sec = c_mem->sec;
 
 	sel_sec_enqueue(c_mem, &sec, rp);
 

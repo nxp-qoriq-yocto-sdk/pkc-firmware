@@ -310,31 +310,6 @@ typedef struct app_ring_pair {
 	struct app_ring_pair *next;
 } app_ring_pair_t;
 
-/*******************************************************************************
-Description :	Defines the container structure for resources in the device
-Fields      :	sec_eng_cnt	: Number of sec engines
-		sec	: Array of sec engine rsrc structures
-		ring_count: Number of rings created in the device (App+cmd)
-		p_q	: Linked list of priority queues created
-
-*******************************************************************************/
-struct resource {
-	u8 sec_eng_cnt;
-	u8 num_of_rps;  /* number of ring pairs communicated by the host */
-
-	void *req_mem;
-	void *ip_pool;
-	struct sec_engine *sec;
-	app_ring_pair_t *rps;
-
-	indexes_mem_t *idxs_mem;
-	ring_counters_mem_t *r_cntrs_mem;
-	ring_counters_mem_t *r_s_c_cntrs_mem;
-	counters_mem_t *cntrs_mem;
-	counters_mem_t *s_c_cntrs_mem;
-	ring_shadow_counters_mem_t *r_s_cntrs_mem;
-};
-
 /* Handshake related data structures */
 struct dev_handshake_mem {
 	u32 h_ob_mem_l;
@@ -453,7 +428,21 @@ struct c_mem_layout {
 
 	struct host_handshake_mem __iomem *h_hs_mem;
 	struct dev_handshake_mem *c_hs_mem;
-	struct resource *rsrc_mem;
+
+	u8 sec_eng_cnt;
+	u8 num_of_rps;  /* number of ring pairs communicated by the host */
+
+	void *req_mem;
+	void *ip_pool;
+	struct sec_engine *sec;
+	app_ring_pair_t *rps;
+
+	indexes_mem_t *idxs_mem;
+	ring_counters_mem_t *r_cntrs_mem;
+	ring_counters_mem_t *r_s_c_cntrs_mem;
+	counters_mem_t *cntrs_mem;
+	counters_mem_t *s_c_cntrs_mem;
+	ring_shadow_counters_mem_t *r_s_cntrs_mem;
 
 	u32 free_mem;
 };
