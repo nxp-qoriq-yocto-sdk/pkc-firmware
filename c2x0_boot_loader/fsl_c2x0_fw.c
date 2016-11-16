@@ -164,14 +164,12 @@ static void init_ring_pairs(struct c_mem_layout *mem, u8 num_of_rps)
 	u8 i;
 	app_ring_pair_t *rps = mem->rps;
 
-	mem->s_c_cntrs_mem = c2zalloc(sizeof(counters_mem_t));
 	mem->r_cntrs_mem = c2zalloc(
 			sizeof(ring_counters_mem_t) * num_of_rps);
 	mem->r_s_c_cntrs_mem = c2zalloc(
 			sizeof(ring_counters_mem_t) * num_of_rps);
 
 	print_debug("Init Ring Pairs:\n");
-	print_debug("S C Counters mem  :%10p\n", mem->s_c_cntrs_mem);
 	print_debug("R counters mem    :%10p\n", mem->r_cntrs_mem);
 	print_debug("R S C counters mem:%10p\n", mem->r_s_c_cntrs_mem);
 
@@ -306,10 +304,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	offset = (u8 *)mem->r_s_c_cntrs_mem - (u8 *)mem->v_ib_mem;
 	mem->h_hs_mem->data.config.r_s_c_cntrs = offset;
 	print_debug("S R CNTRS OFFSET: %10x\n", offset);
-
-	offset = (u8 *) mem->s_c_cntrs_mem - (u8 *) mem->v_ib_mem;
-	mem->h_hs_mem->data.config.s_c_cntrs = offset;
-	print_debug("S_CNTRS OFFSET  : %10x\n", offset);
 
 	offset = (u8 *) &(mem->rps[0].intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
 	mem->h_hs_mem->data.config.resp_intr_ctrl_flag = offset;

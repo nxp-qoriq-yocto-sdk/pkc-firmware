@@ -351,7 +351,7 @@ struct host_handshake_mem {
 		} device;
 		struct config_data {
 			u32 r_s_c_cntrs;
-			u32 s_c_cntrs;
+			u32 padding2;
 			u32 padding;
 			u32 resp_intr_ctrl_flag;
 		} config;
@@ -432,7 +432,6 @@ struct c_mem_layout {
 
 	ring_counters_mem_t *r_cntrs_mem;
 	ring_counters_mem_t *r_s_c_cntrs_mem;
-	counters_mem_t *s_c_cntrs_mem;
 	ring_shadow_counters_mem_t *r_s_cntrs_mem;
 
 	u32 free_mem;
