@@ -227,7 +227,7 @@ bool hs_complete(struct c_mem_layout *mem)
 	return hs_comp;
 }
 
-uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
+void hs_fw_init_ring_pair(struct c_mem_layout *mem)
 {
 	u32 offset;
 	phys_addr_t h_msi_addr;
@@ -259,8 +259,7 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 	rp->msi_addr = (void*)mem->v_msi_mem + offset;
 	rp->msi_data = mem->c_hs_mem->data.ring.msi_data;
 
-	rp->req_r = mem->req_mem + r_offset;
-	r_offset += (rp->depth * sizeof(req_ring_t));
+	rp->req_r = c2alloc(rp->depth * sizeof(req_ring_t));
 	rp->resp_r = (resp_ring_t *)((u8 *)mem->h_hs_mem + mem->c_hs_mem->data.ring.resp_ring_offset);
 
 	print_debug("Rid:	%d\n", rid);
@@ -278,14 +277,13 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 
 	mem->h_hs_mem->result = RESULT_OK;
 	mem->h_hs_mem->state = FW_INIT_RING_PAIR_COMPLETE;
-
-	return r_offset;
 }
 
 void hs_fw_init_config(struct c_mem_layout *mem)
 {
 	u8 num_of_rps;  /* number of ring pairs communicated by the host */
-	u32 req_mem_size, r_s_cntrs, offset;
+	u32 r_s_cntrs;
+	u32 offset;
 
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nFW_INIT_CONFIG\n");
@@ -295,12 +293,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 
 	mem->rps = c2alloc(num_of_rps * sizeof(app_ring_pair_t));
 	init_ring_pairs(mem, num_of_rps);
-
-	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
-	print_debug("Req mem size: %d\n", req_mem_size);
-
-	mem->req_mem = c2alloc(req_mem_size);
-	print_debug("Req mem addr: %0p\n", mem->req_mem);
 
 	r_s_cntrs = mem->c_hs_mem->data.config.r_s_cntrs;
 	mem->r_s_cntrs_mem = (ring_shadow_counters_mem_t *)
@@ -333,7 +325,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 
 static void handshake(struct c_mem_layout *mem)
 {
-	uint32_t r_offset = 0;
 	bool hs_finished = false;
 
 	mem->c_hs_mem->state = DEFAULT;
@@ -353,7 +344,7 @@ static void handshake(struct c_mem_layout *mem)
 			break;
 
 		case FW_INIT_RING_PAIR:
-			r_offset = hs_fw_init_ring_pair(mem, r_offset);
+			hs_fw_init_ring_pair(mem);
 			break;
 
 		case FW_HS_COMPLETE:

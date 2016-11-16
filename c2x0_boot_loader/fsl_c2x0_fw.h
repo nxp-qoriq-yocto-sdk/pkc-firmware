@@ -317,7 +317,7 @@ struct dev_handshake_mem {
 	union cmd_data {
 		struct c_config_data {
 			u8 num_of_rps;
-			u32 req_mem_size;
+			u32 padding;
 			u32 r_s_cntrs;
 		} config;
 		struct c_ring_data {
