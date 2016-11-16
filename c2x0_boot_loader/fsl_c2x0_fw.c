@@ -159,10 +159,9 @@ static void firmware_up(struct c_mem_layout *mem)
 	SYNC_MEM;
 }
 
-static void init_ring_pairs(struct c_mem_layout *mem)
+static void init_ring_pairs(struct c_mem_layout *mem, u8 num_of_rps)
 {
 	u8 i;
-	u8 num_of_rps = mem->num_of_rps;
 	app_ring_pair_t *rps = mem->rps;
 
 	mem->idxs_mem = c2zalloc(sizeof(indexes_mem_t) * num_of_rps);
@@ -197,13 +196,13 @@ static void init_ring_pairs(struct c_mem_layout *mem)
 	}
 }
 
-static void init_shadow_counters(struct c_mem_layout *mem)
+static void init_shadow_counters(struct c_mem_layout *mem, u8 num_of_rps)
 {
 	u32 i;
 	app_ring_pair_t *rps = mem->rps;
 
 	print_debug("Init R S mem....\n");
-	for (i = 0; i < mem->num_of_rps; i++) {
+	for (i = 0; i < num_of_rps; i++) {
 		rps[i].r_s_cntrs = &(mem->r_s_cntrs_mem[i]);
 		print_debug("Ring %d        R S Cntrs: %0x\n", i, rps[i].r_s_cntrs);
 	}
@@ -285,18 +284,17 @@ uint32_t hs_fw_init_ring_pair(struct c_mem_layout *mem, uint32_t r_offset)
 
 void hs_fw_init_config(struct c_mem_layout *mem)
 {
-	u8 num_of_rps;
+	u8 num_of_rps;  /* number of ring pairs communicated by the host */
 	u32 req_mem_size, r_s_cntrs, offset;
 
 	mem->c_hs_mem->state = DEFAULT;
 	print_debug("\nFW_INIT_CONFIG\n");
 
 	num_of_rps = mem->c_hs_mem->data.config.num_of_rps;
-	mem->num_of_rps = num_of_rps;
 	print_debug("Number of ring pairs: %d\n", num_of_rps);
 
 	mem->rps = c2alloc(num_of_rps * sizeof(app_ring_pair_t));
-	init_ring_pairs(mem);
+	init_ring_pairs(mem, num_of_rps);
 
 	req_mem_size = mem->c_hs_mem->data.config.req_mem_size;
 	print_debug("Req mem size: %d\n", req_mem_size);
@@ -313,7 +311,7 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	print_debug("The same counters mapped in local addresses:\n");
 	print_debug("R S CNTRS       : %10p\n\n", mem->r_s_cntrs_mem);
 
-	init_shadow_counters(mem);
+	init_shadow_counters(mem, num_of_rps);
 
 	/* communicate to the host the offsets of the counters allocated earlier */
 	print_debug("\nSENDING FW_INIT_CONFIG_COMPLETE\n");

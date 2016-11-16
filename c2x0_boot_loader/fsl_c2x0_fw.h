@@ -425,7 +425,6 @@ struct c_mem_layout {
 	struct dev_handshake_mem *c_hs_mem;
 
 	u8 sec_eng_cnt;
-	u8 num_of_rps;  /* number of ring pairs communicated by the host */
 
 	void *req_mem;
 	struct sec_engine *sec;
