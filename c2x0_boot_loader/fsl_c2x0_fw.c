@@ -260,7 +260,7 @@ void hs_fw_init_ring_pair(struct c_mem_layout *mem)
 	rp->msi_data = mem->c_hs_mem->data.ring.msi_data;
 
 	rp->req_r = c2alloc(rp->depth * sizeof(req_ring_t));
-	rp->resp_r = (resp_ring_t *)((u8 *)mem->h_hs_mem + mem->c_hs_mem->data.ring.resp_ring_offset);
+	rp->resp_r = (void *)mem->h_hs_mem + mem->c_hs_mem->data.ring.resp_ring_offset;
 
 	print_debug("Rid:	%d\n", rid);
 	print_debug("Depth:	%d\n", rp->depth);
