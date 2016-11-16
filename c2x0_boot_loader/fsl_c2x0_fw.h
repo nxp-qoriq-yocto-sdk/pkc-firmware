@@ -432,7 +432,6 @@ struct c_mem_layout {
 
 	ring_counters_mem_t *r_cntrs_mem;
 	ring_counters_mem_t *r_s_c_cntrs_mem;
-	counters_mem_t *cntrs_mem;
 	counters_mem_t *s_c_cntrs_mem;
 	ring_shadow_counters_mem_t *r_s_cntrs_mem;
 

@@ -164,7 +164,6 @@ static void init_ring_pairs(struct c_mem_layout *mem, u8 num_of_rps)
 	u8 i;
 	app_ring_pair_t *rps = mem->rps;
 
-	mem->cntrs_mem = c2zalloc(sizeof(counters_mem_t));
 	mem->s_c_cntrs_mem = c2zalloc(sizeof(counters_mem_t));
 	mem->r_cntrs_mem = c2zalloc(
 			sizeof(ring_counters_mem_t) * num_of_rps);
@@ -172,7 +171,6 @@ static void init_ring_pairs(struct c_mem_layout *mem, u8 num_of_rps)
 			sizeof(ring_counters_mem_t) * num_of_rps);
 
 	print_debug("Init Ring Pairs:\n");
-	print_debug("Counters mem      :%10p\n", mem->cntrs_mem);
 	print_debug("S C Counters mem  :%10p\n", mem->s_c_cntrs_mem);
 	print_debug("R counters mem    :%10p\n", mem->r_cntrs_mem);
 	print_debug("R S C counters mem:%10p\n", mem->r_s_c_cntrs_mem);
