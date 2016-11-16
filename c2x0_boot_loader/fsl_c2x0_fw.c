@@ -574,30 +574,6 @@ static void make_sec_list(struct sec_engine *sec, u8 count)
 	}
 }
 
-static void alloc_rsrc_mem(struct c_mem_layout *c_mem)
-{
-	uint32_t sys_version;
-	uint8_t sec_nums;
-
-	sys_version = in_be32((uint32_t *)GUTS_SVR);
-
-	sec_nums = (uint8_t)((sys_version & 0x3000) >> 12);
-	if (sec_nums == 0) {
-		/* valid values are 0, 2 and 3 */
-		sec_nums = 1;
-	}
-
-	c_mem->sec_eng_cnt = sec_nums;
-	c_mem->sec = c2zalloc(sec_nums * sizeof(struct sec_engine));
-
-	print_debug("\nalloc_rsrc_mem\n");
-	print_debug("sec addr : %10p\n\n", c_mem->sec);
-
-	make_sec_list(c_mem->sec, sec_nums);
-
-	c_mem->free_mem = TOTAL_CARD_MEMORY - (0xFFFFFFFFU - stack_ptr) + 1;
-}
-
 app_ring_pair_t *find_rp_with_jobs(app_ring_pair_t *rp)
 {
 	uint32_t jobs;
@@ -933,6 +909,8 @@ int32_t fsl_c2x0_fw(void)
 {
 	struct c_mem_layout *c_mem;
 	struct dev_handshake_mem *c_hs_mem;
+	uint32_t sys_version;
+
 	/* One cache line for handshake (HS) memory */
 	c_hs_mem = c2alloc(L1_CACHE_LINE_SIZE);
 	print_debug("\nDevice handshake memory: %p\n", c_hs_mem);
@@ -954,8 +932,19 @@ int32_t fsl_c2x0_fw(void)
 	print_debug("p_pci_mem: %10llx\n", c_mem->p_pci_mem);
 
 	set_ob_mem_tlb(c_mem);
-	alloc_rsrc_mem(c_mem);
 
+	sys_version = in_be32((uint32_t *)GUTS_SVR);
+	c_mem->sec_eng_cnt = (uint8_t)((sys_version & 0x3000) >> 12);
+	if (c_mem->sec_eng_cnt == 0) {
+		/* valid values are 0, 2 and 3 */
+		c_mem->sec_eng_cnt = 1;
+	}
+	c_mem->sec = c2zalloc(c_mem->sec_eng_cnt * sizeof(struct sec_engine));
+	make_sec_list(c_mem->sec, c_mem->sec_eng_cnt);
+
+	c_mem->free_mem = TOTAL_CARD_MEMORY - (0xFFFFFFFFU - stack_ptr) + 1;
+
+	print_debug("sec addr : %10p\n\n", c_mem->sec);
 	print_debug("\nTOTAL memory:\t%8d bytes\n", TOTAL_CARD_MEMORY);
 	print_debug("FREE memory:\t%8d bytes\n", c_mem->free_mem);
 
