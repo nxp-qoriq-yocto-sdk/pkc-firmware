@@ -312,12 +312,10 @@ struct dev_handshake_mem {
 
 	u8 state;
 	u8 data_len;
-	u8 pad;
 
 	union cmd_data {
 		struct c_config_data {
 			u8 num_of_rps;
-			u32 padding;
 			u32 r_s_cntrs;
 		} config;
 		struct c_ring_data {
@@ -339,8 +337,6 @@ struct host_handshake_mem {
 	u8 state;
 	u8 result;
 
-	u32 dev_avail_mem;
-
 	union resp_data {
 		struct fw_up_data {
 			u32 p_ib_mem_base_l;
@@ -351,9 +347,6 @@ struct host_handshake_mem {
 		} device;
 		struct config_data {
 			u32 r_s_c_cntrs;
-			u32 padding2;
-			u32 padding;
-			u32 resp_intr_ctrl_flag;
 		} config;
 		struct ring_data {
 			u32 req_r;

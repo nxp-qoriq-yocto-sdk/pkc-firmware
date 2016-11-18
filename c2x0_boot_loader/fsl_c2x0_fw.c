@@ -291,10 +291,6 @@ void hs_fw_init_config(struct c_mem_layout *mem)
 	mem->h_hs_mem->data.config.r_s_c_cntrs = offset;
 	print_debug("S R CNTRS OFFSET: %10x\n", offset);
 
-	offset = (u8 *) &(mem->rps[0].intr_ctrl_flag) - (u8 *) mem->v_ib_mem;
-	mem->h_hs_mem->data.config.resp_intr_ctrl_flag = offset;
-	print_debug("intr_ctrl_flag  : %10x\n", offset);
-
 	mem->h_hs_mem->result = RESULT_OK;
 	mem->h_hs_mem->state = FW_INIT_CONFIG_COMPLETE;
 }
