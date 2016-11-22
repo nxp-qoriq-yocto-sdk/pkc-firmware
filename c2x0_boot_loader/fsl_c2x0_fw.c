@@ -149,8 +149,8 @@ static void firmware_up(struct c_mem_layout *mem)
 {
 	mem->h_hs_mem->data.device.p_ib_mem_base_l = (u32) mem->p_ib_mem;
 	mem->h_hs_mem->data.device.p_ib_mem_base_h = (u32) (mem->p_ib_mem >> 32);
-	mem->h_hs_mem->data.device.p_ob_mem_base_l = (u32) mem->p_pci_mem;
-	mem->h_hs_mem->data.device.p_ob_mem_base_h = (u32) (mem->p_pci_mem >> 32);
+	mem->h_hs_mem->data.device.p_pci_mem_l = (u32) mem->p_pci_mem;
+	mem->h_hs_mem->data.device.p_pci_mem_h = (u32) (mem->p_pci_mem >> 32);
 	mem->h_hs_mem->data.device.no_secs = (u32) mem->sec_eng_cnt;
 
 	mem->h_hs_mem->state = FIRMWARE_UP;
@@ -833,7 +833,7 @@ void set_ob_mem_tlb(struct c_mem_layout *c_mem)
 	print_debug("Host ob mem h          : %10x\n", c_mem->c_hs_mem->h_ob_mem_h);
 	print_debug("Host ob mem 64 bit addr: %10llx\n", p_addr);
 	print_debug("Host ob mem aligned 1G : %10llx\n", p_aligned_addr);
-	print_debug("p_ob_mem               : %10llx\n", c_mem->p_ob_mem);
+	print_debug("p_pci_mem              : %10llx\n", c_mem->p_pci_mem);
 	print_debug("v_ob_mem               : %10x\n", c_mem->v_ob_mem);
 	print_debug("h_hs_mem               : %10x\n", c_mem->h_hs_mem);
 
