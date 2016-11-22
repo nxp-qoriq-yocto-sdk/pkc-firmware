@@ -62,8 +62,8 @@
 
 /* Physical address ranges used */
 #define CONFIG_SYS_PCIE1_MEM_PHYS           0X800000000U
-#define CONFIG_SYS_PCIE1_MEM_VIRT           0X80000000U
-#define CONFIG_SYS_PCIE1_MSI_MEM_VIRT       0xC0000000U
+#define CONFIG_SYS_PCIE1_MEM_VIRT            0X80000000U
+#define CONFIG_SYS_PCIE1_MSI_MEM_VIRT        0xC0000000U
 
 /* Sec engine related macros */
 #define SEC_JR_DEPTH                    (128)
