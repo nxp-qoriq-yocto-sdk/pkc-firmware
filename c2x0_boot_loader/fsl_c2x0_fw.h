@@ -301,6 +301,7 @@ typedef struct app_ring_pair {
 	u16 msi_data;
 	u32 depth;
 	u32 intr_ctrl_flag;
+	u32 irq_timeout;
 
 	struct app_ring_pair *next;
 } app_ring_pair_t;

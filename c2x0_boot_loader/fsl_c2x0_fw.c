@@ -240,6 +240,7 @@ void hs_fw_init_ring_pair(struct c_mem_layout *mem)
 	offset = h_msi_addr & ~MSI_TLB_SIZE_MASK;
 	rp->msi_addr = (void*)mem->v_msi_mem + offset;
 	rp->msi_data = mem->c_hs_mem->data.ring.msi_data;
+	rp->irq_timeout = IRQ_TIMEOUT;
 
 	rp->req_r = c2alloc(rp->depth * sizeof(req_ring_t));
 	rp->resp_r = (void *)mem->h_hs_mem + mem->c_hs_mem->data.ring.resp_ring_offset;
@@ -736,14 +737,13 @@ static inline void raise_intr(app_ring_pair_t *rp)
 	out_le32(rp->msi_addr, rp->msi_data);
 }
 
-static inline uint32_t irq_is_due(uint32_t deq_cnt, app_ring_pair_t *rp,
-				uint32_t irq_timeout)
+static inline uint32_t irq_is_due(uint32_t deq_cnt, app_ring_pair_t *rp)
 {
 	uint32_t raise_irq;
 	uint32_t host_jobs = rp->r_cntrs.jobs_added - rp->r_s_c_cntrs->jobs_processed;
 
 	raise_irq = (deq_cnt > 0) && (!rp->intr_ctrl_flag);
-	raise_irq |= (host_jobs != 0 ) && (irq_timeout == 0);
+	raise_irq |= (host_jobs != 0 ) && (rp->irq_timeout == 0);
 
 	return raise_irq;
 }
@@ -756,7 +756,6 @@ static void ring_processing_perf(struct c_mem_layout *c_mem)
 	struct sec_engine *deq_sec = c_mem->sec;
 	uint32_t deq_cnt;
 	uint32_t enq_cnt;
-	uint32_t irq_timeout = IRQ_TIMEOUT;
 	uint32_t in_jobs;
 	int32_t in_flight = 0;
 
@@ -764,14 +763,14 @@ static void ring_processing_perf(struct c_mem_layout *c_mem)
 		deq_cnt = dequeue_from_sec(deq_sec, resp_r);
 		in_flight -= deq_cnt;
 
-		if (irq_is_due(deq_cnt, resp_r, irq_timeout)) {
+		if (irq_is_due(deq_cnt, resp_r)) {
 			raise_intr(resp_r);
 			resp_r->intr_ctrl_flag = 1;
-			irq_timeout = IRQ_TIMEOUT;
-		} else if (irq_timeout > 0) {
-			irq_timeout -= 1;
+			resp_r->irq_timeout = IRQ_TIMEOUT;
+		} else if (resp_r->irq_timeout > 0) {
+			resp_r->irq_timeout -= 1;
 		} else {
-			irq_timeout = 0;
+			resp_r->irq_timeout = 0;
 		}
 
 		in_jobs = recv_r->r_s_c_cntrs->jobs_added - recv_r->r_cntrs.jobs_processed;
