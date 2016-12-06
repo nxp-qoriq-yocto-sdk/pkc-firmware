@@ -655,6 +655,51 @@ static inline u32 sec_dequeue(struct sec_engine **deq_sec, app_ring_pair_t *rp)
 	return ret_cnt;
 }
 
+static inline void reset_timer(app_ring_pair_t *rp)
+{
+	rp->intr_ctrl_flag = 1;
+	rp->irq_timeout = IRQ_TIMEOUT;
+}
+
+static inline void raise_intr(app_ring_pair_t *rp)
+{
+	print_debug("%s: MSI addr: %0x, MSI data:%0x \n",
+			__func__, rp->msi_addr, rp->msi_data);
+	out_le32(rp->msi_addr, rp->msi_data);
+	reset_timer(rp);
+}
+
+uint32_t inline get_hostroom(app_ring_pair_t *rp)
+{
+	return rp->depth -
+		(rp->r_cntrs.jobs_added - rp->r_s_c_cntrs->jobs_processed);
+}
+
+static inline app_ring_pair_t *get_rp(dma_addr_t desc, struct c_mem_layout *c_mem)
+{
+	uint32_t id;
+
+	id = (desc - c_mem->bp_base) / c_mem->bp_size;
+	return &(c_mem->rps[id]);
+}
+
+static inline uint32_t same_rid(dma_addr_t desc_a, dma_addr_t desc_b, uint32_t mask)
+{
+	return (desc_a & mask) == (desc_b & mask);
+}
+
+static inline void timer_dec(app_ring_pair_t *rp)
+{
+	if (rp->irq_timeout > 0) {
+		rp->irq_timeout--;
+	}
+}
+
+static inline uint32_t rp_is_stuck(app_ring_pair_t *rp)
+{
+	return (rp->intr_ctrl_flag == 0) | (rp->irq_timeout == 0);
+}
+
 inline void Enq_Circ_Cpy(struct sec_jr *jr, app_ring_pair_t *rp, uint32_t count)
 {
 	uint32_t i;
@@ -674,9 +719,14 @@ inline void Enq_Circ_Cpy(struct sec_jr *jr, app_ring_pair_t *rp, uint32_t count)
 	jr->tail         = wi;
 }
 
-static inline uint32_t enqueue_to_sec(struct sec_engine *sec,
-		app_ring_pair_t *rp, uint32_t in_jobs)
+static inline uint32_t count_ring_jobs(app_ring_pair_t *rp)
 {
+	return rp->r_s_c_cntrs->jobs_added - rp->r_cntrs.jobs_processed;
+}
+
+static void enqueue_to_sec(struct sec_engine *sec, app_ring_pair_t *rp)
+{
+	uint32_t in_jobs = count_ring_jobs(rp);
 	uint32_t secroom = in_be32(&(sec->jr.regs->irsa));
 	uint32_t count = MIN(secroom, in_jobs);
 
@@ -686,103 +736,101 @@ static inline uint32_t enqueue_to_sec(struct sec_engine *sec,
 		rp->r_cntrs.jobs_processed += count;
 		rp->r_s_cntrs->req_jobs_processed = rp->r_cntrs.jobs_processed;
 	}
-	return count;
 }
 
-inline void Deq_Circ_Cpy(struct sec_jr *jr, app_ring_pair_t *rp, uint32_t count)
+static inline void dequeue_from_sec(struct sec_engine *sec,
+		struct c_mem_layout *c_mem)
 {
-	uint32_t i;
-	uint32_t wi = rp->idxs.w_index;
-	uint32_t ri = jr->head;
-	uint32_t rdepth = rp->depth;
-	uint32_t jrdepth = jr->size;
+	uint32_t mask = ~(c_mem->bp_size - 1);
+	app_ring_pair_t *rp;
+	uint32_t out_jobs;
+	uint32_t hostroom;
+	uint32_t count;
+	dma_addr_t desc;
+	dma_addr_t first_desc;
+	uint32_t status;
+	uint32_t ri;
+	uint32_t wi;
 
-	for(i = 0; i < count; i++) {
-		print_debug("%s: desc: %0llx from ri: %d to host wi: %d \n",
-				__func__, jr->o_ring[ri].desc, ri, wi);
-		rp->resp_r[wi].desc   = jr->o_ring[ri].desc;
-		rp->resp_r[wi].result = jr->o_ring[ri].status;
-		wi = (wi + 1) &~(rdepth);
-		ri = (ri + 1) &~(jrdepth);
+	struct sec_op_ring *o_ring;
+	resp_ring_t *h_ring;
+	struct sec_jr *jr;
+
+	jr = &(sec->jr);
+	out_jobs  = in_be32(&(jr->regs->orsf));
+	if (out_jobs == 0) {
+		return;
 	}
+
+	ri = jr->head;
+
+	o_ring = jr->o_ring;
+	desc   = o_ring[ri].desc;
+	status = o_ring[ri].status;
+
+	first_desc = desc;
+
+	rp = get_rp(desc, c_mem);
+	hostroom = get_hostroom(rp);
+	while (hostroom == 0) {
+		if (rp_is_stuck(rp)) {
+			raise_intr(rp);
+		} else {
+			timer_dec(rp);
+		}
+
+		hostroom = get_hostroom(rp);
+	}
+
+	hostroom = MIN(hostroom, out_jobs);
+	count = hostroom;
+
+	wi = rp->idxs.w_index;
+	h_ring = rp->resp_r;
+
+	while (hostroom > 0) {
+		/* copy current descriptor to the ring */
+		h_ring[wi].desc   = desc;
+		h_ring[wi].result = status;
+
+		/* advance indexes for SEC and user rings */
+		wi = (wi + 1) & ~rp->depth;
+		ri = (ri + 1) & ~SEC_JR_DEPTH;
+
+		hostroom--;
+		if (hostroom > 0) {
+			desc   = o_ring[ri].desc;
+			status = o_ring[ri].status;
+
+			if (!same_rid(desc, first_desc, mask)) {
+				break;
+			}
+		}
+	}
+
+	count -= hostroom;
+
 	rp->idxs.w_index = wi;
 	jr->head         = ri;
-}
 
-static inline uint32_t dequeue_from_sec(struct sec_engine *sec,
-		app_ring_pair_t *rp)
-{
-	uint32_t out_jobs  = in_be32(&(sec->jr.regs->orsf));
-	uint32_t hostroom = rp->depth - (rp->r_cntrs.jobs_added - rp->r_s_c_cntrs->jobs_processed);
-	uint32_t count = MIN(out_jobs, hostroom);
+	rp->r_cntrs.jobs_added += count;
+	rp->r_s_cntrs->resp_jobs_added = rp->r_cntrs.jobs_added;
+	out_be32(&(jr->regs->orjr), count);
 
-	print_debug("%s: out_jobs: %d, hostroom: %d, count: %d \n",
-			__func__, out_jobs, hostroom, count);
-
-	if (count) {
-		Deq_Circ_Cpy(&(sec->jr), rp, count);
-		rp->r_cntrs.jobs_added += count;
-		rp->r_s_cntrs->resp_jobs_added = rp->r_cntrs.jobs_added;
-		out_be32(&(sec->jr.regs->orjr), count);
-	}
-	return count;
-}
-
-static inline void raise_intr(app_ring_pair_t *rp)
-{
-	print_debug("%s: MSI addr: %0x, MSI data:%0x \n",
-			__func__, rp->msi_addr, rp->msi_data);
-	rp->intr_ctrl_flag = 1;
-	out_le32(rp->msi_addr, rp->msi_data);
-}
-
-static inline uint32_t irq_is_due(uint32_t deq_cnt, app_ring_pair_t *rp)
-{
-	uint32_t raise_irq;
-	uint32_t host_jobs = rp->r_cntrs.jobs_added - rp->r_s_c_cntrs->jobs_processed;
-
-	raise_irq = (deq_cnt > 0) && (!rp->intr_ctrl_flag);
-	raise_irq |= (host_jobs != 0 ) && (rp->irq_timeout == 0);
-
-	return raise_irq;
+	raise_intr(rp);
 }
 
 static void ring_processing_perf(struct c_mem_layout *c_mem)
 {
-	app_ring_pair_t *recv_r = c_mem->rps;
-	app_ring_pair_t *resp_r = c_mem->rps;
-	struct sec_engine *enq_sec = c_mem->sec;
-	struct sec_engine *deq_sec = c_mem->sec;
-	uint32_t deq_cnt;
-	uint32_t enq_cnt;
-	uint32_t in_jobs;
-	int32_t in_flight = 0;
+	app_ring_pair_t *rp = c_mem->rps;
+	struct sec_engine *sec = c_mem->sec;
 
 	while (1) {
-		deq_cnt = dequeue_from_sec(deq_sec, resp_r);
-		in_flight -= deq_cnt;
+		dequeue_from_sec(sec, c_mem);
+		enqueue_to_sec(sec, rp);
 
-		if (irq_is_due(deq_cnt, resp_r)) {
-			raise_intr(resp_r);
-			resp_r->intr_ctrl_flag = 1;
-			resp_r->irq_timeout = IRQ_TIMEOUT;
-		} else if (resp_r->irq_timeout > 0) {
-			resp_r->irq_timeout -= 1;
-		} else {
-			resp_r->irq_timeout = 0;
-		}
-
-		in_jobs = recv_r->r_s_c_cntrs->jobs_added - recv_r->r_cntrs.jobs_processed;
-		if (in_jobs > 0) {
-			enq_cnt = enqueue_to_sec(enq_sec, recv_r, in_jobs);
-			in_flight += enq_cnt;
-		}
-
-		/* change sec and rings */
-		recv_r = recv_r->next;
-		resp_r = resp_r->next;
-		enq_sec = enq_sec->next;
-		deq_sec = deq_sec->next;
+		rp = rp->next;
+		sec = sec->next;
 	}
 }
 

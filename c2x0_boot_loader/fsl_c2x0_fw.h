@@ -77,7 +77,7 @@
 #define ALIGN_TO_L1_CACHE_LINE(x)   (x & ~(L1_CACHE_LINE_SIZE-1))
 
 /* Watchdog counter to signal the host with an interrupt if it looks stuck */
-#define IRQ_TIMEOUT 10000
+#define IRQ_TIMEOUT 1000
 
 /* General Macros */
 #define RESULT_OK       1
