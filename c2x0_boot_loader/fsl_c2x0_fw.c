@@ -836,11 +836,23 @@ void set_ob_mem_tlb(struct c_mem_layout *c_mem)
 	print_debug("v_ob_mem               : %10x\n", c_mem->v_ob_mem);
 	print_debug("h_hs_mem               : %10x\n", c_mem->h_hs_mem);
 
+	/* remember the buffer pool base and size */
+	p_addr = (phys_addr_t)c_mem->c_hs_mem->bp_base_h << 32;
+	p_addr |= c_mem->c_hs_mem->bp_base_l;
+
+	/* host doesn't know yet the value of c_mem->p_pci_mem. Let's do it a
+	 * favor and do the addition ourselves */
+	p_addr += c_mem->p_pci_mem;
+
+	c_mem->bp_base = p_addr;
+	c_mem->bp_size = c_mem->c_hs_mem->bp_size;
+	print_debug("bp_base                : %10llx\n", c_mem->bp_base);
+	print_debug("bp_size                : %10x\n", c_mem->bp_size);
+
 	/* Set the TLB here for the OB mem 1G - Using TLB 3 */
 	c2x0_set_tlb(1, c_mem->v_ob_mem, c_mem->p_ob_mem,
 			MAS3_SW | MAS3_SR, MAS2_I | MAS2_G, 0, 3,
 			BOOKE_PAGESZ_1G, 1);
-
 }
 
 void set_msi_tlb(struct c_mem_layout *c_mem)

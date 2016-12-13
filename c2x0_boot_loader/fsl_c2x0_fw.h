@@ -311,6 +311,12 @@ struct dev_handshake_mem {
 	u32 h_ob_mem_l;
 	u32 h_ob_mem_h;
 
+	/* address and size of buffer pools in device address space. These are
+	 * used to identify descriptor ring to maintain affinity */
+	uint32_t bp_base_l;
+	uint32_t bp_base_h;
+	uint32_t bp_size;
+
 	u8 state;
 	u8 data_len;
 
@@ -412,8 +418,8 @@ struct c_mem_layout {
 	phys_addr_t h_msi_addr;
 
 	/* Addresses of common pool for all the ring pairs */
-	phys_addr_t p_buf_pool_mem;
-	va_addr_t v_buf_pool_mem;
+	phys_addr_t bp_base;
+	uint32_t bp_size;
 
 	struct host_handshake_mem __iomem *h_hs_mem;
 	struct dev_handshake_mem *c_hs_mem;
