@@ -613,8 +613,7 @@ static inline void sel_sec_enqueue(struct c_mem_layout *c_mem,
 	}
 }
 
-static inline u32 sec_dequeue(struct c_mem_layout *c_mem,
-		struct sec_engine **deq_sec, app_ring_pair_t *rp)
+static inline u32 sec_dequeue(struct sec_engine **deq_sec, app_ring_pair_t *rp)
 {
 	struct sec_jr *jr = &(*deq_sec)->jr;
 	u32 cnt = in_be32(&jr->regs->orsf);
@@ -799,7 +798,7 @@ static inline void rng_processing(struct c_mem_layout *c_mem)
 	sel_sec_enqueue(c_mem, &sec, rp);
 
 DEQ:
-	ring_jobs   =  sec_dequeue(c_mem, &sec, rp);
+	ring_jobs   =  sec_dequeue(&sec, rp);
 	if (ring_jobs) {
 		raise_intr(rp);
 	} else {
